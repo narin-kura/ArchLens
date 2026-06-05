@@ -505,6 +505,9 @@
     .builder-analyze-btn:disabled { opacity:0.35; cursor:not-allowed; box-shadow:none; }
 
     .warn-banner { background:#422006; border:1px solid #92400e; border-radius:10px; padding:12px 16px; color:#fcd34d; font-size:13px; font-weight:600; margin-bottom:20px; }
+    .text-hint { font-size:12px; margin-top:8px; min-height:18px; font-weight:600; }
+    .text-hint.bad  { color:#f87171; }
+    .text-hint.good { color:#34d399; }
 
     /* FOOTER */
     footer {
@@ -670,7 +673,10 @@
     </div>
 
     <div id="tab-text" class="tab-content">
-      <textarea id="textInput" placeholder="Describe your architecture in plain English...&#10;&#10;Example: We have a Python web app on AWS EC2 m5.xlarge, a PostgreSQL RDS db.r5.2xlarge with no encryption, an S3 bucket for uploads set to public, and no monitoring configured."></textarea>
+      <textarea id="textInput"
+        placeholder="Describe your cloud infrastructure — services, databases, tools...&#10;&#10;Example: We run a Node.js API on AWS EC2, a PostgreSQL RDS database with no encryption, an S3 bucket for file uploads, Jenkins for CI/CD, and no monitoring configured."
+        oninput="validateTextInput(this)"></textarea>
+      <div class="text-hint" id="textHint"></div>
     </div>
 
     <!-- BUILDER TAB -->
@@ -776,6 +782,39 @@
 </footer>
 
 <script>
+  const ARCH_KEYWORDS = [
+    'aws','gcp','azure','amazon','ec2','lambda','rds','s3','ecs','eks','fargate',
+    'docker','kubernetes','k8s','container','server','instance','database','db',
+    'mysql','postgres','mongodb','dynamodb','redis','elasticsearch','aurora',
+    'storage','bucket','blob','vpc','subnet','load balancer','alb','elb','nginx',
+    'api gateway','cdn','cloudfront','firewall','nat','queue','kafka','rabbitmq',
+    'sqs','sns','pubsub','terraform','ansible','jenkins','ci/cd','pipeline','deploy',
+    'cloudwatch','datadog','grafana','prometheus','monitoring','microservice','api',
+    'backend','frontend','infrastructure','service','endpoint','application','iam',
+    'security group','cache','serverless','cloud run','cloud sql','spanner','gke',
+    'compute engine','github actions','gitlab','helm',
+  ];
+
+  function looksLikeArchitecture(text) {
+    const lower = text.toLowerCase();
+    const words = lower.trim().split(/\s+/);
+    if (words.length < 5) return false;
+    return ARCH_KEYWORDS.some(kw => lower.includes(kw));
+  }
+
+  function validateTextInput(el) {
+    const hint = document.getElementById('textHint');
+    const val = el.value.trim();
+    if (!val) { hint.textContent = ''; hint.className = 'text-hint'; return; }
+    if (looksLikeArchitecture(val)) {
+      hint.textContent = 'Looks good — ready to analyze.';
+      hint.className = 'text-hint good';
+    } else {
+      hint.textContent = 'Please describe your infrastructure (services, databases, tools). General questions are not supported.';
+      hint.className = 'text-hint bad';
+    }
+  }
+
   let selectedFile = null;
   let activeTab = 'file';
 
@@ -822,7 +861,8 @@
         form.append('file', selectedFile);
       } else {
         const text = document.getElementById('textInput').value.trim();
-        if (!text) throw new Error('Please enter a description or upload a file.');
+        if (!text) throw new Error('Please enter an architecture description.');
+        if (!looksLikeArchitecture(text)) throw new Error('Please describe your cloud infrastructure — include services, databases, or tools. General questions are not supported.');
         form.append('text', text);
         form.append('format_hint', 'text');
       }

@@ -32,6 +32,45 @@ Return this exact JSON structure with no extra text:
 }}"""
 
 
+_ARCH_KEYWORDS = {
+    # cloud providers
+    "aws", "gcp", "azure", "amazon", "google cloud", "microsoft",
+    # compute
+    "ec2", "lambda", "function", "server", "instance", "vm", "virtual machine",
+    "container", "docker", "kubernetes", "k8s", "pod", "cluster", "fargate", "ecs", "eks",
+    "compute engine", "cloud run", "app engine",
+    # database
+    "database", " db ", "rds", "mysql", "postgres", "postgresql", "mongodb", "dynamodb",
+    "redis", "elasticsearch", "cassandra", "aurora", "spanner", "firestore", "bigtable",
+    "cloud sql", "sqlite",
+    # storage
+    "s3", " storage", "bucket", "blob", "gcs", "ebs", "efs",
+    # network / gateway
+    "vpc", "subnet", "load balancer", "alb", "elb", "nginx", "api gateway", "cdn",
+    "cloudfront", "firewall", "nat gateway", "route53", "dns",
+    # messaging / queue
+    "queue", "kafka", "rabbitmq", "sqs", "sns", "pubsub", "message broker", "event",
+    # tools / ci-cd
+    "terraform", "ansible", "jenkins", "ci/cd", "pipeline", "deploy", "github actions",
+    "gitlab", "helm", "ansible",
+    # monitoring
+    "cloudwatch", "datadog", "grafana", "prometheus", "monitoring", "logging",
+    # general architecture terms
+    "microservice", "api", "backend", "frontend", "architecture", "infrastructure",
+    "service", "endpoint", "application", "web app", "mobile app", "iam", "role",
+    "security group", "cache", "auto scaling", "serverless",
+}
+
+_MIN_WORDS = 5
+
+def _is_architecture_text(text: str) -> bool:
+    lower = text.lower()
+    words = lower.split()
+    if len(words) < _MIN_WORDS:
+        return False
+    return any(kw in lower for kw in _ARCH_KEYWORDS)
+
+
 def _strip_fences(raw: str) -> str:
     raw = raw.strip()
     if raw.startswith("```"):
@@ -59,6 +98,13 @@ class TextParser(BaseParser):
         text = p.read_text(encoding="utf-8") if p.exists() else str(source)
         if not text.strip():
             raise ValueError("Input text is empty. Please describe your architecture.")
+        if not _is_architecture_text(text):
+            raise ValueError(
+                "This doesn't look like an architecture description. "
+                "Please describe the services and infrastructure you use — for example: "
+                "'We run a Python API on AWS EC2, a PostgreSQL RDS database, "
+                "an S3 bucket for file storage, and CloudWatch for monitoring.'"
+            )
         return self._parse_with_llm(text)
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
