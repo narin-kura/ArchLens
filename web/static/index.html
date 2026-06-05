@@ -701,6 +701,7 @@
             <button class="cat-tab"        data-cat="cicd"      onclick="setCat(this)">CI/CD</button>
             <button class="cat-tab"        data-cat="monitoring" onclick="setCat(this)">Monitoring</button>
             <button class="cat-tab"        data-cat="security"  onclick="setCat(this)">Security</button>
+            <button class="cat-tab"        data-cat="ai"        onclick="setCat(this)">AI / ML</button>
           </div>
           <div class="service-grid" id="serviceGrid"></div>
 
@@ -793,6 +794,10 @@
     'backend','frontend','infrastructure','service','endpoint','application','iam',
     'security group','cache','serverless','cloud run','cloud sql','spanner','gke',
     'compute engine','github actions','gitlab','helm',
+    'llm','openai','anthropic','gemini','gpt','claude','bedrock','vertex ai','sagemaker',
+    'machine learning','embedding','vector database','vector db','pinecone','weaviate',
+    'chroma','qdrant','langchain','llamaindex','rag','inference','training','hugging face',
+    'ollama','mlflow','wandb','triton','ai model','language model','generative ai','chatbot',
   ];
 
   function looksLikeArchitecture(text) {
@@ -1035,6 +1040,42 @@
     {id:'s_snyk',        name:'Snyk',          provider:'generic', cat:'security',  type:'MONITORING', service:'snyk',            icon:'SNK'},
     {id:'s_waf',         name:'AWS WAF',       provider:'aws',     cat:'security',  type:'NETWORK',    service:'waf',             icon:'WAF'},
     {id:'s_sg',          name:'Sec. Group',    provider:'aws',     cat:'security',  type:'NETWORK',    service:'security_group',  icon:'SG'},
+    // AI / ML — AWS
+    {id:'aws_sagemaker', name:'SageMaker',     provider:'aws',     cat:'ai',        type:'COMPUTE',    service:'sagemaker',       icon:'SM'},
+    {id:'aws_bedrock',   name:'Bedrock',       provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'bedrock',         icon:'BDR'},
+    {id:'aws_rekognition',name:'Rekognition',  provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'rekognition',     icon:'RKG'},
+    {id:'aws_textract',  name:'Textract',      provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'textract',        icon:'TXT'},
+    {id:'aws_comprehend',name:'Comprehend',    provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'comprehend',      icon:'NLP'},
+    {id:'aws_kendra',    name:'Kendra',        provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'kendra',          icon:'KND'},
+    // AI / ML — GCP
+    {id:'gcp_vertexai',  name:'Vertex AI',     provider:'gcp',     cat:'ai',        type:'COMPUTE',    service:'vertex_ai',       icon:'VAI'},
+    {id:'gcp_bqml',      name:'BigQuery ML',   provider:'gcp',     cat:'ai',        type:'DATABASE',   service:'bigquery_ml',     icon:'BQML'},
+    {id:'gcp_vision',    name:'Vision API',    provider:'gcp',     cat:'ai',        type:'SERVERLESS', service:'vision_api',      icon:'VIS'},
+    {id:'gcp_nlp',       name:'Natural Language',provider:'gcp',   cat:'ai',        type:'SERVERLESS', service:'cloud_nlp',       icon:'NLP'},
+    // AI / ML — Azure
+    {id:'az_openai',     name:'Azure OpenAI',  provider:'azure',   cat:'ai',        type:'GATEWAY',    service:'azure_openai',    icon:'AOAI'},
+    {id:'az_ml',         name:'Azure ML',      provider:'azure',   cat:'ai',        type:'COMPUTE',    service:'azure_ml',        icon:'AML'},
+    {id:'az_cognitive',  name:'Cognitive Svcs',provider:'azure',   cat:'ai',        type:'SERVERLESS', service:'cognitive_services',icon:'COG'},
+    // LLM APIs (generic)
+    {id:'ai_openai',     name:'OpenAI API',    provider:'generic', cat:'ai',        type:'GATEWAY',    service:'openai_api',      icon:'OAI'},
+    {id:'ai_anthropic',  name:'Anthropic API', provider:'generic', cat:'ai',        type:'GATEWAY',    service:'anthropic_api',   icon:'ANT'},
+    {id:'ai_gemini',     name:'Gemini API',    provider:'generic', cat:'ai',        type:'GATEWAY',    service:'gemini_api',      icon:'GEM'},
+    {id:'ai_ollama',     name:'Ollama',        provider:'generic', cat:'ai',        type:'COMPUTE',    service:'ollama',          icon:'OLL'},
+    {id:'ai_hf',         name:'Hugging Face',  provider:'generic', cat:'ai',        type:'GATEWAY',    service:'huggingface',     icon:'HF'},
+    // Vector Databases
+    {id:'ai_pinecone',   name:'Pinecone',      provider:'generic', cat:'ai',        type:'DATABASE',   service:'pinecone',        icon:'PCN'},
+    {id:'ai_weaviate',   name:'Weaviate',      provider:'generic', cat:'ai',        type:'DATABASE',   service:'weaviate',        icon:'WVT'},
+    {id:'ai_chroma',     name:'Chroma',        provider:'generic', cat:'ai',        type:'DATABASE',   service:'chroma',          icon:'CHR'},
+    {id:'ai_qdrant',     name:'Qdrant',        provider:'generic', cat:'ai',        type:'DATABASE',   service:'qdrant',          icon:'QDR'},
+    {id:'ai_pgvector',   name:'pgvector',      provider:'generic', cat:'ai',        type:'DATABASE',   service:'pgvector',        icon:'PGV'},
+    // MLOps / Frameworks
+    {id:'ai_mlflow',     name:'MLflow',        provider:'generic', cat:'ai',        type:'MONITORING', service:'mlflow',          icon:'MLF'},
+    {id:'ai_wandb',      name:'W&B',           provider:'generic', cat:'ai',        type:'MONITORING', service:'wandb',           icon:'W&B'},
+    {id:'ai_langchain',  name:'LangChain',     provider:'generic', cat:'ai',        type:'OTHER',      service:'langchain',       icon:'LC'},
+    {id:'ai_llamaindex', name:'LlamaIndex',    provider:'generic', cat:'ai',        type:'OTHER',      service:'llamaindex',      icon:'LLI'},
+    {id:'ai_ray',        name:'Ray',           provider:'generic', cat:'ai',        type:'COMPUTE',    service:'ray',             icon:'RAY'},
+    {id:'ai_feast',      name:'Feast',         provider:'generic', cat:'ai',        type:'DATABASE',   service:'feast',           icon:'FST'},
+    {id:'ai_triton',     name:'Triton Server', provider:'generic', cat:'ai',        type:'COMPUTE',    service:'triton',          icon:'TRI'},
   ];
 
   let selectedSvcs = new Map();
@@ -1081,68 +1122,86 @@
       : '<span class="stack-empty">Click services above to add them</span>';
     const btn = document.getElementById('builderAnalyzeBtn');
     if (btn) btn.disabled = svcs.length === 0;
-    const types = new Set(svcs.map(s => s.type));
-    renderSuggestions(types, [], 'suggList');
+    const types    = new Set(svcs.map(s => s.type));
+    const services = new Set(svcs.map(s => s.service));
+    renderSuggestions(types, [], 'suggList', services);
   }
 
   // --- Live suggestion rules (pure client-side) ---
-  function computeSuggestions(types, edges, nodes) {
-    const has = t => types.has(t);
+  const _LLM_SERVICES    = new Set(['openai_api','anthropic_api','gemini_api','bedrock','vertex_ai','azure_openai','huggingface','ollama','kendra']);
+  const _VECTOR_SERVICES = new Set(['pinecone','weaviate','chroma','qdrant','pgvector']);
+  const _MLOPS_SERVICES  = new Set(['mlflow','wandb']);
+  const _FRAMEWORK_SVCS  = new Set(['langchain','llamaindex']);
+  const _ML_TRAIN_SVCS   = new Set(['sagemaker','vertex_ai','azure_ml','ray']);
+
+  function computeSuggestions(types, edges, nodes, services) {
+    services = services || new Set();
+    const has  = t => types.has(t);
+    const hasSvc = s => services.has(s);
+    const hasAnyLLM    = [..._LLM_SERVICES].some(s => hasSvc(s));
+    const hasVectorDb  = [..._VECTOR_SERVICES].some(s => hasSvc(s));
+    const hasMLOps     = [..._MLOPS_SERVICES].some(s => hasSvc(s));
+    const hasFramework = [..._FRAMEWORK_SVCS].some(s => hasSvc(s));
+    const hasMLTrain   = [..._ML_TRAIN_SVCS].some(s => hasSvc(s));
     const suggs = [];
 
+    // --- General architecture rules ---
     if ((has('COMPUTE') || has('SERVERLESS') || has('CONTAINER')) && !has('MONITORING'))
       suggs.push({l:'crit', t:'No monitoring — critical gap. Add CloudWatch, Datadog, or Grafana'});
     if (has('DATABASE') && !has('MONITORING'))
       suggs.push({l:'warn', t:'Database with no monitoring — query anomalies will go undetected'});
-    if (has('COMPUTE') && !has('GATEWAY') && !has('CDN'))
+    if (has('COMPUTE') && !has('GATEWAY') && !has('CDN') && !hasAnyLLM)
       suggs.push({l:'warn', t:'Compute exposed without a Gateway or CDN — add API Gateway or ALB'});
     if (has('STORAGE') && !has('IAM'))
       suggs.push({l:'warn', t:'Storage without IAM — public access risk. Add access control'});
-    if ((has('COMPUTE') || has('DATABASE')) && !has('NETWORK'))
+    if ((has('COMPUTE') || has('DATABASE')) && !has('NETWORK') && !hasAnyLLM)
       suggs.push({l:'warn', t:'No VPC/Network isolation — resources may be publicly reachable'});
     if (has('CONTAINER') && !has('IAM'))
-      suggs.push({l:'warn', t:'Containers need service accounts/RBAC — add IAM or Azure AD'});
+      suggs.push({l:'warn', t:'Containers need service accounts/RBAC — add IAM'});
     if (has('QUEUE') && !has('MONITORING'))
-      suggs.push({l:'warn', t:'Queues should have dead-letter queue alerts configured'});
+      suggs.push({l:'warn', t:'Queues should have dead-letter queue monitoring configured'});
     if (has('IAM'))
       suggs.push({l:'info', t:'IAM present — verify least-privilege; avoid wildcard (*) actions'});
     if (has('MONITORING') && (has('COMPUTE') || has('SERVERLESS')))
-      suggs.push({l:'good', t:'Monitoring + compute is a solid observability foundation'});
+      suggs.push({l:'good', t:'Monitoring + compute — solid observability foundation'});
     if (has('GATEWAY') || has('CDN'))
       suggs.push({l:'good', t:'Gateway/CDN layer adds traffic control and DDoS protection'});
     if (has('NETWORK'))
       suggs.push({l:'good', t:'Network isolation (VPC/Subnet) is a strong security boundary'});
 
-    // Edge-based suggestions
-    if (nodes.length > 0) {
-      const connectedIds = new Set(edges.flatMap(e => [e.source, e.target]));
-      nodes.forEach(n => {
-        if (['DATABASE','STORAGE'].includes(n.type) && !connectedIds.has(n.id))
-          suggs.push({l:'warn', t:`${n.name} is isolated — not connected to any other service`});
-      });
-      const mon = nodes.find(n => n.type === 'MONITORING');
-      const computes = nodes.filter(n => ['COMPUTE','SERVERLESS','CONTAINER'].includes(n.type));
-      if (mon && computes.length > 0) {
-        const wired = edges.some(e =>
-          (e.source === mon.id && computes.some(c => c.id === e.target)) ||
-          (e.target === mon.id && computes.some(c => c.id === e.source))
-        );
-        suggs.push(wired
-          ? {l:'good', t:`${mon.name} is wired to compute — good observability`}
-          : {l:'warn', t:`${mon.name} not connected to compute — wire it up`}
-        );
-      }
-    }
+    // --- AI / ML specific rules ---
+    if (hasAnyLLM && !has('MONITORING') && !hasMLOps)
+      suggs.push({l:'crit', t:'LLM API with no monitoring — token costs can spike without warning. Add CloudWatch, Datadog, or W&B'});
+    if (hasAnyLLM && !has('CACHE'))
+      suggs.push({l:'warn', t:'No cache layer — semantic caching (Redis) can cut LLM API costs by 40-60% on repeated queries'});
+    if (hasAnyLLM && !has('GATEWAY'))
+      suggs.push({l:'warn', t:'LLM API without a Gateway — add API Gateway or rate limiting to control costs and prevent abuse'});
+    if (hasVectorDb && !has('IAM'))
+      suggs.push({l:'warn', t:'Vector DB stores embeddings that may contain sensitive data — add access control (IAM)'});
+    if (hasVectorDb && !hasAnyLLM)
+      suggs.push({l:'info', t:'Vector DB without an LLM — is this intentional? Usually paired with an LLM for RAG pipelines'});
+    if (hasAnyLLM && hasVectorDb)
+      suggs.push({l:'good', t:'LLM + Vector DB — classic RAG setup. Consider adding a cache layer for performance'});
+    if (hasFramework && !has('IAM'))
+      suggs.push({l:'warn', t:'LangChain/LlamaIndex detected — store API keys in Secrets Manager, never in code'});
+    if (hasMLTrain && !has('STORAGE'))
+      suggs.push({l:'warn', t:'ML training without artifact storage — add S3 or GCS to save model checkpoints and datasets'});
+    if (hasMLTrain && !hasMLOps)
+      suggs.push({l:'info', t:'ML training without experiment tracking — consider MLflow or W&B to track runs and compare models'});
+    if (hasMLOps)
+      suggs.push({l:'good', t:'Experiment tracking configured — great for reproducibility and model comparison'});
+    if (hasAnyLLM && hasVectorDb && has('CACHE') && has('MONITORING'))
+      suggs.push({l:'good', t:'Well-structured AI stack — LLM + Vector DB + caching + monitoring covers the essentials'});
 
     if (suggs.length === 0)
       suggs.push({l:'info', t:'Architecture looks reasonable — run full analysis for detailed findings'});
     return suggs;
   }
 
-  function renderSuggestions(types, _unused, containerId) {
+  function renderSuggestions(types, _unused, containerId, services) {
     const list = document.getElementById(containerId);
     if (!list) return;
-    const items = computeSuggestions(types, [], []);
+    const items = computeSuggestions(types, [], [], services);
     list.innerHTML = items.map(s =>
       `<div class="sugg-item ${s.l}"><div class="sugg-dot ${s.l}"></div><span>${s.t}</span></div>`
     ).join('');

@@ -59,6 +59,13 @@ _ARCH_KEYWORDS = {
     "microservice", "api", "backend", "frontend", "architecture", "infrastructure",
     "service", "endpoint", "application", "web app", "mobile app", "iam", "role",
     "security group", "cache", "auto scaling", "serverless",
+    # AI / ML
+    "llm", "openai", "anthropic", "gemini", "gpt", "claude", "bedrock", "vertex ai",
+    "sagemaker", "machine learning", "ml model", "neural network", "embedding",
+    "vector database", "vector db", "pinecone", "weaviate", "chroma", "qdrant",
+    "langchain", "llamaindex", "rag", "fine-tuning", "inference", "training",
+    "hugging face", "ollama", "mlflow", "weights & biases", "wandb", "triton",
+    "ai model", "language model", "generative ai", "chatbot", "ai pipeline",
 }
 
 _MIN_WORDS = 5
