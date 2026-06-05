@@ -549,10 +549,10 @@
 
     <div id="tab-file" class="tab-content active">
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.txt,.md" onchange="onFileSelect(this)" />
+        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md" onchange="onFileSelect(this)" />
         <div class="icon">&#128194;</div>
         <p><strong>Click to upload</strong> or drag &amp; drop</p>
-        <p>Terraform (.tf), draw.io (.xml), Cloud export (.json), Text (.txt)</p>
+        <p>Terraform (.tf) &nbsp;·&nbsp; CloudFormation (.yaml/.json) &nbsp;·&nbsp; draw.io (.xml/.drawio) &nbsp;·&nbsp; AWS Config (.json) &nbsp;·&nbsp; GCP Asset (.json) &nbsp;·&nbsp; Text (.txt)</p>
         <div class="file-name" id="fileName"></div>
       </div>
     </div>

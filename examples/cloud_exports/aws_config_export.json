@@ -1,0 +1,45 @@
+{
+  "configurationItems": [
+    {
+      "resourceType": "AWS::EC2::Instance",
+      "resourceId": "i-0abc1234567890000",
+      "resourceName": "web-server-prod",
+      "configuration": {
+        "instanceType": "m5.4xlarge",
+        "publiclyAccessible": "true"
+      }
+    },
+    {
+      "resourceType": "AWS::RDS::DBInstance",
+      "resourceId": "db-prod-mysql",
+      "resourceName": "prod-mysql",
+      "configuration": {
+        "dbInstanceClass": "db.r5.large",
+        "storageEncrypted": false,
+        "publiclyAccessible": true
+      }
+    },
+    {
+      "resourceType": "AWS::S3::Bucket",
+      "resourceId": "my-public-data-bucket",
+      "resourceName": "my-public-data-bucket",
+      "configuration": {
+        "acl": "public-read"
+      }
+    },
+    {
+      "resourceType": "AWS::IAM::Role",
+      "resourceId": "role-wildcard-access",
+      "resourceName": "role-wildcard-access",
+      "configuration": {
+        "assumeRolePolicyDocument": "*"
+      }
+    },
+    {
+      "resourceType": "AWS::SQS::Queue",
+      "resourceId": "orders-queue",
+      "resourceName": "orders-queue",
+      "configuration": {}
+    }
+  ]
+}

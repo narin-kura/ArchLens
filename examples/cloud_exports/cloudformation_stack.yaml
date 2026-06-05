@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sample CFN stack with intentional security issues for ArchLens testing"
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: m5.4xlarge
+      ImageId: ami-0123456789abcdef0
+
+  OpenSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Web tier SG"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  ProductionDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: db.r5.large
+      Engine: mysql
+      StorageEncrypted: false
+      PubliclyAccessible: true
+      AllocatedStorage: 100
+
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: company-data-bucket
+      AccessControl: PublicRead
+
+  WildcardRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "*"
+            Resource: "*"
+
+  OrderQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: order-processing-queue
+
+  ApiEndpoint:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: ProductionAPI

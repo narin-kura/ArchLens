@@ -1,0 +1,51 @@
+{
+  "assets": [
+    {
+      "name": "//compute.googleapis.com/projects/my-project/zones/us-central1-a/instances/web-vm",
+      "assetType": "compute.googleapis.com/Instance",
+      "resource": {
+        "data": {
+          "machineType": "zones/us-central1-a/machineTypes/n2-standard-16",
+          "status": "RUNNING"
+        }
+      }
+    },
+    {
+      "name": "//sqladmin.googleapis.com/projects/my-project/instances/prod-postgres",
+      "assetType": "sqladmin.googleapis.com/Instance",
+      "resource": {
+        "data": {
+          "databaseVersion": "POSTGRES_14",
+          "encryptionConfig": {}
+        }
+      }
+    },
+    {
+      "name": "//storage.googleapis.com/my-public-bucket",
+      "assetType": "storage.googleapis.com/Bucket",
+      "resource": {
+        "data": {
+          "bindings": [
+            {"members": ["allUsers"], "role": "roles/storage.objectViewer"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "//pubsub.googleapis.com/projects/my-project/topics/order-events",
+      "assetType": "pubsub.googleapis.com/Topic",
+      "resource": {
+        "data": {}
+      }
+    },
+    {
+      "name": "//container.googleapis.com/projects/my-project/locations/us-central1/clusters/prod-gke",
+      "assetType": "container.googleapis.com/Cluster",
+      "resource": {
+        "data": {
+          "currentNodeCount": 5
+        }
+      }
+    }
+  ]
+}

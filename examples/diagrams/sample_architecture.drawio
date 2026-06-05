@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel>
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="2" value="API Gateway" style="shape=mxgraph.aws4.gateway;aws_gateway=apigateway;" vertex="1" parent="1">
+      <mxGeometry x="100" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="3" value="Lambda Function" style="shape=mxgraph.aws4.lambda;aws_lambda=lambda;" vertex="1" parent="1">
+      <mxGeometry x="300" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="4" value="RDS Database" style="shape=mxgraph.aws4.rds;aws_rds=rds;" vertex="1" parent="1">
+      <mxGeometry x="500" y="100" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="5" value="S3 Bucket" style="shape=mxgraph.aws4.s3;aws_s3=s3;" vertex="1" parent="1">
+      <mxGeometry x="300" y="250" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="6" value="CloudWatch" style="shape=mxgraph.aws4.cloudwatch;aws_cloudwatch=cloudwatch;" vertex="1" parent="1">
+      <mxGeometry x="100" y="250" width="120" height="60" as="geometry" />
+    </mxCell>
+    <mxCell id="7" value="" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="8" value="" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="9" value="" edge="1" source="3" target="5" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
