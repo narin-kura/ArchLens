@@ -20,7 +20,11 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git remote add hf https://knnarin:$HF_TOKEN@huggingface.co/spaces/knnarin/ArchLens
-          git push hf main --force
+          for i in 1 2 3; do
+            git push hf main --force && break
+            echo "Attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
 
       - name: Summary
         run: |
