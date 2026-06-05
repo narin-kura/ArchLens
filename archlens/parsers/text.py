@@ -22,6 +22,12 @@ class TextParser(BaseParser):
         return self._parse_with_llm(text)
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
+        import os
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            raise ValueError(
+                "Text analysis requires an Anthropic API key. "
+                "Set ANTHROPIC_API_KEY in your environment or use the file upload option instead."
+            )
         try:
             import anthropic
         except ImportError:

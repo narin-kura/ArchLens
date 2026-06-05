@@ -1,9 +1,14 @@
 """ArchLens FastAPI web server."""
 
 from __future__ import annotations
+import os
 import tempfile
 from pathlib import Path
 from typing import Optional
+
+# Allow HF Spaces / Docker to inject the key via environment variable
+if os.getenv("ANTHROPIC_API_KEY"):
+    os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
