@@ -1,12 +1,15 @@
 """ArchLens FastAPI web server."""
 
 from __future__ import annotations
+import logging
 import os
 import tempfile
 from pathlib import Path
 from typing import Optional
 
-# Allow HF Spaces / Docker to inject the key via environment variable
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 if os.getenv("ANTHROPIC_API_KEY"):
     os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 
@@ -24,6 +27,8 @@ app = FastAPI(title="ArchLens", description="Architecture security & cost analyz
 
 _STATIC = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(_STATIC)), name="static")
+
+MAX_FILE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -44,68 +49,106 @@ async def analyze(
         if file and file.filename:
             model = await _parse_upload(file, format_hint)
         else:
+            if not text or not text.strip():
+                raise HTTPException(status_code=400, detail="Text description cannot be empty.")
             model = _parse_text(text, format_hint)
 
         findings = SecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
         report = AnalysisReport(architecture_name=model.name, findings=findings)
-        return _report_to_dict(report)
+        return _report_to_dict(report, len(model.components))
 
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception("Unexpected error during analysis")
+        raise HTTPException(
+            status_code=500,
+            detail="Analysis failed. Please check your file format and try again."
+        )
 
 
 @app.post("/analyze-interactive")
 async def analyze_interactive(request: Request):
     try:
         data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
+
+    components_raw = data.get("components", [])
+    if not components_raw:
+        raise HTTPException(
+            status_code=400,
+            detail="No components selected. Please add at least one service to your stack."
+        )
+
+    try:
         model = ArchitectureModel(
-            name=data.get("name", "Interactive Diagram"),
+            name=data.get("name", "My Stack"),
             source="interactive",
         )
-        for c in data.get("components", []):
+        for c in components_raw:
             try:
                 ctype = ComponentType[c.get("type", "OTHER")]
             except KeyError:
                 ctype = ComponentType.OTHER
             model.components.append(Component(
-                id=c["id"],
-                name=c["name"],
+                id=c.get("id", "unknown"),
+                name=c.get("name", "unknown"),
                 type=ctype,
                 provider=c.get("provider", "generic"),
                 service=c.get("service", ""),
             ))
         for conn in data.get("connections", []):
-            model.connections.append(Connection(
-                source_id=conn["source_id"],
-                target_id=conn["target_id"],
-                label=conn.get("label", ""),
-            ))
+            try:
+                model.connections.append(Connection(
+                    source_id=conn["source_id"],
+                    target_id=conn["target_id"],
+                    label=conn.get("label", ""),
+                ))
+            except Exception:
+                continue
+
         findings = SecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
         report = AnalysisReport(architecture_name=model.name, findings=findings)
-        return _report_to_dict(report)
+        return _report_to_dict(report, len(model.components))
+
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception("Unexpected error during interactive analysis")
+        raise HTTPException(
+            status_code=500,
+            detail="Analysis failed. Please try again."
+        )
 
 
-async def _parse_upload(file: UploadFile, format_hint: Optional[str]) -> object:
+async def _parse_upload(file: UploadFile, format_hint: Optional[str]) -> ArchitectureModel:
+    content = await file.read()
+    if len(content) > MAX_FILE_BYTES:
+        raise ValueError(
+            f"File is too large ({len(content) // 1024} KB). "
+            f"Maximum allowed size is {MAX_FILE_BYTES // 1024 // 1024} MB."
+        )
     suffix = Path(file.filename).suffix
     with tempfile.TemporaryDirectory() as tmp:
         dest = Path(tmp) / file.filename
-        dest.write_bytes(await file.read())
-        # For .tf files use the tmp dir so TerraformParser can glob
+        dest.write_bytes(content)
         source = str(tmp) if suffix == ".tf" else str(dest)
         parser = detect_parser(source, format_hint)
         return parser.parse(source)
 
 
-def _parse_text(text: str, format_hint: Optional[str]) -> object:
+def _parse_text(text: str, format_hint: Optional[str]) -> ArchitectureModel:
     parser = detect_parser(text, format_hint or "text")
     return parser.parse(text)
 
 
-def _report_to_dict(report: AnalysisReport) -> dict:
+def _report_to_dict(report: AnalysisReport, components_found: int = 0) -> dict:
     return {
         "architecture": report.architecture_name,
+        "components_found": components_found,
         "summary": {
             "security_count": len(report.security_findings),
             "cost_count": len(report.cost_findings),

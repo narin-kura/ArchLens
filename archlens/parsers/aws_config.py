@@ -49,37 +49,40 @@ class AWSConfigParser(BaseParser):
 
     def parse(self, source: str | Path) -> ArchitectureModel:
         p = Path(source)
-        data = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Could not parse AWS Config export — check it is valid JSON. ({exc})") from exc
 
-        # Normalise: could be a list or {"configurationItems": [...]}
         items = data if isinstance(data, list) else data.get("configurationItems", [])
 
         model = ArchitectureModel(name=p.stem, source="aws_config")
 
         for item in items:
-            res_type = item.get("resourceType", "")
-            res_id   = item.get("resourceId", "")
-            res_name = item.get("resourceName") or res_id
-            config   = item.get("configuration", {})
-            if isinstance(config, str):
-                try:
-                    config = json.loads(config)
-                except Exception:
-                    config = {}
+            try:
+                res_type = item.get("resourceType", "")
+                res_id   = item.get("resourceId", "")
+                res_name = item.get("resourceName") or res_id or "unknown"
+                config   = item.get("configuration", {}) or {}
+                if isinstance(config, str):
+                    try:
+                        config = json.loads(config)
+                    except Exception:
+                        config = {}
 
-            comp_type, service = _RESOURCE_TYPE_MAP.get(res_type, (ComponentType.OTHER, res_type))
+                comp_type, service = _RESOURCE_TYPE_MAP.get(res_type, (ComponentType.OTHER, res_type))
+                props = self._extract_props(res_type, config)
 
-            # Flatten useful config properties for analysis
-            props = self._extract_props(res_type, config)
-
-            model.components.append(Component(
-                id=res_id or res_name,
-                name=res_name,
-                type=comp_type,
-                provider="aws",
-                service=service,
-                properties=props,
-            ))
+                model.components.append(Component(
+                    id=res_id or res_name,
+                    name=res_name,
+                    type=comp_type,
+                    provider="aws",
+                    service=service,
+                    properties=props,
+                ))
+            except Exception:
+                continue
 
         return model
 

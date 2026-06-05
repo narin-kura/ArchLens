@@ -504,6 +504,8 @@
     .builder-analyze-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 28px rgba(46,16,101,0.7); }
     .builder-analyze-btn:disabled { opacity:0.35; cursor:not-allowed; box-shadow:none; }
 
+    .warn-banner { background:#422006; border:1px solid #92400e; border-radius:10px; padding:12px 16px; color:#fcd34d; font-size:13px; font-weight:600; margin-bottom:20px; }
+
     /* FOOTER */
     footer {
       background: #1e293b; color: #94a3b8;
@@ -734,6 +736,7 @@
       <div class="summary-card arch">
         <div class="label">Architecture</div>
         <div class="value" id="archName" style="font-size:15px; margin-top:6px;"></div>
+        <div style="font-size:12px;margin-top:6px;opacity:0.7;" id="compCount"></div>
       </div>
       <div class="summary-card sec">
         <div class="label">Security Findings</div>
@@ -743,6 +746,9 @@
         <div class="label">Est. Monthly Savings</div>
         <div class="value" id="costSavings">--</div>
       </div>
+    </div>
+    <div class="warn-banner" id="warnBanner" style="display:none;">
+      &#9888; No components were detected in your input. The file may be empty, unsupported, or in an unexpected format.
     </div>
 
     <div class="export-bar">
@@ -842,6 +848,11 @@
     document.getElementById('costCountBadge').textContent = data.summary.cost_count;
     document.getElementById('costSavings').textContent =
       data.summary.estimated_savings > 0 ? '$' + Math.round(data.summary.estimated_savings) + '/mo' : '--';
+
+    const n = data.components_found || 0;
+    document.getElementById('compCount').textContent = n + ' component' + (n === 1 ? '' : 's') + ' detected';
+    const warn = document.getElementById('warnBanner');
+    warn.style.display = n === 0 ? 'block' : 'none';
 
     const secEl = document.getElementById('secFindings');
     const costEl = document.getElementById('costFindings');

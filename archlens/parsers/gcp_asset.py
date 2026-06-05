@@ -51,29 +51,35 @@ class GCPAssetParser(BaseParser):
 
     def parse(self, source: str | Path) -> ArchitectureModel:
         p = Path(source)
-        data = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Could not parse GCP Asset Inventory export — check it is valid JSON. ({exc})") from exc
 
         assets = data if isinstance(data, list) else data.get("assets", [])
         model = ArchitectureModel(name=p.stem, source="gcp_asset")
 
         for asset in assets:
-            asset_type = asset.get("assetType", "")
-            asset_name = asset.get("name", "")
-            resource   = asset.get("resource", {})
-            res_data   = resource.get("data", {})
+            try:
+                asset_type = asset.get("assetType", "")
+                asset_name = asset.get("name", "")
+                resource   = asset.get("resource", {}) or {}
+                res_data   = resource.get("data", {}) or {}
 
-            comp_type, service = _ASSET_TYPE_MAP.get(asset_type, (ComponentType.OTHER, asset_type))
-            name = _resource_name(asset_name)
-            props = self._extract_props(asset_type, res_data)
+                comp_type, service = _ASSET_TYPE_MAP.get(asset_type, (ComponentType.OTHER, asset_type))
+                name = _resource_name(asset_name) or asset_type or "unknown"
+                props = self._extract_props(asset_type, res_data)
 
-            model.components.append(Component(
-                id=asset_name or name,
-                name=name,
-                type=comp_type,
-                provider="gcp",
-                service=service,
-                properties=props,
-            ))
+                model.components.append(Component(
+                    id=asset_name or name,
+                    name=name,
+                    type=comp_type,
+                    provider="gcp",
+                    service=service,
+                    properties=props,
+                ))
+            except Exception:
+                continue
 
         return model
 

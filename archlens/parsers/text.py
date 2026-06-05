@@ -40,6 +40,13 @@ def _strip_fences(raw: str) -> str:
     return raw.strip()
 
 
+def _safe_component_type(raw: str) -> ComponentType:
+    try:
+        return ComponentType(raw.lower().strip())
+    except ValueError:
+        return ComponentType.OTHER
+
+
 class TextParser(BaseParser):
     def can_parse(self, source: str | Path) -> bool:
         p = Path(source)
@@ -50,6 +57,8 @@ class TextParser(BaseParser):
     def parse(self, source: str | Path) -> ArchitectureModel:
         p = Path(source)
         text = p.read_text(encoding="utf-8") if p.exists() else str(source)
+        if not text.strip():
+            raise ValueError("Input text is empty. Please describe your architecture.")
         return self._parse_with_llm(text)
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
@@ -64,10 +73,14 @@ class TextParser(BaseParser):
             )
 
         if gemini_key:
-            return self._parse_gemini(text, gemini_key)
+            try:
+                return self._parse_gemini(text, gemini_key)
+            except Exception:
+                if anthropic_key:
+                    return self._parse_anthropic(text, anthropic_key)
+                raise
         return self._parse_anthropic(text, anthropic_key)
 
-    # --- Gemini ---
     def _parse_gemini(self, text: str, api_key: str) -> ArchitectureModel:
         try:
             import google.generativeai as genai
@@ -76,11 +89,24 @@ class TextParser(BaseParser):
 
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(_PROMPT.format(text=text))
-        data = json.loads(_strip_fences(response.text))
+        try:
+            response = model.generate_content(
+                _PROMPT.format(text=text),
+                request_options={"timeout": 30},
+            )
+            raw = _strip_fences(response.text)
+        except Exception as exc:
+            raise ValueError(f"Gemini API error: {exc}") from exc
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            raise ValueError(
+                "Could not parse the AI response. Try rephrasing your description "
+                "with clear component names (e.g. 'EC2 instance', 'RDS database')."
+            )
         return self._dict_to_model(data)
 
-    # --- Anthropic ---
     def _parse_anthropic(self, text: str, api_key: str) -> ArchitectureModel:
         try:
             import anthropic
@@ -88,30 +114,46 @@ class TextParser(BaseParser):
             raise ImportError("Install anthropic: pip install anthropic")
 
         client = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=2048,
-            messages=[{"role": "user", "content": _PROMPT.format(text=text)}],
-        )
-        data = json.loads(_strip_fences(message.content[0].text))
+        try:
+            message = client.messages.create(
+                model="claude-opus-4-8",
+                max_tokens=2048,
+                messages=[{"role": "user", "content": _PROMPT.format(text=text)}],
+            )
+            raw = _strip_fences(message.content[0].text)
+        except Exception as exc:
+            raise ValueError(f"Anthropic API error: {exc}") from exc
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            raise ValueError(
+                "Could not parse the AI response. Try rephrasing your description "
+                "with clear component names (e.g. 'EC2 instance', 'RDS database')."
+            )
         return self._dict_to_model(data)
 
-    # --- Shared ---
     def _dict_to_model(self, data: dict) -> ArchitectureModel:
         model = ArchitectureModel(name=data.get("name", "unnamed"), source="text")
         for c in data.get("components", []):
-            model.components.append(Component(
-                id=c["id"],
-                name=c["name"],
-                type=ComponentType(c.get("type", "other")),
-                provider=c.get("provider", "generic"),
-                service=c.get("service", ""),
-                properties=c.get("properties", {}),
-            ))
+            try:
+                model.components.append(Component(
+                    id=c.get("id", c.get("name", "unknown")),
+                    name=c.get("name", "unknown"),
+                    type=_safe_component_type(c.get("type", "other")),
+                    provider=c.get("provider", "generic"),
+                    service=c.get("service", ""),
+                    properties=c.get("properties", {}),
+                ))
+            except Exception:
+                continue  # skip malformed component entries
         for conn in data.get("connections", []):
-            model.connections.append(Connection(
-                source_id=conn["source_id"],
-                target_id=conn["target_id"],
-                label=conn.get("label", ""),
-            ))
+            try:
+                model.connections.append(Connection(
+                    source_id=conn["source_id"],
+                    target_id=conn["target_id"],
+                    label=conn.get("label", ""),
+                ))
+            except Exception:
+                continue
         return model

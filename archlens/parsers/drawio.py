@@ -51,7 +51,10 @@ class DrawioParser(BaseParser):
 
     def parse(self, source: str | Path) -> ArchitectureModel:
         p = Path(source)
-        tree = ET.parse(str(p))
+        try:
+            tree = ET.parse(str(p))
+        except ET.ParseError as exc:
+            raise ValueError(f"Could not read draw.io file — it may be corrupted or not a valid XML file. ({exc})") from exc
         root = tree.getroot()
 
         model = ArchitectureModel(name=p.stem, source="drawio")

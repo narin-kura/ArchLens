@@ -44,11 +44,23 @@ class CloudFormationParser(BaseParser):
         p = Path(source)
         content = p.read_text(encoding="utf-8")
 
+        data = None
         try:
             import yaml
             data = yaml.safe_load(content)
         except Exception:
-            data = json.loads(content)
+            pass
+
+        if data is None:
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise ValueError(
+                    f"Could not parse CloudFormation template — check it is valid YAML or JSON. ({exc})"
+                ) from exc
+
+        if not isinstance(data, dict):
+            raise ValueError("CloudFormation template must be a YAML or JSON object.")
 
         model = ArchitectureModel(name=p.stem, source="cloudformation")
         resources = data.get("Resources", {})
