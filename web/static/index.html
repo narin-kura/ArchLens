@@ -399,12 +399,17 @@
     /* BUILDER TAB */
     .analyzer-section.builder-wide { max-width: 1100px; }
 
-    .bstep-indicator { display:flex; align-items:center; margin-bottom:22px; }
-    .bstep { display:flex; align-items:center; gap:9px; font-size:14px; font-weight:700; color:#4a5568; }
-    .bstep.active { color:#a5b4fc; }
-    .bstep.done   { color:#34d399; }
-    .bstep-num { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; border:2px solid currentColor; flex-shrink:0; }
-    .bstep-divider { flex:1; height:2px; background:#1e2d4a; margin:0 16px; min-width:40px; }
+    .builder-intro { display:flex; align-items:center; gap:14px; background:#0a1628; border:1.5px solid #1e3050; border-radius:12px; padding:16px 20px; margin-bottom:20px; }
+    .builder-intro-icon { font-size:28px; flex-shrink:0; }
+    .builder-intro-title { font-size:15px; font-weight:800; color:#dde8ff; margin-bottom:3px; }
+    .builder-intro-sub { font-size:13px; color:#6b85a8; line-height:1.5; }
+
+    .builder-layout { display:flex; gap:18px; align-items:flex-start; }
+    .builder-main { flex:1; min-width:0; }
+    .builder-sidebar { width:270px; flex-shrink:0; display:flex; flex-direction:column; gap:14px; position:sticky; top:80px; }
+
+    .stack-empty { font-size:13px; color:#3d5070; font-style:italic; }
+    .analyze-note { font-size:12px; color:#4a6080; text-align:center; line-height:1.4; }
 
     .picker-controls { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
     .service-search { width:100%; padding:11px 16px; background:#0d1a30; border:1.5px solid #1e2d4a; border-radius:10px; color:#e2e8f0; font-size:14px; outline:none; }
@@ -649,7 +654,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="file" onclick="switchTab('file')">Upload File</button>
       <button class="tab" data-tab="text" onclick="switchTab('text')">Describe in Text</button>
-      <button class="tab" data-tab="builder" onclick="switchTab('builder')">&#9999; Build Diagram</button>
+      <button class="tab" data-tab="builder" onclick="switchTab('builder')">No file? Add your stack</button>
     </div>
 
     <div id="tab-file" class="tab-content active">
@@ -668,70 +673,47 @@
 
     <!-- BUILDER TAB -->
     <div id="tab-builder" class="tab-content">
-
-      <!-- Step 1: Pick Services -->
-      <div id="builder-step1">
-        <div class="bstep-indicator">
-          <div class="bstep active" id="bsi1"><div class="bstep-num">1</div> Pick Services</div>
-          <div class="bstep-divider"></div>
-          <div class="bstep" id="bsi2"><div class="bstep-num">2</div> Draw &amp; Connect</div>
-        </div>
-
-        <div class="picker-controls">
-          <input class="service-search" id="serviceSearch" type="text" placeholder="Search services (EC2, RDS, Jenkins...)" oninput="renderServiceGrid()">
-          <div class="cat-tabs">
-            <button class="cat-tab active" data-cat="all"      onclick="setCat(this)">All</button>
-            <button class="cat-tab"        data-cat="aws"      onclick="setCat(this)">AWS</button>
-            <button class="cat-tab"        data-cat="gcp"      onclick="setCat(this)">GCP</button>
-            <button class="cat-tab"        data-cat="azure"    onclick="setCat(this)">Azure</button>
-            <button class="cat-tab"        data-cat="cicd"     onclick="setCat(this)">CI/CD</button>
-            <button class="cat-tab"        data-cat="monitoring" onclick="setCat(this)">Monitoring</button>
-            <button class="cat-tab"        data-cat="security" onclick="setCat(this)">Security</button>
-          </div>
-        </div>
-
-        <div class="service-grid" id="serviceGrid"></div>
-
-        <div class="stack-row">
-          <span class="stack-label">Stack:</span>
-          <div class="stack-chips" id="stackChips"></div>
-          <button class="continue-btn" id="continueBtn" onclick="goToStep2()" disabled>Connect Services &#8594;</button>
-        </div>
-
-        <div class="sugg-panel">
-          <div class="sugg-title">&#128161; Architecture Suggestions</div>
-          <div id="suggList"><div class="sugg-item info"><div class="sugg-dot info"></div><span>Add services to see recommendations</span></div></div>
+      <div class="builder-intro">
+        <div class="builder-intro-icon">&#128270;</div>
+        <div>
+          <div class="builder-intro-title">Don't have a file to upload?</div>
+          <div class="builder-intro-sub">Pick the services in your stack — security &amp; cost suggestions appear live as you go.</div>
         </div>
       </div>
 
-      <!-- Step 2: Canvas -->
-      <div id="builder-step2" style="display:none">
-        <div class="bstep-indicator">
-          <div class="bstep done" id="bsi1b"><div class="bstep-num">&#10003;</div> Pick Services</div>
-          <div class="bstep-divider"></div>
-          <div class="bstep active"><div class="bstep-num">2</div> Draw &amp; Connect</div>
-        </div>
-
-        <div class="canvas-header">
-          <button class="mode-btn active" id="modeDrag"    onclick="setMode('drag')">&#8741; Drag</button>
-          <button class="mode-btn"        id="modeConnect" onclick="setMode('connect')">&#8594; Connect</button>
-          <button class="mode-btn danger"                  onclick="removeLastEdge()">&#10005; Undo</button>
-          <span class="mode-hint" id="modeHint">Drag nodes to arrange your architecture</span>
-        </div>
-
-        <div class="canvas-wrap">
-          <div class="diagram-canvas" id="diagramCanvas">
-            <svg id="canvasSvg" class="edge-layer"></svg>
+      <div class="builder-layout">
+        <!-- Left: search + grid -->
+        <div class="builder-main">
+          <input class="service-search" id="serviceSearch" type="text" placeholder="Search — EC2, RDS, Jenkins, Vault..." oninput="renderServiceGrid()">
+          <div class="cat-tabs" style="margin:12px 0 14px;">
+            <button class="cat-tab active" data-cat="all"       onclick="setCat(this)">All</button>
+            <button class="cat-tab"        data-cat="aws"       onclick="setCat(this)">AWS</button>
+            <button class="cat-tab"        data-cat="gcp"       onclick="setCat(this)">GCP</button>
+            <button class="cat-tab"        data-cat="azure"     onclick="setCat(this)">Azure</button>
+            <button class="cat-tab"        data-cat="cicd"      onclick="setCat(this)">CI/CD</button>
+            <button class="cat-tab"        data-cat="monitoring" onclick="setCat(this)">Monitoring</button>
+            <button class="cat-tab"        data-cat="security"  onclick="setCat(this)">Security</button>
           </div>
-          <div class="canvas-sugg">
-            <div class="sugg-title">&#128269; Live Analysis</div>
-            <div id="canvasSuggList"></div>
+          <div class="service-grid" id="serviceGrid"></div>
+
+          <div class="stack-row">
+            <span class="stack-label">Your stack:</span>
+            <div class="stack-chips" id="stackChips">
+              <span class="stack-empty">Click services above to add them</span>
+            </div>
           </div>
         </div>
 
-        <div class="canvas-footer">
-          <button class="back-btn" onclick="goToStep1()">&#8592; Back</button>
-          <button class="builder-analyze-btn" id="builderAnalyzeBtn" onclick="runBuilderAnalysis()">Analyze Architecture &#8594;</button>
+        <!-- Right: live suggestions + analyze -->
+        <div class="builder-sidebar">
+          <div class="sugg-panel" style="flex:1;">
+            <div class="sugg-title">&#128161; Live Suggestions</div>
+            <div id="suggList"><div class="sugg-item info"><div class="sugg-dot info"></div><span>Pick services to see instant recommendations</span></div></div>
+          </div>
+          <button class="builder-analyze-btn" id="builderAnalyzeBtn" onclick="runBuilderAnalysis()" disabled>
+            Analyze My Stack &#8594;
+          </button>
+          <div class="analyze-note">Runs full security &amp; cost analysis on your selections</div>
         </div>
       </div>
     </div>
@@ -1006,10 +988,6 @@
 
   let selectedSvcs = new Map();
   let currentCat = 'all';
-  let builderNodes = [];
-  let builderEdges = [];
-  let builderMode = 'drag';
-  let connectSrc = null;
 
   function renderServiceGrid() {
     const grid = document.getElementById('serviceGrid');
@@ -1046,11 +1024,13 @@
 
   function updateStack() {
     const chips = document.getElementById('stackChips');
-    chips.innerHTML = [...selectedSvcs.values()].map(s =>
-      `<span class="stack-chip" onclick="toggleSvc('${s.id}')">${s.name} <span class="stack-chip-x">&#x2715;</span></span>`
-    ).join('');
-    document.getElementById('continueBtn').disabled = selectedSvcs.size === 0;
-    const types = new Set([...selectedSvcs.values()].map(s => s.type));
+    const svcs = [...selectedSvcs.values()];
+    chips.innerHTML = svcs.length
+      ? svcs.map(s => `<span class="stack-chip" onclick="toggleSvc('${s.id}')" title="Click to remove">${s.name} <span class="stack-chip-x">&#x2715;</span></span>`).join('')
+      : '<span class="stack-empty">Click services above to add them</span>';
+    const btn = document.getElementById('builderAnalyzeBtn');
+    if (btn) btn.disabled = svcs.length === 0;
+    const types = new Set(svcs.map(s => s.type));
     renderSuggestions(types, [], 'suggList');
   }
 
@@ -1108,133 +1088,17 @@
     return suggs;
   }
 
-  function renderSuggestions(types, edges, containerId, nodes) {
+  function renderSuggestions(types, _unused, containerId) {
     const list = document.getElementById(containerId);
     if (!list) return;
-    const items = computeSuggestions(types, edges || [], nodes || []);
+    const items = computeSuggestions(types, [], []);
     list.innerHTML = items.map(s =>
       `<div class="sugg-item ${s.l}"><div class="sugg-dot ${s.l}"></div><span>${s.t}</span></div>`
     ).join('');
   }
 
-  // --- Step navigation ---
-  function goToStep2() {
-    if (selectedSvcs.size === 0) return;
-    builderNodes = []; builderEdges = []; connectSrc = null; builderMode = 'drag';
-
-    document.getElementById('builder-step1').style.display = 'none';
-    document.getElementById('builder-step2').style.display = 'block';
-
-    const canvas = document.getElementById('diagramCanvas');
-    [...canvas.children].forEach(c => { if (c.id !== 'canvasSvg') c.remove(); });
-    document.getElementById('canvasSvg').innerHTML = svgDefs();
-
-    const svcs = [...selectedSvcs.values()];
-    const cols = Math.min(Math.ceil(Math.sqrt(svcs.length + 1)), 4);
-    const nW = 140, nH = 72, gX = 30, gY = 22, pX = 20, pY = 20;
-
-    svcs.forEach((svc, i) => {
-      const col = i % cols, row = Math.floor(i / cols);
-      const node = {id: svc.id, name: svc.name, type: svc.type, provider: svc.provider, service: svc.service,
-                    x: pX + col*(nW+gX), y: pY + row*(nH+gY), el: null};
-      builderNodes.push(node);
-      spawnNode(node, canvas);
-    });
-
-    setMode('drag');
-    refreshCanvasSugg();
-  }
-
-  function goToStep1() {
-    document.getElementById('builder-step2').style.display = 'none';
-    document.getElementById('builder-step1').style.display = 'block';
-  }
-
-  function svgDefs() {
-    return '<defs><marker id="ah" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#818cf8" opacity="0.85"/></marker></defs>';
-  }
-
-  function spawnNode(node, canvas) {
-    const el = document.createElement('div');
-    el.className = 'diagram-node';
-    el.style.cssText = `left:${node.x}px;top:${node.y}px;cursor:grab;`;
-    el.dataset.nid = node.id;
-    el.innerHTML = `<div class="node-badge nt-${node.type}">${node.type}</div><div class="node-name">${node.name}</div><div class="node-prov">${node.provider}</div>`;
-    node.el = el;
-    canvas.appendChild(el);
-
-    // drag
-    el.addEventListener('mousedown', ev => {
-      if (builderMode !== 'drag') return;
-      ev.preventDefault();
-      const r = canvas.getBoundingClientRect();
-      const ox = ev.clientX - r.left - node.x, oy = ev.clientY - r.top - node.y;
-      const mv = e2 => {
-        node.x = Math.max(0, Math.min(canvas.clientWidth  - 150, e2.clientX - r.left - ox));
-        node.y = Math.max(0, Math.min(canvas.clientHeight - 80,  e2.clientY - r.top  - oy));
-        el.style.left = node.x + 'px'; el.style.top = node.y + 'px';
-        redrawEdges();
-      };
-      const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
-      document.addEventListener('mousemove', mv);
-      document.addEventListener('mouseup', up);
-    });
-
-    // connect
-    el.addEventListener('click', ev => {
-      if (builderMode !== 'connect') return;
-      ev.stopPropagation();
-      if (!connectSrc) {
-        connectSrc = node; el.classList.add('connect-source');
-      } else if (connectSrc.id !== node.id) {
-        const dup = builderEdges.some(e => e.source === connectSrc.id && e.target === node.id);
-        if (!dup) { builderEdges.push({source: connectSrc.id, target: node.id}); redrawEdges(); refreshCanvasSugg(); }
-        connectSrc.el.classList.remove('connect-source'); connectSrc = null;
-      }
-    });
-  }
-
-  function setMode(mode) {
-    builderMode = mode;
-    if (connectSrc) { connectSrc.el.classList.remove('connect-source'); connectSrc = null; }
-    document.getElementById('modeDrag').classList.toggle('active', mode === 'drag');
-    document.getElementById('modeConnect').classList.toggle('active', mode === 'connect');
-    document.getElementById('modeHint').textContent = mode === 'drag'
-      ? 'Drag nodes to arrange your architecture'
-      : 'Click a service, then click another to draw a connection';
-    builderNodes.forEach(n => {
-      n.el.classList.toggle('connect-mode', mode === 'connect');
-      n.el.style.cursor = mode === 'drag' ? 'grab' : 'pointer';
-    });
-  }
-
-  function removeLastEdge() {
-    if (builderEdges.length > 0) { builderEdges.pop(); redrawEdges(); refreshCanvasSugg(); }
-  }
-
-  function redrawEdges() {
-    const svg = document.getElementById('canvasSvg');
-    svg.innerHTML = svgDefs();
-    const nW = 140, nH = 72;
-    builderEdges.forEach(edge => {
-      const s = builderNodes.find(n => n.id === edge.source);
-      const t = builderNodes.find(n => n.id === edge.target);
-      if (!s || !t) return;
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', s.x + nW/2); line.setAttribute('y1', s.y + nH/2);
-      line.setAttribute('x2', t.x + nW/2); line.setAttribute('y2', t.y + nH/2);
-      line.setAttribute('stroke', '#818cf8'); line.setAttribute('stroke-width', '2');
-      line.setAttribute('stroke-opacity', '0.75'); line.setAttribute('marker-end', 'url(#ah)');
-      svg.appendChild(line);
-    });
-  }
-
-  function refreshCanvasSugg() {
-    const types = new Set(builderNodes.map(n => n.type));
-    renderSuggestions(types, builderEdges, 'canvasSuggList', builderNodes);
-  }
-
   async function runBuilderAnalysis() {
+    if (selectedSvcs.size === 0) return;
     const btn = document.getElementById('builderAnalyzeBtn');
     const loader = document.getElementById('loader');
     const errorBox = document.getElementById('errorBox');
@@ -1243,13 +1107,14 @@
     loader.style.display = 'block';
     btn.disabled = true;
     try {
+      const svcs = [...selectedSvcs.values()];
       const res = await fetch('/analyze-interactive', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-          name: 'Interactive Diagram',
-          components: builderNodes.map(n => ({id:n.id, name:n.name, type:n.type, provider:n.provider, service:n.service})),
-          connections: builderEdges.map(e => ({source_id:e.source, target_id:e.target, label:''}))
+          name: 'My Stack',
+          components: svcs.map(s => ({id:s.id, name:s.name, type:s.type, provider:s.provider, service:s.service})),
+          connections: []
         })
       });
       const data = await res.json();
