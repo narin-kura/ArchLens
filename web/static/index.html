@@ -3,48 +3,278 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ArchLens</title>
+  <title>ArchLens — Architecture Security & Cost Analyzer</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg: #0f1117;
+      --surface: #161b27;
+      --border: #1e2533;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --subtle: #94a3b8;
+      --blue: #3b82f6;
+      --blue-dark: #1d4ed8;
+      --blue-dim: #1e3a5f;
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
     }
 
-    header {
-      padding: 24px 40px;
-      border-bottom: 1px solid #1e2533;
+    /* NAV */
+    nav {
+      padding: 18px 40px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(15,17,23,0.92);
+      backdrop-filter: blur(10px);
+      z-index: 100;
     }
-    header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-    header span { font-size: 13px; color: #64748b; }
-    .badge {
-      background: #1e3a5f;
-      color: #60a5fa;
-      font-size: 11px;
+    .nav-logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .nav-logo span { color: var(--blue); }
+    .nav-cta {
+      padding: 8px 20px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
       font-weight: 600;
-      padding: 2px 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .nav-cta:hover { background: var(--blue-dark); }
+
+    /* HERO */
+    .hero {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 90px 24px 70px;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--blue-dim);
+      color: #60a5fa;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
       border-radius: 99px;
-      text-transform: uppercase;
+      margin-bottom: 24px;
       letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 6vw, 56px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+    }
+    .hero h1 em { font-style: normal; color: var(--blue); }
+    .hero p {
+      font-size: 18px;
+      color: var(--subtle);
+      line-height: 1.7;
+      max-width: 580px;
+      margin: 0 auto 36px;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 13px 28px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-secondary {
+      padding: 13px 28px;
+      background: transparent;
+      color: var(--subtle);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { border-color: var(--subtle); color: var(--text); }
+
+    /* DEMO PREVIEW */
+    .preview {
+      max-width: 860px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .preview-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--subtle);
+    }
+    .preview-box .line-crit { color: #f87171; }
+    .preview-box .line-high { color: #fb923c; }
+    .preview-box .line-med  { color: #fbbf24; }
+    .preview-box .line-green { color: #34d399; }
+    .preview-box .line-blue { color: #60a5fa; }
+    .preview-header {
+      font-family: -apple-system, sans-serif;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+
+    /* FEATURES */
+    .features {
+      max-width: 960px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .section-label {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 48px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--blue-dim);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+    .feature-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .feature-card p { font-size: 13px; color: var(--subtle); line-height: 1.6; }
+
+    /* HOW IT WORKS */
+    .how {
+      max-width: 860px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0;
+      position: relative;
+    }
+    .step {
+      text-align: center;
+      padding: 24px 16px;
+      position: relative;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      background: var(--blue-dim);
+      color: #60a5fa;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 auto 14px;
+    }
+    .step h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+    .step p { font-size: 13px; color: var(--subtle); line-height: 1.5; }
+
+    /* INPUT TYPES */
+    .inputs {
+      max-width: 860px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .input-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 8px 18px;
+      font-size: 13px;
+      color: var(--subtle);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); }
+
+    /* DIVIDER */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      max-width: 860px;
+      margin: 0 auto 60px;
     }
 
-    main { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+    /* ANALYZER SECTION */
+    .analyzer-section {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+    .analyzer-section .section-title { text-align: left; margin-bottom: 28px; }
 
-    /* Input panel */
     .input-panel {
-      background: #161b27;
-      border: 1px solid #1e2533;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 12px;
       padding: 28px;
       margin-bottom: 32px;
     }
-    .input-panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 20px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
 
     .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
     .tab {
@@ -55,11 +285,11 @@
       cursor: pointer;
       border: 1px solid transparent;
       background: transparent;
-      color: #64748b;
+      color: var(--muted);
       transition: all 0.15s;
     }
-    .tab.active { background: #1e2d45; color: #60a5fa; border-color: #1e3a5f; }
-    .tab:hover:not(.active) { color: #94a3b8; }
+    .tab.active { background: #1e2d45; color: #60a5fa; border-color: var(--blue-dim); }
+    .tab:hover:not(.active) { color: var(--subtle); }
 
     .tab-content { display: none; }
     .tab-content.active { display: block; }
@@ -72,28 +302,20 @@
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
     }
-    .drop-zone:hover, .drop-zone.drag-over {
-      border-color: #3b82f6;
-      background: #0f1e35;
-    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: var(--blue); background: #0f1e35; }
     .drop-zone input[type="file"] { display: none; }
-    .drop-zone .icon { font-size: 32px; margin-bottom: 10px; }
-    .drop-zone p { font-size: 14px; color: #64748b; }
-    .drop-zone p strong { color: #94a3b8; }
-    .drop-zone .file-name {
-      margin-top: 10px;
-      font-size: 13px;
-      color: #60a5fa;
-      font-weight: 500;
-    }
+    .drop-zone .icon { font-size: 30px; margin-bottom: 10px; }
+    .drop-zone p { font-size: 14px; color: var(--muted); }
+    .drop-zone p strong { color: var(--subtle); }
+    .drop-zone .file-name { margin-top: 10px; font-size: 13px; color: #60a5fa; font-weight: 500; }
 
     textarea {
       width: 100%;
       height: 160px;
-      background: #0f1117;
+      background: var(--bg);
       border: 1px solid #2d3748;
       border-radius: 8px;
-      color: #e2e8f0;
+      color: var(--text);
       font-size: 14px;
       padding: 14px;
       resize: vertical;
@@ -102,14 +324,14 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    textarea:focus { border-color: #3b82f6; }
+    textarea:focus { border-color: var(--blue); }
     textarea::placeholder { color: #4a5568; }
 
     .analyze-btn {
       margin-top: 16px;
       width: 100%;
       padding: 13px;
-      background: #2563eb;
+      background: var(--blue);
       color: #fff;
       border: none;
       border-radius: 8px;
@@ -117,25 +339,22 @@
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
-      letter-spacing: 0.2px;
     }
-    .analyze-btn:hover:not(:disabled) { background: #1d4ed8; }
+    .analyze-btn:hover:not(:disabled) { background: var(--blue-dark); }
     .analyze-btn:disabled { background: #1e2d45; color: #4a5568; cursor: not-allowed; }
 
-    /* Loader */
     .loader { display: none; text-align: center; padding: 40px; }
     .spinner {
       width: 36px; height: 36px;
-      border: 3px solid #1e2533;
-      border-top-color: #3b82f6;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       margin: 0 auto 14px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { color: #64748b; font-size: 14px; }
+    .loader p { color: var(--muted); font-size: 14px; }
 
-    /* Error */
     .error-box {
       display: none;
       background: #1f0a0a;
@@ -147,7 +366,6 @@
       margin-bottom: 24px;
     }
 
-    /* Results */
     .results { display: none; }
     .summary-bar {
       display: grid;
@@ -156,40 +374,39 @@
       margin-bottom: 24px;
     }
     .summary-card {
-      background: #161b27;
-      border: 1px solid #1e2533;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 18px 20px;
     }
-    .summary-card .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .summary-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
     .summary-card .value { font-size: 26px; font-weight: 700; }
     .summary-card.security .value { color: #f87171; }
     .summary-card.cost .value { color: #34d399; }
     .summary-card.arch .value { color: #60a5fa; }
 
-    .section { margin-bottom: 28px; }
-    .section-header {
+    .section-hdr {
       font-size: 13px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #64748b;
+      color: var(--muted);
       margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .section-header .count {
-      background: #1e2533;
-      color: #94a3b8;
+    .section-hdr .count {
+      background: var(--border);
+      color: var(--subtle);
       font-size: 11px;
       padding: 1px 7px;
       border-radius: 99px;
     }
 
     .finding-card {
-      background: #161b27;
-      border: 1px solid #1e2533;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-left: 3px solid;
       border-radius: 8px;
       padding: 16px 18px;
@@ -203,105 +420,197 @@
 
     .finding-top { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
     .severity-pill {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 99px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      flex-shrink: 0;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 99px;
+      text-transform: uppercase; white-space: nowrap; flex-shrink: 0;
     }
     .severity-pill.critical { background: #450a0a; color: #f87171; }
     .severity-pill.high     { background: #431407; color: #fb923c; }
     .severity-pill.medium   { background: #422006; color: #fbbf24; }
     .severity-pill.low      { background: #0f172a; color: #60a5fa; }
-    .severity-pill.info     { background: #1e2533; color: #94a3b8; }
+    .severity-pill.info     { background: var(--border); color: var(--subtle); }
 
-    .finding-title { font-size: 14px; font-weight: 600; color: #e2e8f0; }
-    .finding-component { font-size: 12px; color: #64748b; margin-bottom: 6px; }
-    .finding-desc { font-size: 13px; color: #94a3b8; margin-bottom: 8px; line-height: 1.5; }
+    .finding-title { font-size: 14px; font-weight: 600; }
+    .finding-component { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .finding-desc { font-size: 13px; color: var(--subtle); margin-bottom: 8px; line-height: 1.5; }
     .finding-rec {
-      font-size: 13px;
-      color: #60a5fa;
-      background: #0f1e35;
-      border-radius: 6px;
-      padding: 8px 12px;
-      line-height: 1.5;
+      font-size: 13px; color: #60a5fa;
+      background: #0f1e35; border-radius: 6px;
+      padding: 8px 12px; line-height: 1.5;
     }
     .finding-rec::before { content: 'Fix: '; font-weight: 600; }
-
     .savings-badge {
-      margin-left: auto;
-      font-size: 12px;
-      font-weight: 700;
-      color: #34d399;
-      background: #022c22;
-      padding: 2px 10px;
-      border-radius: 99px;
-      white-space: nowrap;
+      margin-left: auto; font-size: 12px; font-weight: 700;
+      color: #34d399; background: #022c22;
+      padding: 2px 10px; border-radius: 99px; white-space: nowrap;
     }
+    .findings-section { margin-bottom: 28px; }
 
-    .empty-state {
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
       text-align: center;
-      padding: 40px;
-      color: #4a5568;
-      font-size: 14px;
+      font-size: 13px;
+      color: var(--muted);
     }
-    .empty-state .big { font-size: 32px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
-<header>
-  <h1>ArchLens</h1>
-  <span class="badge">Beta</span>
-  <span style="margin-left:auto; font-size:13px; color:#4a5568;">Architecture Security &amp; Cost Analyzer</span>
-</header>
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Arch<span>Lens</span></div>
+  <a class="nav-cta" href="#analyzer">Analyze Now</a>
+</nav>
 
-<main>
-  <!-- Input Panel -->
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">Free & Open Source</div>
+  <h1>Find security risks &amp;<br><em>cost waste</em> in your architecture</h1>
+  <p>Upload your Terraform files, paste a cloud export, or just describe your setup in plain English. ArchLens gives you actionable findings in seconds.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#analyzer">Start Analyzing</a>
+    <a class="btn-secondary" href="https://github.com/narin-kura/ArchLens" target="_blank">View on GitHub</a>
+  </div>
+</section>
+
+<!-- DEMO PREVIEW -->
+<div class="preview">
+  <div class="preview-box">
+    <div class="preview-header">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      &nbsp; ArchLens Report &mdash; my-startup-aws
+    </div>
+    <div class="line-crit">[CRIT]  S3 bucket 'assets' is publicly accessible</div>
+    <div style="color:#4a5568; padding-left:16px; margin-bottom:8px;">Fix: Set bucket ACL to private. Use pre-signed URLs for public content.</div>
+    <div class="line-high">[HIGH]  RDS 'prod-db' has no encryption at rest</div>
+    <div style="color:#4a5568; padding-left:16px; margin-bottom:8px;">Fix: Enable storage_encrypted = true with KMS key.</div>
+    <div class="line-med">[MED]   Security group allows 0.0.0.0/0 on port 22</div>
+    <div style="color:#4a5568; padding-left:16px; margin-bottom:16px;">Fix: Restrict SSH to known IP ranges or use a bastion host.</div>
+    <div class="line-green">[COST]  RDS db.r5.2xlarge may be oversized &mdash; est. -$687/mo</div>
+    <div style="color:#4a5568; padding-left:16px;">Fix: Switch to db.t3.micro after reviewing CloudWatch metrics.</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="section-label">What it does</div>
+  <div class="section-title">Everything you need to review an architecture</div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#128274;</div>
+      <h3>Security Analysis</h3>
+      <p>Detects public storage buckets, unencrypted databases, open ports, missing IAM least-privilege, and lack of monitoring.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128176;</div>
+      <h3>Cost Optimization</h3>
+      <p>Flags oversized instances, idle resources, NAT Gateway inefficiencies, and missing Reserved Instance opportunities.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#129302;</div>
+      <h3>AI-Powered Parsing</h3>
+      <p>Describe your architecture in plain English and Claude AI will extract the components and run the full analysis.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128196;</div>
+      <h3>Multi-Format Input</h3>
+      <p>Upload Terraform files, cloud provider exports, draw.io diagrams, or just type a description — it handles all formats.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128270;</div>
+      <h3>Actionable Findings</h3>
+      <p>Every finding comes with a clear recommendation and estimated cost savings — not just a list of problems.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128196;</div>
+      <h3>Export Reports</h3>
+      <p>Download findings as JSON or Markdown to share with your team or include in architecture review docs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="section-label">How it works</div>
+  <div class="section-title">Three steps to a safer, cheaper stack</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Provide your architecture</h3>
+      <p>Upload a file or describe your setup in plain English</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>ArchLens analyzes it</h3>
+      <p>Runs security rules and cost checks against every component</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Get actionable findings</h3>
+      <p>See exactly what to fix and how much you could save</p>
+    </div>
+  </div>
+</section>
+
+<!-- INPUT TYPES -->
+<section class="inputs">
+  <div class="section-label">Supported inputs</div>
+  <div class="section-title">Works with what you already have</div>
+  <div class="input-chips">
+    <div class="chip"><div class="chip-dot"></div> Terraform (.tf)</div>
+    <div class="chip"><div class="chip-dot"></div> CloudFormation (.yaml/.json)</div>
+    <div class="chip"><div class="chip-dot"></div> Plain English description</div>
+    <div class="chip"><div class="chip-dot"></div> draw.io diagram (.xml)</div>
+    <div class="chip"><div class="chip-dot"></div> AWS Config export</div>
+    <div class="chip"><div class="chip-dot"></div> GCP Asset Inventory</div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ANALYZER -->
+<section class="analyzer-section" id="analyzer">
+  <div class="section-title">Analyze your architecture</div>
+
   <div class="input-panel">
-    <h2>Analyze your architecture</h2>
-
     <div class="tabs">
       <button class="tab active" onclick="switchTab('file')">Upload File</button>
       <button class="tab" onclick="switchTab('text')">Describe in Text</button>
     </div>
 
-    <!-- File tab -->
     <div id="tab-file" class="tab-content active">
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.txt,.md" onchange="onFileSelect(this)" />
         <div class="icon">&#128194;</div>
         <p><strong>Click to upload</strong> or drag &amp; drop</p>
-        <p>Terraform (.tf), draw.io (.xml), Cloud export (.json), Text (.txt, .md)</p>
+        <p>Terraform (.tf), draw.io (.xml), Cloud export (.json), Text (.txt)</p>
         <div class="file-name" id="fileName"></div>
       </div>
     </div>
 
-    <!-- Text tab -->
     <div id="tab-text" class="tab-content">
-      <textarea id="textInput" placeholder="Describe your architecture in plain English...&#10;&#10;Example: We have a Python web app on AWS EC2 (m5.xlarge), a PostgreSQL RDS instance (db.r5.2xlarge) with no encryption, an S3 bucket for user uploads that is public, and no monitoring setup."></textarea>
+      <textarea id="textInput" placeholder="Describe your architecture in plain English...&#10;&#10;Example: We have a Python web app on AWS EC2 m5.xlarge, a PostgreSQL RDS db.r5.2xlarge with no encryption, an S3 bucket for uploads that is set to public, and no monitoring."></textarea>
     </div>
 
     <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">Analyze Architecture</button>
   </div>
 
-  <!-- Loader -->
   <div class="loader" id="loader">
     <div class="spinner"></div>
     <p>Analyzing architecture...</p>
   </div>
 
-  <!-- Error -->
   <div class="error-box" id="errorBox"></div>
 
-  <!-- Results -->
   <div class="results" id="results">
     <div class="summary-bar">
       <div class="summary-card arch">
         <div class="label">Architecture</div>
-        <div class="value" id="archName" style="font-size:16px; margin-top:4px;"></div>
+        <div class="value" id="archName" style="font-size:15px; margin-top:4px;"></div>
       </div>
       <div class="summary-card security">
         <div class="label">Security Findings</div>
@@ -313,25 +622,21 @@
       </div>
     </div>
 
-    <!-- Security -->
-    <div class="section" id="secSection">
-      <div class="section-header">
-        Security Findings
-        <span class="count" id="secCountBadge">0</span>
-      </div>
+    <div class="findings-section">
+      <div class="section-hdr">Security Findings <span class="count" id="secCountBadge">0</span></div>
       <div id="secFindings"></div>
     </div>
 
-    <!-- Cost -->
-    <div class="section" id="costSection">
-      <div class="section-header">
-        Cost Optimizations
-        <span class="count" id="costCountBadge">0</span>
-      </div>
+    <div class="findings-section">
+      <div class="section-hdr">Cost Optimizations <span class="count" id="costCountBadge">0</span></div>
       <div id="costFindings"></div>
     </div>
   </div>
-</main>
+</section>
+
+<footer>
+  Built with ArchLens &mdash; <a href="https://github.com/narin-kura/ArchLens" style="color:#60a5fa; text-decoration:none;">Open Source on GitHub</a>
+</footer>
 
 <script>
   let selectedFile = null;
@@ -351,7 +656,6 @@
     document.getElementById('fileName').textContent = selectedFile ? selectedFile.name : '';
   }
 
-  // Drag & drop
   const dz = document.getElementById('dropZone');
   dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
   dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
@@ -359,10 +663,7 @@
     e.preventDefault();
     dz.classList.remove('drag-over');
     const f = e.dataTransfer.files[0];
-    if (f) {
-      selectedFile = f;
-      document.getElementById('fileName').textContent = f.name;
-    }
+    if (f) { selectedFile = f; document.getElementById('fileName').textContent = f.name; }
   });
 
   async function runAnalysis() {
@@ -391,7 +692,6 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Analysis failed');
       renderResults(data);
-
     } catch (err) {
       errorBox.textContent = err.message;
       errorBox.style.display = 'block';
@@ -407,7 +707,7 @@
     document.getElementById('secCountBadge').textContent = data.summary.security_count;
     document.getElementById('costCountBadge').textContent = data.summary.cost_count;
     document.getElementById('costSavings').textContent =
-      data.summary.estimated_savings > 0 ? `$${Math.round(data.summary.estimated_savings)}/mo` : '--';
+      data.summary.estimated_savings > 0 ? '$' + Math.round(data.summary.estimated_savings) + '/mo' : '--';
 
     const secEl = document.getElementById('secFindings');
     const costEl = document.getElementById('costFindings');
@@ -416,21 +716,14 @@
 
     const sec = data.findings.filter(f => f.type === 'security');
     const cost = data.findings.filter(f => f.type === 'cost');
-
     const order = ['critical','high','medium','low','info'];
     sec.sort((a,b) => order.indexOf(a.severity) - order.indexOf(b.severity));
 
-    if (sec.length === 0) {
-      secEl.innerHTML = '<div class="empty-state"><div class="big">&#10003;</div>No security issues found</div>';
-    } else {
-      sec.forEach(f => secEl.appendChild(findingCard(f)));
-    }
+    sec.forEach(f => secEl.appendChild(findingCard(f)));
+    cost.forEach(f => costEl.appendChild(findingCard(f)));
 
-    if (cost.length === 0) {
-      costEl.innerHTML = '<div class="empty-state"><div class="big">&#10003;</div>No cost issues found</div>';
-    } else {
-      cost.forEach(f => costEl.appendChild(findingCard(f)));
-    }
+    if (!sec.length) secEl.innerHTML = '<div style="text-align:center;padding:24px;color:#4a5568;font-size:14px;">No security issues found</div>';
+    if (!cost.length) costEl.innerHTML = '<div style="text-align:center;padding:24px;color:#4a5568;font-size:14px;">No cost issues found</div>';
 
     document.getElementById('results').style.display = 'block';
     document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
@@ -438,13 +731,13 @@
 
   function findingCard(f) {
     const card = document.createElement('div');
-    card.className = `finding-card ${f.severity}`;
+    card.className = 'finding-card ' + f.severity;
 
     const top = document.createElement('div');
     top.className = 'finding-top';
 
     const pill = document.createElement('span');
-    pill.className = `severity-pill ${f.severity}`;
+    pill.className = 'severity-pill ' + f.severity;
     pill.textContent = f.severity;
 
     const title = document.createElement('div');
@@ -457,7 +750,7 @@
     if (f.estimated_savings > 0) {
       const badge = document.createElement('span');
       badge.className = 'savings-badge';
-      badge.textContent = `-$${Math.round(f.estimated_savings)}/mo`;
+      badge.textContent = '-$' + Math.round(f.estimated_savings) + '/mo';
       top.appendChild(badge);
     }
 
@@ -466,7 +759,7 @@
     if (f.component) {
       const comp = document.createElement('div');
       comp.className = 'finding-component';
-      comp.textContent = `Component: ${f.component}`;
+      comp.textContent = 'Component: ' + f.component;
       card.appendChild(comp);
     }
 
