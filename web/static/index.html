@@ -1001,6 +1001,7 @@
     {id:'aws_cloudwatch',name:'CloudWatch',    provider:'aws',     cat:'aws',       type:'MONITORING', service:'cloudwatch',      icon:'CW'},
     {id:'aws_sg',        name:'Security Group',provider:'aws',     cat:'aws',       type:'NETWORK',    service:'security_group',  icon:'SG'},
     {id:'aws_secrets',   name:'Secrets Mgr',  provider:'aws',     cat:'aws',       type:'IAM',        service:'secrets_manager', icon:'SM'},
+    {id:'aws_kms',       name:'KMS',          provider:'aws',     cat:'aws',       type:'IAM',        service:'kms',             icon:'KMS'},
     // GCP
     {id:'gcp_gce',       name:'Compute Engine',provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'gce_instance',    icon:'GCE'},
     {id:'gcp_cloudrun',  name:'Cloud Run',     provider:'gcp',     cat:'gcp',       type:'SERVERLESS', service:'cloud_run',       icon:'CR'},
@@ -1012,6 +1013,8 @@
     {id:'gcp_pubsub',    name:'Pub/Sub',       provider:'gcp',     cat:'gcp',       type:'QUEUE',      service:'pubsub',          icon:'PS'},
     {id:'gcp_memstore',  name:'Memorystore',   provider:'gcp',     cat:'gcp',       type:'CACHE',      service:'memorystore',     icon:'MEM'},
     {id:'gcp_monitor',   name:'Cloud Monitor', provider:'gcp',     cat:'gcp',       type:'MONITORING', service:'cloud_monitoring', icon:'MON'},
+    {id:'gcp_secrets',   name:'Secret Manager',provider:'gcp',    cat:'gcp',       type:'IAM',        service:'secret_manager',  icon:'GSM'},
+    {id:'gcp_kms',       name:'Cloud KMS',     provider:'gcp',    cat:'gcp',       type:'IAM',        service:'cloud_kms',       icon:'KMS'},
     // Azure
     {id:'az_vm',         name:'Azure VM',      provider:'azure',   cat:'azure',     type:'COMPUTE',    service:'azure_vm',        icon:'VM'},
     {id:'az_functions',  name:'Functions',     provider:'azure',   cat:'azure',     type:'SERVERLESS', service:'azure_functions', icon:'FN'},
@@ -1020,6 +1023,7 @@
     {id:'az_blob',       name:'Blob Storage',  provider:'azure',   cat:'azure',     type:'STORAGE',    service:'blob_storage',    icon:'BLOB'},
     {id:'az_monitor',    name:'Azure Monitor', provider:'azure',   cat:'azure',     type:'MONITORING', service:'azure_monitor',   icon:'MON'},
     {id:'az_iam',        name:'Azure AD',      provider:'azure',   cat:'azure',     type:'IAM',        service:'azure_ad',        icon:'AAD'},
+    {id:'az_keyvault',   name:'Key Vault',     provider:'azure',   cat:'azure',     type:'IAM',        service:'key_vault',       icon:'KV'},
     // CI/CD & Tools
     {id:'t_jenkins',     name:'Jenkins',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'jenkins',         icon:'JNK'},
     {id:'t_gha',         name:'GitHub Actions',provider:'generic', cat:'cicd',      type:'OTHER',      service:'github_actions',  icon:'GHA'},
@@ -1028,6 +1032,8 @@
     {id:'t_docker',      name:'Docker',        provider:'generic', cat:'cicd',      type:'CONTAINER',  service:'docker',          icon:'DKR'},
     {id:'t_k8s',         name:'Kubernetes',    provider:'generic', cat:'cicd',      type:'CONTAINER',  service:'kubernetes',      icon:'K8S'},
     {id:'t_ansible',     name:'Ansible',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'ansible',         icon:'ANS'},
+    {id:'t_redis',       name:'Redis',         provider:'generic', cat:'cicd',      type:'CACHE',      service:'redis',           icon:'RDS'},
+    {id:'t_nginx',       name:'Nginx',         provider:'generic', cat:'cicd',      type:'GATEWAY',    service:'nginx',           icon:'NGX'},
     // Monitoring
     {id:'m_datadog',     name:'Datadog',       provider:'generic', cat:'monitoring',type:'MONITORING', service:'datadog',         icon:'DD'},
     {id:'m_grafana',     name:'Grafana',       provider:'generic', cat:'monitoring',type:'MONITORING', service:'grafana',         icon:'GF'},
