@@ -10,7 +10,7 @@ from typing import Optional
 if os.getenv("ANTHROPIC_API_KEY"):
     os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -18,6 +18,7 @@ from archlens.parsers.registry import detect_parser
 from archlens.analyzers.security import SecurityAnalyzer
 from archlens.analyzers.cost import CostAnalyzer
 from archlens.models.findings import AnalysisReport
+from archlens.models.architecture import ArchitectureModel, Component, Connection, ComponentType
 
 app = FastAPI(title="ArchLens", description="Architecture security & cost analyzer")
 
@@ -49,6 +50,39 @@ async def analyze(
         report = AnalysisReport(architecture_name=model.name, findings=findings)
         return _report_to_dict(report)
 
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.post("/analyze-interactive")
+async def analyze_interactive(request: Request):
+    try:
+        data = await request.json()
+        model = ArchitectureModel(
+            name=data.get("name", "Interactive Diagram"),
+            source="interactive",
+        )
+        for c in data.get("components", []):
+            try:
+                ctype = ComponentType[c.get("type", "OTHER")]
+            except KeyError:
+                ctype = ComponentType.OTHER
+            model.components.append(Component(
+                id=c["id"],
+                name=c["name"],
+                type=ctype,
+                provider=c.get("provider", "generic"),
+                service=c.get("service", ""),
+            ))
+        for conn in data.get("connections", []):
+            model.connections.append(Connection(
+                source_id=conn["source_id"],
+                target_id=conn["target_id"],
+                label=conn.get("label", ""),
+            ))
+        findings = SecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
+        report = AnalysisReport(architecture_name=model.name, findings=findings)
+        return _report_to_dict(report)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
