@@ -21,3 +21,15 @@ jobs:
         run: |
           git remote add hf https://knnarin:$HF_TOKEN@huggingface.co/spaces/knnarin/ArchLens
           git push hf main --force
+
+      - name: Summary
+        run: |
+          echo "## ArchLens Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Live URL:** https://knnarin-archlens.hf.space" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Space | [knnarin/ArchLens](https://huggingface.co/spaces/knnarin/ArchLens) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
