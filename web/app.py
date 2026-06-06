@@ -1,3 +1,6 @@
+# Copyright (c) 2026 K.N. Narin (github.com/narin-kura). All rights reserved.
+# Non-commercial use only. Commercial use requires written permission: k.n.narin@gmail.com
+# See LICENSE for full terms.
 """ArchLens FastAPI web server."""
 
 from __future__ import annotations
