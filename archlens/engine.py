@@ -7,6 +7,7 @@ from .models.findings import AnalysisReport, Finding
 from .parsers.registry import detect_parser
 from .analyzers.security import SecurityAnalyzer
 from .analyzers.cost import CostAnalyzer
+from .analyzers.kubernetes_security import KubernetesSecurityAnalyzer
 
 
 def run_analysis(source: str, format_hint: str | None = None) -> AnalysisReport:
@@ -14,7 +15,7 @@ def run_analysis(source: str, format_hint: str | None = None) -> AnalysisReport:
     model = parser.parse(source)
 
     findings: list[Finding] = []
-    for analyzer in [SecurityAnalyzer(), CostAnalyzer()]:
+    for analyzer in [SecurityAnalyzer(), KubernetesSecurityAnalyzer(), CostAnalyzer()]:
         findings.extend(analyzer.analyze(model))
 
     return AnalysisReport(architecture_name=model.name, findings=findings)

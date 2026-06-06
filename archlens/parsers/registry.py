@@ -10,11 +10,13 @@ from .drawio import DrawioParser
 from .cloudformation import CloudFormationParser
 from .aws_config import AWSConfigParser
 from .gcp_asset import GCPAssetParser
+from .kubernetes import KubernetesParser
 
 
 # Order matters: more specific parsers first, text (LLM) last as fallback
 _PARSERS: list[BaseParser] = [
     TerraformParser(),
+    KubernetesParser(),
     DrawioParser(),
     CloudFormationParser(),
     AWSConfigParser(),
@@ -27,6 +29,8 @@ def detect_parser(source: str, format_hint: str | None = None) -> BaseParser:
     if format_hint:
         mapping = {
             "terraform": TerraformParser(),
+            "kubernetes": KubernetesParser(),
+            "k8s": KubernetesParser(),
             "drawio": DrawioParser(),
             "cloudformation": CloudFormationParser(),
             "aws_config": AWSConfigParser(),
