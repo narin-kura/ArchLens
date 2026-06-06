@@ -11,16 +11,32 @@ from .cloudformation import CloudFormationParser
 from .aws_config import AWSConfigParser
 from .gcp_asset import GCPAssetParser
 from .kubernetes import KubernetesParser
+from .docker_compose import DockerComposeParser
+from .dockerfile import DockerfileParser
+from .azure_arm import AzureARMParser
+from .helm import HelmParser
+from .serverless_framework import ServerlessFrameworkParser
+from .openapi import OpenAPIParser
+from .github_actions import GitHubActionsParser
+from .ansible import AnsibleParser
 
 
-# Order matters: more specific parsers first, text (LLM) last as fallback
+# Order matters: most specific detectors first, text (LLM) last as fallback
 _PARSERS: list[BaseParser] = [
     TerraformParser(),
+    DockerfileParser(),          # before compose — Dockerfile has no extension
+    DockerComposeParser(),
+    HelmParser(),                # before k8s — Chart.yaml is more specific
     KubernetesParser(),
+    ServerlessFrameworkParser(),
+    GitHubActionsParser(),
+    AnsibleParser(),
     DrawioParser(),
     CloudFormationParser(),
+    AzureARMParser(),
     AWSConfigParser(),
     GCPAssetParser(),
+    OpenAPIParser(),
     TextParser(),
 ]
 
@@ -28,14 +44,27 @@ _PARSERS: list[BaseParser] = [
 def detect_parser(source: str, format_hint: str | None = None) -> BaseParser:
     if format_hint:
         mapping = {
-            "terraform": TerraformParser(),
-            "kubernetes": KubernetesParser(),
-            "k8s": KubernetesParser(),
-            "drawio": DrawioParser(),
+            "terraform":    TerraformParser(),
+            "kubernetes":   KubernetesParser(),
+            "k8s":          KubernetesParser(),
+            "helm":         HelmParser(),
+            "compose":      DockerComposeParser(),
+            "docker-compose": DockerComposeParser(),
+            "dockerfile":   DockerfileParser(),
+            "azure-arm":    AzureARMParser(),
+            "arm":          AzureARMParser(),
+            "serverless":   ServerlessFrameworkParser(),
+            "openapi":      OpenAPIParser(),
+            "swagger":      OpenAPIParser(),
+            "github-actions": GitHubActionsParser(),
+            "gha":          GitHubActionsParser(),
+            "ansible":      AnsibleParser(),
+            "drawio":       DrawioParser(),
             "cloudformation": CloudFormationParser(),
-            "aws_config": AWSConfigParser(),
-            "gcp_asset": GCPAssetParser(),
-            "text": TextParser(),
+            "cfn":          CloudFormationParser(),
+            "aws_config":   AWSConfigParser(),
+            "gcp_asset":    GCPAssetParser(),
+            "text":         TextParser(),
         }
         if format_hint in mapping:
             return mapping[format_hint]
