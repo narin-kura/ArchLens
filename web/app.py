@@ -1,4 +1,4 @@
-# Copyright (c) 2026 K.N. Narin (github.com/narin-kura). All rights reserved.
+# Copyright (c) 2026 Kura Nagender Narin (github.com/narin-kura). All rights reserved.
 # Non-commercial use only. Commercial use requires written permission: k.n.narin@gmail.com
 # See LICENSE for full terms.
 """ArchLens FastAPI web server."""
