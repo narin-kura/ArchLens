@@ -531,7 +531,7 @@
   <div class="hero">
     <div class="hero-badge">Free &amp; Open Source</div>
     <h1>Spot security risks &amp;<br><em>cut cloud costs</em> instantly</h1>
-    <p>Upload your Terraform, describe your setup in plain English, or paste a cloud export. Get actionable findings in seconds — powered by AI.</p>
+    <p>Upload Terraform, Kubernetes YAML, Helm, Docker Compose, Dockerfile, Serverless Framework, OpenAPI, GitHub Actions, Ansible, CloudFormation, Azure ARM, or describe in plain English. 77+ security checks, instantly.</p>
     <div class="hero-actions">
       <a class="btn-white" href="#analyzer">Start Analyzing</a>
       <a class="btn-outline-white" href="https://github.com/narin-kura/ArchLens" target="_blank">View on GitHub</a>
@@ -546,13 +546,17 @@
       <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
       &nbsp; ArchLens Report &mdash; my-startup-aws
     </div>
-    <span class="crit">[CRIT]  S3 bucket 'assets' is publicly accessible</span>
+    <span class="crit">[CRIT]  S3 bucket 'assets' is publicly accessible  <em style="color:#64748b;font-size:11px;">terraform</em></span>
     <span class="fix">Fix: Set bucket ACL to private. Use pre-signed URLs for public content.</span>
-    <span class="high">[HIGH]  RDS 'prod-db' has no encryption at rest</span>
-    <span class="fix">Fix: Enable storage_encrypted = true with a KMS key.</span>
-    <span class="med"> [MED]   Security group allows 0.0.0.0/0 on port 22</span>
-    <span class="fix">Fix: Restrict SSH to known IP ranges or use a bastion host.</span>
-    <span class="sav"> [COST]  RDS db.r5.2xlarge may be oversized &mdash; est. -$687/mo</span>
+    <span class="crit">[CRIT]  Deployment 'api' runs a privileged container  <em style="color:#64748b;font-size:11px;">kubernetes</em></span>
+    <span class="fix">Fix: Remove privileged: true. Use specific capabilities instead.</span>
+    <span class="high">[HIGH]  Dockerfile 'api' runs as root (no USER instruction)  <em style="color:#64748b;font-size:11px;">dockerfile</em></span>
+    <span class="fix">Fix: Add USER 1000 before the final CMD/ENTRYPOINT.</span>
+    <span class="high">[HIGH]  Workflow 'deploy.yml' has unpinned third-party actions  <em style="color:#64748b;font-size:11px;">github actions</em></span>
+    <span class="fix">Fix: Pin actions to a full commit SHA (e.g. uses: org/action@a1b2c3d).</span>
+    <span class="med"> [MED]   GET /users unauthenticated — no authorizer defined  <em style="color:#64748b;font-size:11px;">openapi</em></span>
+    <span class="fix">Fix: Add a security scheme (JWT, OAuth2, API key) to the endpoint.</span>
+    <span class="sav"> [COST]  RDS db.r5.2xlarge may be oversized &mdash; est. -$687/mo  <em style="color:#64748b;font-size:11px;">terraform</em></span>
     <span class="fix">Fix: Switch to db.t3.micro after reviewing CloudWatch metrics.</span>
   </div>
 </div>
@@ -619,12 +623,12 @@
     <div class="step">
       <div class="step-num s1">1</div>
       <h3>Provide your architecture</h3>
-      <p>Upload a Terraform file or describe your setup in plain English</p>
+      <p>Upload any of 15 supported formats — Terraform, Kubernetes, Helm, Docker, Serverless, OpenAPI, Ansible, ARM and more — or describe in plain English</p>
     </div>
     <div class="step">
       <div class="step-num s2">2</div>
       <h3>AI analyzes it</h3>
-      <p>Runs security rules and cost checks against every detected component</p>
+      <p>Runs 77+ security rules and cost checks across cloud infra, Kubernetes, containers, IAM, networking, CI/CD, and APIs</p>
     </div>
     <div class="step">
       <div class="step-num s3">3</div>
@@ -673,7 +677,7 @@
 
     <div id="tab-file" class="tab-content active">
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md" onchange="onFileSelect(this)" />
+        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md,.dockerfile" onchange="onFileSelect(this)" />
         <div class="icon">&#128194;</div>
         <p><strong>Click to upload</strong> or drag &amp; drop</p>
         <p>Terraform &nbsp;&#183;&nbsp; Kubernetes YAML &nbsp;&#183;&nbsp; Helm &nbsp;&#183;&nbsp; Docker Compose &nbsp;&#183;&nbsp; Dockerfile &nbsp;&#183;&nbsp; Azure ARM &nbsp;&#183;&nbsp; CloudFormation &nbsp;&#183;&nbsp; Serverless Framework &nbsp;&#183;&nbsp; OpenAPI/Swagger &nbsp;&#183;&nbsp; GitHub Actions &nbsp;&#183;&nbsp; Ansible &nbsp;&#183;&nbsp; draw.io &nbsp;&#183;&nbsp; Text</p>
