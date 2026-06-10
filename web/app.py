@@ -167,6 +167,7 @@ def _report_to_dict(report: AnalysisReport, components_found: int = 0) -> dict:
                 "component": f.component_name,
                 "recommendation": f.recommendation,
                 "estimated_savings": f.estimated_savings,
+                "references": f.references,
             }
             for f in report.findings
         ],

@@ -55,6 +55,7 @@ class CostAnalyzer(BaseAnalyzer):
                         component_name=c.name,
                         recommendation=f"Switch to {suggested} (~${alternatives[suggested]}/mo) after reviewing CloudWatch metrics.",
                         estimated_savings=savings,
+                        references=["https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html"],
                     ))
         return findings
 
@@ -93,6 +94,7 @@ class CostAnalyzer(BaseAnalyzer):
                 description="Fixed-size compute runs at full capacity 24/7 even during low-traffic periods.",
                 recommendation="Add Auto Scaling Groups or use serverless (Lambda/Fargate) for variable workloads to reduce idle costs.",
                 estimated_savings=0,
+                references=["https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html"],
             )]
         return []
 
@@ -107,5 +109,6 @@ class CostAnalyzer(BaseAnalyzer):
                 description=f"Detected {len(compute)} compute and {len(databases)} database resources running on-demand.",
                 recommendation="1-year Reserved Instances save ~40%, 3-year ~60% vs on-demand. Savings Plans offer similar discounts with more flexibility.",
                 estimated_savings=0,
+                references=["https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html"],
             )]
         return []

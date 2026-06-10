@@ -389,6 +389,13 @@
       border-radius: 8px; padding: 8px 12px; line-height: 1.5;
     }
     .finding-rec::before { content: 'Fix: '; font-weight: 700; }
+    .finding-refs { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .finding-ref-link {
+      font-size: 11px; font-weight: 700; color: #93c5fd; background: #0c1a2e;
+      border: 1px solid #1e3050; border-radius: 99px; padding: 3px 10px;
+      text-decoration: none; white-space: nowrap;
+    }
+    .finding-ref-link:hover { background: #142338; border-color: #2d4a73; }
     .savings-badge {
       margin-left: auto; font-size: 12px; font-weight: 800;
       color: #6ee7b7; background: #052e16;
@@ -979,6 +986,11 @@
         if (f.component) lines.push(`**Component:** ${f.component}  `);
         lines.push(`\n${f.description}\n`);
         if (f.recommendation) lines.push(`**Fix:** ${f.recommendation}\n`);
+        if (f.references && f.references.length) {
+          lines.push(`**References:**`);
+          f.references.forEach(ref => lines.push(`- ${ref}`));
+          lines.push('');
+        }
       });
     }
 
@@ -988,6 +1000,11 @@
         lines.push(`### ${f.title}${f.estimated_savings > 0 ? ` (-$${Math.round(f.estimated_savings)}/mo)` : ''}`);
         lines.push(`\n${f.description}\n`);
         if (f.recommendation) lines.push(`**Fix:** ${f.recommendation}\n`);
+        if (f.references && f.references.length) {
+          lines.push(`**References:**`);
+          f.references.forEach(ref => lines.push(`- ${ref}`));
+          lines.push('');
+        }
       });
     }
 
@@ -1306,6 +1323,21 @@
       rec.className = 'finding-rec';
       rec.textContent = f.recommendation;
       card.appendChild(rec);
+    }
+
+    if (f.references && f.references.length) {
+      const refs = document.createElement('div');
+      refs.className = 'finding-refs';
+      f.references.forEach((ref, i) => {
+        const link = document.createElement('a');
+        link.className = 'finding-ref-link';
+        link.href = ref;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Reference' + (f.references.length > 1 ? ` ${i + 1}` : '');
+        refs.appendChild(link);
+      });
+      card.appendChild(refs);
     }
 
     return card;

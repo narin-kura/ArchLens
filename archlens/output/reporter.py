@@ -53,6 +53,8 @@ def _to_console(report: AnalysisReport) -> str:
             comp = f"[{f.component_name}] " if f.component_name else ""
             lines.append(f"  {icon} {comp}{f.title}")
             lines.append(f"           {f.recommendation}")
+            for ref in f.references:
+                lines.append(f"           Ref: {ref}")
             lines.append("")
 
     if cost:
@@ -64,6 +66,8 @@ def _to_console(report: AnalysisReport) -> str:
             savings = f"  (-${f.estimated_savings:.0f}/mo)" if f.estimated_savings else ""
             lines.append(f"  {icon} {f.title}{savings}")
             lines.append(f"           {f.recommendation}")
+            for ref in f.references:
+                lines.append(f"           Ref: {ref}")
             lines.append("")
 
     if not sec and not cost:
@@ -84,6 +88,11 @@ def _to_markdown(report: AnalysisReport) -> str:
                 lines.append(f"**Component:** {f.component_name}")
             lines.append(f"\n{f.description}\n")
             lines.append(f"**Recommendation:** {f.recommendation}\n")
+            if f.references:
+                lines.append("**References:**")
+                for ref in f.references:
+                    lines.append(f"- {ref}")
+                lines.append("")
 
     cost = report.cost_findings
     if cost:
@@ -97,6 +106,11 @@ def _to_markdown(report: AnalysisReport) -> str:
                 lines.append(f"**Estimated saving:** ${f.estimated_savings:.0f}/mo")
             lines.append(f"\n{f.description}\n")
             lines.append(f"**Recommendation:** {f.recommendation}\n")
+            if f.references:
+                lines.append("**References:**")
+                for ref in f.references:
+                    lines.append(f"- {ref}")
+                lines.append("")
 
     return "\n".join(lines)
 
@@ -118,6 +132,7 @@ def _to_json(report: AnalysisReport) -> str:
                 "component": f.component_name,
                 "recommendation": f.recommendation,
                 "estimated_savings": f.estimated_savings,
+                "references": f.references,
             }
             for f in report.findings
         ],

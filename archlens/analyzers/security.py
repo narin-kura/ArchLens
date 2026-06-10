@@ -136,6 +136,7 @@ class SecurityAnalyzer(BaseAnalyzer):
                     component_id=c.id,
                     component_name=c.name,
                     recommendation="Restrict inbound rules to known IP ranges. Use VPN or bastion host for admin access.",
+                    references=["https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html"],
                 ))
         return findings
 
@@ -346,6 +347,7 @@ class SecurityAnalyzer(BaseAnalyzer):
                 title="No monitoring or observability components detected",
                 description="Without monitoring, security incidents and anomalies go undetected.",
                 recommendation="Add CloudWatch, Datadog, or equivalent. Enable VPC Flow Logs and CloudTrail.",
+                references=["https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/working_with_metrics.html"],
             )]
         return []
 
