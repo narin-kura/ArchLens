@@ -1,0 +1,48 @@
+name: Deploy to Cloud Run (GCP)
+
+on:
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: project-f281922f-0040-402f-b61
+  REGION: us-central1
+  SERVICE: archlens
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push image
+        run: |
+          gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }} \
+            --region ${{ env.REGION }} \
+            --port 7860 \
+            --allow-unauthenticated \
+            --set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest
+
+      - name: Show service URL
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE }} --region ${{ env.REGION }} --format 'value(status.url)')
+          echo "## ArchLens deployed" >> $GITHUB_STEP_SUMMARY
+          echo "**Live URL:** $URL" >> $GITHUB_STEP_SUMMARY
