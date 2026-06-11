@@ -166,7 +166,7 @@ class TextParser(BaseParser):
         except ImportError:
             raise ImportError("Install anthropic: pip install anthropic")
 
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=30.0, max_retries=1)
         try:
             message = client.messages.create(
                 model="claude-opus-4-8",
