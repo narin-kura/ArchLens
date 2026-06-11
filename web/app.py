@@ -17,6 +17,7 @@ if os.getenv("ANTHROPIC_API_KEY"):
     os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -55,7 +56,8 @@ async def analyze(
         else:
             if not text or not text.strip():
                 raise HTTPException(status_code=400, detail="Text description cannot be empty.")
-            model = _parse_text(text, format_hint)
+            # threadpool: LLM-backed parse must not block the event loop
+            model = await run_in_threadpool(_parse_text, text, format_hint)
 
         findings = SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
         report = AnalysisReport(architecture_name=model.name, findings=findings)
@@ -141,7 +143,8 @@ async def _parse_upload(file: UploadFile, format_hint: Optional[str]) -> Archite
         dest.write_bytes(content)
         source = str(tmp) if suffix == ".tf" else str(dest)
         parser = detect_parser(source, format_hint)
-        return parser.parse(source)
+        # threadpool: text/LLM parsers must not block the event loop
+        return await run_in_threadpool(parser.parse, source)
 
 
 def _parse_text(text: str, format_hint: Optional[str]) -> ArchitectureModel:

@@ -140,7 +140,8 @@ class TextParser(BaseParser):
         except ImportError:
             raise ImportError("Install google-generativeai: pip install google-generativeai")
 
-        genai.configure(api_key=api_key)
+        # REST transport: default gRPC channels hang silently on Cloud Run's gVisor sandbox
+        genai.configure(api_key=api_key, transport="rest")
         model = genai.GenerativeModel("gemini-2.5-flash")
         try:
             response = model.generate_content(
