@@ -30,7 +30,21 @@ jobs:
 
       - name: Build and push image
         run: |
-          gcloud builds submit --suppress-logs --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }}
+          IMAGE="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }}"
+          BUILD_ID=$(gcloud builds submit --async --tag "$IMAGE" --format="value(id)")
+          echo "Build ID: $BUILD_ID"
+          while true; do
+            STATUS=$(gcloud builds describe "$BUILD_ID" --format="value(status)")
+            echo "Status: $STATUS"
+            case "$STATUS" in
+              SUCCESS) break ;;
+              FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED)
+                echo "Build failed with status $STATUS"
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
 
       - name: Deploy to Cloud Run
         run: |
