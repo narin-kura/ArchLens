@@ -30,7 +30,7 @@ jobs:
 
       - name: Build and push image
         run: |
-          gcloud builds submit --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }}
+          gcloud builds submit --suppress-logs --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/apps/${{ env.SERVICE }}
 
       - name: Deploy to Cloud Run
         run: |
