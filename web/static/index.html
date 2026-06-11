@@ -240,6 +240,20 @@
     /* DIVIDER */
     hr { border: none; border-top: 2px dashed #1e2d4a; max-width: 860px; margin: 0 auto 60px; }
 
+    /* ANALYZER GUIDE */
+    .analyzer-guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 720px) { .analyzer-guide { grid-template-columns: 1fr; } }
+    .ag-item {
+      display: flex; gap: 11px; align-items: flex-start; text-align: left;
+      background: #0a1322; border: 1.5px solid #1e2d4a; border-radius: 12px;
+      padding: 14px 16px; font-family: inherit; font-size: 12.5px; color: #94a3b8;
+      line-height: 1.5; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+    }
+    .ag-item:hover { border-color: #4c1d95; transform: translateY(-2px); }
+    .ag-emo { font-size: 20px; line-height: 1.2; }
+    .ag-item strong { display: block; color: #dde8ff; font-size: 13.5px; margin-bottom: 3px; }
+    .ag-foot { font-size: 12.5px; color: #4a6080; text-align: center; margin-bottom: 22px; line-height: 1.5; }
+
     /* ANALYZER */
     .analyzer-section { max-width: 860px; margin: 0 auto; padding: 0 24px 80px; }
     .analyzer-section .section-title { text-align: left; margin-bottom: 24px; }
@@ -674,6 +688,22 @@
 <!-- ANALYZER -->
 <section class="analyzer-section" id="analyzer">
   <div class="section-title">Analyze your architecture</div>
+
+  <div class="analyzer-guide">
+    <button type="button" class="ag-item" onclick="switchTab('file')">
+      <span class="ag-emo">&#128194;</span>
+      <div><strong>Upload File</strong>Drop Terraform, Kubernetes, Docker, CloudFormation or any of the 15 supported formats.</div>
+    </button>
+    <button type="button" class="ag-item" onclick="switchTab('text')">
+      <span class="ag-emo">&#128172;</span>
+      <div><strong>Describe in Text</strong>No config handy? Write a plain-English description and AI extracts the components.</div>
+    </button>
+    <button type="button" class="ag-item" onclick="switchTab('builder')">
+      <span class="ag-emo">&#129521;</span>
+      <div><strong>Build your stack</strong>Pick services from a catalog and watch live security &amp; cost suggestions as you go.</div>
+    </button>
+  </div>
+  <p class="ag-foot">Whichever way you start, you get the same report below — security findings with fixes, estimated monthly savings, and JSON / Markdown export.</p>
 
   <div class="input-panel">
     <div class="tabs">
