@@ -9,7 +9,8 @@ pinned: false
 
 # ArchLens
 
-[![Live App](https://img.shields.io/badge/Live%20App-Hugging%20Face-blue?style=flat-square&logo=huggingface)](https://knnarin-archlens.hf.space)
+[![Hugging Face](https://img.shields.io/badge/Live%20App-Hugging%20Face-blue?style=flat-square&logo=huggingface)](https://knnarin-archlens.hf.space)
+[![Google Cloud Run](https://img.shields.io/badge/Live%20App-GCP%20Cloud%20Run-blue?style=flat-square&logo=google-cloud)](https://archlens-982110430844.us-central1.run.app/)
 
 Architecture security & cost analyzer. Upload a Terraform file or describe your architecture in plain English — get back security risks and cost savings recommendations instantly.
 
