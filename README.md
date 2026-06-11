@@ -9,6 +9,8 @@ pinned: false
 
 # ArchLens
 
+[![Live App](https://img.shields.io/badge/Live%20App-Hugging%20Face-blue?style=flat-square&logo=huggingface)](https://knnarin-archlens.hf.space)
+
 Architecture security & cost analyzer. Upload a Terraform file or describe your architecture in plain English — get back security risks and cost savings recommendations instantly.
 
 ## Features
