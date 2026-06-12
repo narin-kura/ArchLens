@@ -27,6 +27,7 @@ from archlens.analyzers.cost import CostAnalyzer
 from archlens.analyzers.kubernetes_security import KubernetesSecurityAnalyzer
 from archlens.models.findings import AnalysisReport
 from archlens.models.architecture import ArchitectureModel, Component, Connection, ComponentType
+from archlens.recommender import recommend as build_recommendation
 
 app = FastAPI(title="ArchLens", description="Architecture security & cost analyzer")
 
@@ -127,6 +128,24 @@ async def analyze_interactive(request: Request):
         raise HTTPException(
             status_code=500,
             detail="Analysis failed. Please try again."
+        )
+
+
+@app.post("/recommend")
+async def recommend(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
+
+    try:
+        # threadpool: the AI-summary step may make a blocking network call
+        return await run_in_threadpool(build_recommendation, data)
+    except Exception:
+        logger.exception("Unexpected error during recommendation")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not generate a recommendation. Please try again."
         )
 
 

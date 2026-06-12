@@ -241,7 +241,7 @@
     hr { border: none; border-top: 2px dashed #1e2d4a; max-width: 860px; margin: 0 auto 60px; }
 
     /* ANALYZER GUIDE */
-    .analyzer-guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+    .analyzer-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 14px; }
     @media (max-width: 720px) { .analyzer-guide { grid-template-columns: 1fr; } }
     .ag-item {
       display: flex; gap: 11px; align-items: flex-start; text-align: left;
@@ -526,6 +526,35 @@
     .builder-analyze-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 28px rgba(46,16,101,0.7); }
     .builder-analyze-btn:disabled { opacity:0.35; cursor:not-allowed; box-shadow:none; }
 
+    /* RECOMMEND TAB */
+    .rec-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:18px; }
+    .rec-field { display:flex; flex-direction:column; gap:6px; }
+    .rec-field label { font-size:12px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.3px; }
+    .rec-select, .rec-multiselect { width:100%; padding:10px 14px; background:#0d1a30; border:1.5px solid #1e2d4a; border-radius:10px; color:#e2e8f0; font-size:14px; outline:none; font-family:inherit; }
+    .rec-select:focus, .rec-multiselect:focus { border-color:#6366f1; }
+    .rec-multiselect { height:150px; }
+    .rec-multiselect optgroup { color:#64748b; font-weight:800; font-style:normal; }
+    .rec-multiselect option { color:#dde8ff; padding:3px 0; }
+    .rec-field-wide { grid-column:1/-1; }
+    .rec-checkbox-row { display:flex; align-items:center; gap:8px; grid-column:1/-1; }
+    .rec-checkbox-row input { width:16px; height:16px; accent-color:#6366f1; }
+    .rec-checkbox-row label { font-size:13px; color:#94a3b8; font-weight:600; text-transform:none; letter-spacing:normal; }
+    .rec-submit-btn { padding:13px 32px; border-radius:99px; font-size:14px; font-weight:800; cursor:pointer; background:linear-gradient(135deg,#3730a3,#4c1d95); color:#ddd6fe; border:none; box-shadow:0 4px 16px rgba(55,48,163,0.4); transition:transform 0.15s,box-shadow 0.15s; }
+    .rec-submit-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 6px 22px rgba(55,48,163,0.6); }
+    .rec-submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+    .rec-result { margin-top:22px; border-top:1px solid #1e2d4a; padding-top:18px; }
+    .rec-summary { background:#0a1628; border:1.5px solid #1e3050; border-radius:12px; padding:14px 18px; font-size:13px; color:#cbd5e1; line-height:1.6; margin-bottom:16px; }
+    .rec-list-title, .rec-tips-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#64748b; margin:16px 0 10px; }
+    .rec-item { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #16213b; }
+    .rec-item:last-child { border-bottom:none; }
+    .rec-item-name { display:flex; flex-direction:column; gap:3px; min-width:180px; flex-shrink:0; font-size:13px; font-weight:700; color:#dde8ff; }
+    .rec-item-why { font-size:13px; color:#94a3b8; line-height:1.5; padding-top:1px; }
+    .rec-role { font-size:10px; font-weight:800; color:#64748b; text-transform:uppercase; letter-spacing:0.3px; }
+    .rec-tips { font-size:13px; color:#94a3b8; line-height:1.6; padding-left:18px; margin:0; }
+    .rec-tips li { margin-bottom:6px; }
+    .rec-use-btn { margin-top:18px; }
+
     .warn-banner { background:#422006; border:1px solid #92400e; border-radius:10px; padding:12px 16px; color:#fcd34d; font-size:13px; font-weight:600; margin-bottom:20px; }
     .text-hint { font-size:12px; margin-top:8px; min-height:18px; font-weight:600; }
     .text-hint.bad  { color:#f87171; }
@@ -725,6 +754,10 @@
       <span class="ag-emo">&#129521;</span>
       <div><strong>Build your stack</strong>Pick services from a catalog and watch live security &amp; cost suggestions as you go.</div>
     </button>
+    <button type="button" class="ag-item" onclick="switchTab('recommend')">
+      <span class="ag-emo">&#10024;</span>
+      <div><strong>Recommend My Stack</strong>Answer a few questions and get a cost-optimized, secure stack picked for you.</div>
+    </button>
   </div>
   <p class="ag-foot">Whichever way you start, you get the same report below — security findings with fixes, estimated monthly savings, and JSON / Markdown export.</p>
 
@@ -733,6 +766,7 @@
       <button class="tab active" data-tab="file" onclick="switchTab('file')">Upload File</button>
       <button class="tab" data-tab="text" onclick="switchTab('text')">Describe in Text</button>
       <button class="tab" data-tab="builder" onclick="switchTab('builder')">No file? Add your stack</button>
+      <button class="tab" data-tab="recommend" onclick="switchTab('recommend')">Recommend My Stack</button>
     </div>
 
     <div id="tab-file" class="tab-content active">
@@ -803,6 +837,108 @@
       </div>
     </div>
     <!-- /BUILDER TAB -->
+
+    <!-- RECOMMEND TAB -->
+    <div id="tab-recommend" class="tab-content">
+      <div class="builder-intro">
+        <div class="builder-intro-icon">&#10024;</div>
+        <div>
+          <div class="builder-intro-title">Not sure where to start?</div>
+          <div class="builder-intro-sub">Answer a few questions and we'll pick a cost-optimized, secure starter stack from the catalog — you can tweak it before analyzing.</div>
+        </div>
+      </div>
+
+      <div class="rec-form">
+        <div class="rec-field">
+          <label for="recProjectType">What are you building?</label>
+          <select class="rec-select" id="recProjectType">
+            <option value="web_api">Web app / API backend</option>
+            <option value="microservices">Microservices platform</option>
+            <option value="data_pipeline">Data pipeline / analytics</option>
+            <option value="ai_llm">AI / LLM application</option>
+            <option value="mobile_backend">Mobile app backend</option>
+            <option value="iot_embedded">IoT / embedded system</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recScale">Expected scale</label>
+          <select class="rec-select" id="recScale">
+            <option value="startup">Startup / MVP — low traffic</option>
+            <option value="growth">Growth — moderate traffic</option>
+            <option value="enterprise">Enterprise — high scale</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recCloud">Preferred cloud</label>
+          <select class="rec-select" id="recCloud">
+            <option value="generic">No preference / self-hosted</option>
+            <option value="aws">AWS</option>
+            <option value="gcp">GCP</option>
+            <option value="azure">Azure</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recPriority">Optimize for</label>
+          <select class="rec-select" id="recPriority">
+            <option value="cost">Lowest cost</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="performance">Best performance &amp; scale</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recDatabase">Database needs</label>
+          <select class="rec-select" id="recDatabase">
+            <option value="relational">Relational (SQL)</option>
+            <option value="nosql">NoSQL / document</option>
+            <option value="analytics">Analytics / data warehouse</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recAiNeeds">AI / ML needs</label>
+          <select class="rec-select" id="recAiNeeds">
+            <option value="none">None</option>
+            <option value="llm_api">LLM API — chatbot / RAG</option>
+            <option value="custom_ml">Custom ML training</option>
+            <option value="gpu_inference">Self-hosted LLM / GPU inference</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recSecurityLevel">Security level</label>
+          <select class="rec-select" id="recSecurityLevel">
+            <option value="basic">Basic</option>
+            <option value="standard" selected>Standard (recommended)</option>
+            <option value="high">High — regulated / compliance</option>
+          </select>
+        </div>
+        <div class="rec-checkbox-row">
+          <input type="checkbox" id="recRealtime" />
+          <label for="recRealtime">Needs async / event-driven processing (queues, streaming)</label>
+        </div>
+        <div class="rec-field rec-field-wide">
+          <label for="recMustHaves">Already know some services you want to use? (optional, ctrl/cmd-click for multiple)</label>
+          <select class="rec-multiselect" id="recMustHaves" multiple></select>
+        </div>
+      </div>
+
+      <button class="rec-submit-btn" id="recSubmitBtn" onclick="getRecommendation()">Get My Recommendation &#8594;</button>
+
+      <div class="rec-result" id="recResult" style="display:none;">
+        <div class="rec-summary" id="recSummary"></div>
+
+        <div class="rec-list-title">Recommended Stack</div>
+        <div id="recList"></div>
+
+        <div class="rec-tips-title">Cost Tips</div>
+        <ul class="rec-tips" id="recCostTips"></ul>
+
+        <div class="rec-tips-title">Security Tips</div>
+        <ul class="rec-tips" id="recSecurityTips"></ul>
+
+        <button class="builder-analyze-btn rec-use-btn" onclick="useRecommendation()">Use This Stack &#8594;</button>
+      </div>
+    </div>
+    <!-- /RECOMMEND TAB -->
 
     <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">Analyze Architecture</button>
   </div>
@@ -908,13 +1044,14 @@
   function switchTab(tab) {
     activeTab = tab;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-    ['file','text','builder'].forEach(id => {
+    ['file','text','builder','recommend'].forEach(id => {
       document.getElementById('tab-' + id).classList.toggle('active', id === tab);
     });
     const analyzeBtn = document.getElementById('analyzeBtn');
-    analyzeBtn.style.display = tab === 'builder' ? 'none' : 'block';
+    analyzeBtn.style.display = (tab === 'builder' || tab === 'recommend') ? 'none' : 'block';
     document.querySelector('.analyzer-section').classList.toggle('builder-wide', tab === 'builder');
     if (tab === 'builder') renderServiceGrid();
+    if (tab === 'recommend') populateMustHaves();
   }
 
   function onFileSelect(input) {
@@ -1463,6 +1600,97 @@
     }
   }
   // ===================== END BUILDER =====================
+
+  // ===================== RECOMMEND MY STACK =====================
+  const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};
+
+  function populateMustHaves() {
+    const sel = document.getElementById('recMustHaves');
+    if (sel.options.length) return;
+    const byCat = {};
+    SERVICES.forEach(s => { (byCat[s.cat] = byCat[s.cat] || []).push(s); });
+    sel.innerHTML = Object.keys(byCat).filter(c => c !== 'all').map(cat =>
+      `<optgroup label="${CAT_LABELS[cat] || cat}">${byCat[cat].map(s => `<option value="${s.id}">${s.name} (${s.provider})</option>`).join('')}</optgroup>`
+    ).join('');
+  }
+
+  let lastRecommendation = null;
+
+  async function getRecommendation() {
+    const btn = document.getElementById('recSubmitBtn');
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+    try {
+      const mustHaves = [...document.getElementById('recMustHaves').selectedOptions]
+        .map(o => SERVICES.find(s => s.id === o.value))
+        .filter(Boolean)
+        .map(s => ({id:s.id, name:s.name, type:s.type, provider:s.provider, service:s.service}));
+
+      const req = {
+        project_type: document.getElementById('recProjectType').value,
+        scale: document.getElementById('recScale').value,
+        cloud: document.getElementById('recCloud').value,
+        priority: document.getElementById('recPriority').value,
+        database: document.getElementById('recDatabase').value,
+        ai_needs: document.getElementById('recAiNeeds').value,
+        security_level: document.getElementById('recSecurityLevel').value,
+        realtime: document.getElementById('recRealtime').checked,
+        must_haves: mustHaves,
+      };
+
+      const res = await fetch('/recommend', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(req)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Could not generate a recommendation.');
+      lastRecommendation = data;
+      renderRecommendation(data);
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get My Recommendation →';
+    }
+  }
+
+  function renderRecommendation(data) {
+    const result = document.getElementById('recResult');
+    document.getElementById('recSummary').textContent = data.ai_summary ||
+      'Here is a starter stack based on your answers. Review the reasoning below, then use it to pre-fill the builder for a full security & cost analysis.';
+
+    document.getElementById('recList').innerHTML = data.recommended.map(r => `
+      <div class="rec-item">
+        <div class="rec-item-name">
+          <span class="svc-prov prov-${r.provider}">${r.provider.toUpperCase()}</span>
+          ${r.name}
+          <span class="rec-role">${r.role.replace(/_/g, ' ')}</span>
+        </div>
+        <div class="rec-item-why">${r.why}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('recCostTips').innerHTML = data.cost_tips.map(t => `<li>${t}</li>`).join('');
+    document.getElementById('recSecurityTips').innerHTML = data.security_tips.map(t => `<li>${t}</li>`).join('');
+
+    result.style.display = 'block';
+    result.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  function useRecommendation() {
+    if (!lastRecommendation) return;
+    lastRecommendation.recommended.forEach(r => {
+      const svc = SERVICES.find(s => s.id === r.id);
+      if (svc) selectedSvcs.set(svc.id, svc);
+    });
+    switchTab('builder');
+    updateStack();
+  }
+  // ===================== END RECOMMEND =====================
 
   function findingCard(f) {
     const card = document.createElement('div');
