@@ -451,6 +451,7 @@
     .prov-gcp     { background:#062a14; color:#6ee7b7; }
     .prov-azure   { background:#091f3a; color:#7dd3fc; }
     .prov-generic { background:#1a1d30; color:#a3b4cc; }
+    .prov-nvidia  { background:#1a2906; color:#76b900; }
     .svc-icon { font-size:20px; font-weight:900; color:#c4b5fd; margin:4px 0 6px; font-family:monospace; letter-spacing:-1px; }
     .svc-name { font-size:13px; font-weight:700; color:#dde8ff; line-height:1.3; }
 
@@ -771,10 +772,12 @@
             <button class="cat-tab"        data-cat="gcp"       onclick="setCat(this)">GCP</button>
             <button class="cat-tab"        data-cat="azure"     onclick="setCat(this)">Azure</button>
             <button class="cat-tab"        data-cat="data"      onclick="setCat(this)">Data</button>
+            <button class="cat-tab"        data-cat="gpu"       onclick="setCat(this)">GPU / NVIDIA</button>
             <button class="cat-tab"        data-cat="cicd"      onclick="setCat(this)">CI/CD</button>
             <button class="cat-tab"        data-cat="monitoring" onclick="setCat(this)">Monitoring</button>
             <button class="cat-tab"        data-cat="security"  onclick="setCat(this)">Security</button>
             <button class="cat-tab"        data-cat="ai"        onclick="setCat(this)">AI / ML</button>
+            <button class="cat-tab"        data-cat="embedded"  onclick="setCat(this)">Hardware / IoT</button>
           </div>
           <div class="service-grid" id="serviceGrid"></div>
 
@@ -1102,6 +1105,14 @@
     {id:'aws_kinesis',   name:'Kinesis',       provider:'aws',     cat:'aws',       type:'QUEUE',      service:'kinesis',          icon:'KIN'},
     {id:'aws_cloudtrail',name:'CloudTrail',    provider:'aws',     cat:'aws',       type:'MONITORING', service:'cloudtrail',       icon:'CT'},
     {id:'aws_nlb',       name:'NLB',           provider:'aws',     cat:'aws',       type:'GATEWAY',    service:'nlb',              icon:'NLB'},
+    {id:'aws_glue',      name:'Glue',          provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'glue',             icon:'GLU'},
+    {id:'aws_athena',    name:'Athena',        provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'athena',           icon:'ATH'},
+    {id:'aws_emr',       name:'EMR',           provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'emr',              icon:'EMR'},
+    {id:'aws_batch',     name:'AWS Batch',     provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'aws_batch',        icon:'BAT'},
+    {id:'aws_cfn',       name:'CloudFormation',provider:'aws',     cat:'aws',       type:'OTHER',      service:'cloudformation',   icon:'CFN'},
+    {id:'aws_xray',      name:'X-Ray',         provider:'aws',     cat:'aws',       type:'MONITORING', service:'xray',             icon:'XRY'},
+    {id:'aws_tgw',       name:'Transit GW',    provider:'aws',     cat:'aws',       type:'NETWORK',    service:'transit_gateway',  icon:'TGW'},
+    {id:'aws_ga',        name:'Global Accel.', provider:'aws',     cat:'aws',       type:'NETWORK',    service:'global_accelerator',icon:'GA'},
     // GCP
     {id:'gcp_gce',       name:'Compute Engine',provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'gce_instance',    icon:'GCE'},
     {id:'gcp_cloudrun',  name:'Cloud Run',     provider:'gcp',     cat:'gcp',       type:'SERVERLESS', service:'cloud_run',       icon:'CR'},
@@ -1124,6 +1135,14 @@
     {id:'gcp_armor',     name:'Cloud Armor',   provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'cloud_armor',     icon:'ARM'},
     {id:'gcp_dns',       name:'Cloud DNS',     provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'cloud_dns',       icon:'DNS'},
     {id:'gcp_artifactreg',name:'Artifact Reg.',provider:'gcp',    cat:'gcp',       type:'CONTAINER',  service:'artifact_registry',icon:'GAR'},
+    {id:'gcp_tasks',     name:'Cloud Tasks',   provider:'gcp',     cat:'gcp',       type:'QUEUE',      service:'cloud_tasks',      icon:'CTQ'},
+    {id:'gcp_scheduler', name:'Cloud Scheduler',provider:'gcp',    cat:'gcp',       type:'OTHER',      service:'cloud_scheduler',  icon:'SCH'},
+    {id:'gcp_dataflow',  name:'Dataflow',      provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'dataflow',         icon:'DF'},
+    {id:'gcp_dataproc',  name:'Dataproc',      provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'dataproc',         icon:'DPR'},
+    {id:'gcp_filestore', name:'Filestore',     provider:'gcp',     cat:'gcp',       type:'STORAGE',    service:'filestore',        icon:'FS'},
+    {id:'gcp_composer',  name:'Cloud Composer',provider:'gcp',     cat:'gcp',       type:'OTHER',      service:'cloud_composer',   icon:'CMP'},
+    {id:'gcp_nat',       name:'Cloud NAT',     provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'cloud_nat',        icon:'NAT'},
+    {id:'gcp_vpc',       name:'VPC Network',   provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'gcp_vpc',          icon:'VPC'},
     // Azure
     {id:'az_vm',         name:'Azure VM',      provider:'azure',   cat:'azure',     type:'COMPUTE',    service:'azure_vm',        icon:'VM'},
     {id:'az_functions',  name:'Functions',     provider:'azure',   cat:'azure',     type:'SERVERLESS', service:'azure_functions', icon:'FN'},
@@ -1142,6 +1161,15 @@
     {id:'az_eventhubs',  name:'Event Hubs',    provider:'azure',   cat:'azure',     type:'QUEUE',      service:'event_hubs',      icon:'EH'},
     {id:'az_frontdoor',  name:'Front Door',    provider:'azure',   cat:'azure',     type:'CDN',        service:'front_door',      icon:'FD'},
     {id:'az_appgw',      name:'App Gateway',   provider:'azure',   cat:'azure',     type:'GATEWAY',    service:'app_gateway',     icon:'AGW'},
+    {id:'az_datafactory',name:'Data Factory',  provider:'azure',   cat:'azure',     type:'OTHER',      service:'data_factory',     icon:'ADF'},
+    {id:'az_synapse',    name:'Synapse',       provider:'azure',   cat:'azure',     type:'DATABASE',   service:'synapse',          icon:'SYN'},
+    {id:'az_containerapps',name:'Container Apps',provider:'azure', cat:'azure',     type:'CONTAINER',  service:'container_apps',   icon:'ACA'},
+    {id:'az_logicapps',  name:'Logic Apps',    provider:'azure',   cat:'azure',     type:'SERVERLESS', service:'logic_apps',       icon:'LA'},
+    {id:'az_apim',       name:'API Mgmt',      provider:'azure',   cat:'azure',     type:'GATEWAY',    service:'apim',             icon:'APIM'},
+    {id:'az_lb',         name:'Load Balancer', provider:'azure',   cat:'azure',     type:'GATEWAY',    service:'azure_lb',         icon:'ALB'},
+    {id:'az_trafficmgr', name:'Traffic Mgr',   provider:'azure',   cat:'azure',     type:'NETWORK',    service:'traffic_manager',  icon:'TM'},
+    {id:'az_vmss',       name:'VM Scale Set',  provider:'azure',   cat:'azure',     type:'COMPUTE',    service:'vmss',             icon:'VMSS'},
+    {id:'az_bastion',    name:'Bastion',       provider:'azure',   cat:'azure',     type:'NETWORK',    service:'azure_bastion',    icon:'BAS'},
     // Data stores & streaming (self-managed)
     {id:'d_postgres',    name:'PostgreSQL',    provider:'generic', cat:'data',      type:'DATABASE',   service:'postgresql',      icon:'PG'},
     {id:'d_mysql',       name:'MySQL',         provider:'generic', cat:'data',      type:'DATABASE',   service:'mysql',           icon:'MYS'},
@@ -1155,6 +1183,22 @@
     {id:'d_memcached',   name:'Memcached',     provider:'generic', cat:'data',      type:'CACHE',      service:'memcached',       icon:'MC'},
     {id:'d_kafka',       name:'Kafka',         provider:'generic', cat:'data',      type:'QUEUE',      service:'kafka',           icon:'KFK'},
     {id:'d_rabbitmq',    name:'RabbitMQ',      provider:'generic', cat:'data',      type:'QUEUE',      service:'rabbitmq',        icon:'RMQ'},
+    // GPU / NVIDIA & LLM Serving
+    {id:'nv_dgx',        name:'DGX Cloud',     provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'nvidia_dgx',       icon:'DGX'},
+    {id:'nv_nim',        name:'NIM',           provider:'nvidia',  cat:'gpu',       type:'GATEWAY',    service:'nvidia_nim',       icon:'NIM'},
+    {id:'nv_ngc',        name:'NGC Catalog',   provider:'nvidia',  cat:'gpu',       type:'CONTAINER',  service:'nvidia_ngc',       icon:'NGC'},
+    {id:'nv_aie',        name:'AI Enterprise', provider:'nvidia',  cat:'gpu',       type:'OTHER',      service:'nvidia_ai_enterprise',icon:'NVAI'},
+    {id:'nv_trtllm',     name:'TensorRT-LLM',  provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'tensorrt_llm',     icon:'TRT'},
+    {id:'nv_rapids',     name:'RAPIDS',        provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'rapids',           icon:'RAP'},
+    {id:'nv_nemo',       name:'NeMo',          provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'nvidia_nemo',      icon:'NMO'},
+    {id:'aws_gpu',       name:'EC2 GPU (P5/P4)',provider:'aws',    cat:'gpu',       type:'COMPUTE',    service:'ec2_gpu',          icon:'P5'},
+    {id:'gcp_gpu',       name:'GPU VM (A3/A2)',provider:'gcp',     cat:'gpu',       type:'COMPUTE',    service:'gcp_gpu_vm',       icon:'A3'},
+    {id:'az_gpu',        name:'GPU VM (ND/NC)',provider:'azure',   cat:'gpu',       type:'COMPUTE',    service:'azure_gpu_vm',     icon:'ND'},
+    {id:'nv_vllm',       name:'vLLM',          provider:'generic', cat:'gpu',       type:'COMPUTE',    service:'vllm',             icon:'VLM'},
+    {id:'nv_tgi',        name:'TGI',           provider:'generic', cat:'gpu',       type:'COMPUTE',    service:'tgi',              icon:'TGI'},
+    {id:'nv_together',   name:'Together AI',   provider:'generic', cat:'gpu',       type:'GATEWAY',    service:'together_ai',      icon:'TOG'},
+    {id:'nv_runpod',     name:'RunPod',        provider:'generic', cat:'gpu',       type:'COMPUTE',    service:'runpod',           icon:'RUN'},
+    {id:'nv_modal',      name:'Modal',         provider:'generic', cat:'gpu',       type:'SERVERLESS', service:'modal',            icon:'MDL'},
     // CI/CD & Tools
     {id:'t_jenkins',     name:'Jenkins',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'jenkins',         icon:'JNK'},
     {id:'t_gha',         name:'GitHub Actions',provider:'generic', cat:'cicd',      type:'OTHER',      service:'github_actions',  icon:'GHA'},
@@ -1165,6 +1209,15 @@
     {id:'t_ansible',     name:'Ansible',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'ansible',         icon:'ANS'},
     {id:'t_redis',       name:'Redis',         provider:'generic', cat:'cicd',      type:'CACHE',      service:'redis',           icon:'RDS'},
     {id:'t_nginx',       name:'Nginx',         provider:'generic', cat:'cicd',      type:'GATEWAY',    service:'nginx',           icon:'NGX'},
+    {id:'t_argocd',      name:'Argo CD',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'argocd',          icon:'ARGO'},
+    {id:'t_flux',        name:'Flux CD',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'fluxcd',          icon:'FLX'},
+    {id:'t_tekton',      name:'Tekton',        provider:'generic', cat:'cicd',      type:'OTHER',      service:'tekton',          icon:'TKN'},
+    {id:'t_circleci',    name:'CircleCI',      provider:'generic', cat:'cicd',      type:'OTHER',      service:'circleci',        icon:'CCI'},
+    {id:'t_spinnaker',   name:'Spinnaker',     provider:'generic', cat:'cicd',      type:'OTHER',      service:'spinnaker',       icon:'SPK'},
+    {id:'t_azpipelines', name:'Azure Pipelines',provider:'azure',  cat:'cicd',      type:'OTHER',      service:'azure_pipelines', icon:'AZP'},
+    {id:'gcp_build',     name:'Cloud Build',   provider:'gcp',     cat:'cicd',      type:'OTHER',      service:'cloud_build',     icon:'GCB'},
+    {id:'t_helm',        name:'Helm',          provider:'generic', cat:'cicd',      type:'CONTAINER',  service:'helm',            icon:'HLM'},
+    {id:'t_drone',       name:'Drone CI',      provider:'generic', cat:'cicd',      type:'OTHER',      service:'drone_ci',        icon:'DRN'},
     // Monitoring
     {id:'m_datadog',     name:'Datadog',       provider:'generic', cat:'monitoring',type:'MONITORING', service:'datadog',         icon:'DD'},
     {id:'m_grafana',     name:'Grafana',       provider:'generic', cat:'monitoring',type:'MONITORING', service:'grafana',         icon:'GF'},
@@ -1182,6 +1235,17 @@
     {id:'s_keycloak',    name:'Keycloak',      provider:'generic', cat:'security',  type:'IAM',        service:'keycloak',        icon:'KC'},
     {id:'s_firebaseauth',name:'Firebase Auth', provider:'generic', cat:'security',  type:'IAM',        service:'firebase_auth',   icon:'FBA'},
     {id:'s_cloudflare',  name:'Cloudflare',    provider:'generic', cat:'security',  type:'CDN',        service:'cloudflare',      icon:'CFL'},
+    {id:'s_trivy',       name:'Trivy',         provider:'generic', cat:'security',  type:'MONITORING', service:'trivy',           icon:'TRV'},
+    {id:'s_sonarqube',   name:'SonarQube',     provider:'generic', cat:'security',  type:'MONITORING', service:'sonarqube',       icon:'SNQ'},
+    {id:'s_wiz',         name:'Wiz',           provider:'generic', cat:'security',  type:'MONITORING', service:'wiz',             icon:'WIZ'},
+    {id:'s_prisma',      name:'Prisma Cloud',  provider:'generic', cat:'security',  type:'MONITORING', service:'prisma_cloud',    icon:'PRC'},
+    {id:'s_aqua',        name:'Aqua Security', provider:'generic', cat:'security',  type:'MONITORING', service:'aqua_security',   icon:'AQA'},
+    {id:'s_opa',         name:'OPA',           provider:'generic', cat:'security',  type:'IAM',        service:'opa',             icon:'OPA'},
+    {id:'s_falco',       name:'Falco',         provider:'generic', cat:'security',  type:'MONITORING', service:'falco',           icon:'FAL'},
+    {id:'s_crowdstrike', name:'CrowdStrike',   provider:'generic', cat:'security',  type:'MONITORING', service:'crowdstrike',     icon:'CRWD'},
+    {id:'aws_guardduty', name:'GuardDuty',     provider:'aws',     cat:'security',  type:'MONITORING', service:'guardduty',       icon:'GD'},
+    {id:'aws_inspector', name:'Inspector',     provider:'aws',     cat:'security',  type:'MONITORING', service:'inspector',       icon:'INS'},
+    {id:'az_sentinel',   name:'Sentinel',      provider:'azure',   cat:'security',  type:'MONITORING', service:'sentinel',        icon:'SEN'},
     // AI / ML — AWS
     {id:'aws_sagemaker', name:'SageMaker',     provider:'aws',     cat:'ai',        type:'COMPUTE',    service:'sagemaker',       icon:'SM'},
     {id:'aws_bedrock',   name:'Bedrock',       provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'bedrock',         icon:'BDR'},
@@ -1224,6 +1288,20 @@
     {id:'ai_replicate',  name:'Replicate',     provider:'generic', cat:'ai',        type:'GATEWAY',    service:'replicate',       icon:'RPL'},
     {id:'ai_milvus',     name:'Milvus',        provider:'generic', cat:'ai',        type:'DATABASE',   service:'milvus',          icon:'MLV'},
     {id:'ai_langsmith',  name:'LangSmith',     provider:'generic', cat:'ai',        type:'MONITORING', service:'langsmith',       icon:'LS'},
+    {id:'ai_kubeflow',   name:'Kubeflow',      provider:'generic', cat:'ai',        type:'CONTAINER',  service:'kubeflow',        icon:'KFL'},
+    {id:'ai_arize',      name:'Arize',         provider:'generic', cat:'ai',        type:'MONITORING', service:'arize',           icon:'ARZ'},
+    // Hardware / Embedded / IoT / EDA
+    {id:'hw_cadence',    name:'Cadence EDA',   provider:'generic', cat:'embedded',  type:'OTHER',      service:'cadence',         icon:'CDS'},
+    {id:'hw_synopsys',   name:'Synopsys',      provider:'generic', cat:'embedded',  type:'OTHER',      service:'synopsys',        icon:'SNPS'},
+    {id:'hw_siemens',    name:'Siemens EDA',   provider:'generic', cat:'embedded',  type:'OTHER',      service:'siemens_eda',     icon:'MENT'},
+    {id:'hw_fpga',       name:'FPGA Instance', provider:'generic', cat:'embedded',  type:'COMPUTE',    service:'fpga',            icon:'FPGA'},
+    {id:'aws_iotcore',   name:'IoT Core',      provider:'aws',     cat:'embedded',  type:'GATEWAY',    service:'iot_core',        icon:'IOT'},
+    {id:'aws_greengrass',name:'IoT Greengrass',provider:'aws',     cat:'embedded',  type:'COMPUTE',    service:'iot_greengrass',  icon:'GG'},
+    {id:'az_iothub',     name:'IoT Hub',       provider:'azure',   cat:'embedded',  type:'GATEWAY',    service:'iot_hub',         icon:'IOTH'},
+    {id:'az_iotedge',    name:'IoT Edge',      provider:'azure',   cat:'embedded',  type:'COMPUTE',    service:'iot_edge',        icon:'IOTE'},
+    {id:'hw_freertos',   name:'FreeRTOS',      provider:'generic', cat:'embedded',  type:'OTHER',      service:'freertos',        icon:'RTOS'},
+    {id:'hw_mqtt',       name:'MQTT Broker',   provider:'generic', cat:'embedded',  type:'QUEUE',      service:'mqtt_broker',     icon:'MQTT'},
+    {id:'hw_balena',     name:'Balena Cloud',  provider:'generic', cat:'embedded',  type:'OTHER',      service:'balena',          icon:'BAL'},
   ];
 
   let selectedSvcs = new Map();
@@ -1276,11 +1354,11 @@
   }
 
   // --- Live suggestion rules (pure client-side) ---
-  const _LLM_SERVICES    = new Set(['openai_api','anthropic_api','gemini_api','bedrock','vertex_ai','azure_openai','huggingface','ollama','kendra']);
-  const _VECTOR_SERVICES = new Set(['pinecone','weaviate','chroma','qdrant','pgvector']);
+  const _LLM_SERVICES    = new Set(['openai_api','anthropic_api','gemini_api','bedrock','vertex_ai','azure_openai','huggingface','ollama','kendra','triton','vllm','tgi','nvidia_nim','together_ai','runpod','cohere_api','mistral_api','groq_api','replicate']);
+  const _VECTOR_SERVICES = new Set(['pinecone','weaviate','chroma','qdrant','pgvector','milvus']);
   const _MLOPS_SERVICES  = new Set(['mlflow','wandb']);
   const _FRAMEWORK_SVCS  = new Set(['langchain','llamaindex']);
-  const _ML_TRAIN_SVCS   = new Set(['sagemaker','vertex_ai','azure_ml','ray']);
+  const _ML_TRAIN_SVCS   = new Set(['sagemaker','vertex_ai','azure_ml','ray','nvidia_dgx','rapids','nvidia_nemo','ec2_gpu','gcp_gpu_vm','azure_gpu_vm','kubeflow']);
 
   function computeSuggestions(types, edges, nodes, services) {
     services = services || new Set();
