@@ -56,16 +56,67 @@ def _services_in_model(model: ArchitectureModel) -> set[str]:
     return {c.service.lower() for c in model.components}
 
 
+_MLOPS_SERVICES = {"mlflow", "wandb", "feast", "ray"}
+_ORCHESTRATOR_SERVICES = {"langchain", "llamaindex", "airflow", "prefect", "kubeflow"}
+_QUEUE_SERVICES = {"sqs", "sns", "pubsub", "kafka", "rabbitmq"}
+
+
 def _is_ai_stack(model: ArchitectureModel) -> bool:
     """True if the model has at least one recognisable AI/ML component."""
     known = (
         _LLM_API_SERVICES | _TRAINING_SERVICES |
         _INFERENCE_SERVICES | _VECTOR_DB_SERVICES |
-        {"langchain", "llamaindex", "mlflow", "wandb", "feast", "triton",
-         "rekognition", "textract", "comprehend", "kendra",
+        _MLOPS_SERVICES | _ORCHESTRATOR_SERVICES |
+        {"rekognition", "textract", "comprehend", "kendra",
          "vision_api", "cloud_nlp", "cognitive_services"}
     )
     return bool(_services_in_model(model) & known)
+
+
+def _detect_workloads(model: ArchitectureModel) -> set[str]:
+    """
+    Identify which AI workload patterns are present.
+    Returns a set of labels: rag, fine_tuning, realtime_inference,
+    batch_inference, mlops_pipeline, managed_ai.
+    """
+    services = _services_in_model(model)
+    workloads: set[str] = set()
+
+    # RAG: LLM + vector DB (+ optional orchestrator)
+    if (services & _LLM_API_SERVICES) and (services & _VECTOR_DB_SERVICES):
+        workloads.add("rag")
+
+    # Fine-tuning / training: dedicated training service + large storage
+    if services & _TRAINING_SERVICES:
+        has_storage = bool(model.components_by_type(ComponentType.STORAGE))
+        if has_storage:
+            workloads.add("fine_tuning")
+        else:
+            workloads.add("realtime_inference")
+
+    # Real-time inference: inference service + gateway (latency-critical)
+    if (services & _INFERENCE_SERVICES) and _has_type(model, ComponentType.GATEWAY):
+        workloads.add("realtime_inference")
+
+    # Batch inference: queue + compute or storage + compute (no gateway)
+    if (services & _INFERENCE_SERVICES) and not _has_type(model, ComponentType.GATEWAY):
+        has_queue = bool(services & _QUEUE_SERVICES)
+        has_storage = bool(model.components_by_type(ComponentType.STORAGE))
+        if has_queue or has_storage:
+            workloads.add("batch_inference")
+
+    # MLOps pipeline: experiment tracking / feature store present
+    if services & _MLOPS_SERVICES:
+        workloads.add("mlops_pipeline")
+
+    # Managed AI: only managed API gateways, no self-hosted training/inference
+    only_managed = (services & _LLM_API_SERVICES) and not (
+        services & (_TRAINING_SERVICES | {"triton", "ollama"})
+    )
+    if only_managed:
+        workloads.add("managed_ai")
+
+    return workloads
 
 
 class AIAnalyzer(BaseAnalyzer):
@@ -85,6 +136,8 @@ class AIAnalyzer(BaseAnalyzer):
             self._check_llm_without_cache,
             self._check_always_on_inference_endpoint,
             self._check_multiple_vector_dbs,
+            # Workload-specific
+            self._check_workload_patterns,
         ]:
             findings.extend(check(model))
         return findings
@@ -341,3 +394,285 @@ class AIAnalyzer(BaseAnalyzer):
             ),
             estimated_savings=150,
         )]
+
+    # ── Workload patterns ─────────────────────────────────────────────────────
+
+    def _check_workload_patterns(self, model: ArchitectureModel) -> list[Finding]:
+        workloads = _detect_workloads(model)
+        if not workloads:
+            return []
+        findings: list[Finding] = []
+
+        if "rag" in workloads:
+            findings.extend(self._workload_rag(model))
+        if "fine_tuning" in workloads:
+            findings.extend(self._workload_fine_tuning(model))
+        if "realtime_inference" in workloads:
+            findings.extend(self._workload_realtime_inference(model))
+        if "batch_inference" in workloads:
+            findings.extend(self._workload_batch_inference(model))
+        if "mlops_pipeline" in workloads:
+            findings.extend(self._workload_mlops(model))
+        if "managed_ai" in workloads:
+            findings.extend(self._workload_managed_ai(model))
+
+        return findings
+
+    def _workload_rag(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # RAG without a reranker or cache = poor quality + high cost
+        has_cache = _has_type(model, ComponentType.CACHE)
+        if not has_cache:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.MEDIUM,
+                title="RAG pipeline detected — no semantic cache layer",
+                description=(
+                    "Your RAG stack (LLM + vector DB) sends every query to the LLM even "
+                    "when semantically identical questions were already answered. "
+                    "In production RAG apps, 40-60% of queries are near-duplicates."
+                ),
+                recommendation=(
+                    "Add a semantic cache (Redis + GPTCache, or LangChain CacheBackedEmbeddings). "
+                    "Cache at the embedding level — queries within cosine similarity >0.95 "
+                    "return the cached answer without hitting the LLM."
+                ),
+                estimated_savings=250,
+            ))
+        # RAG without monitoring = no visibility into retrieval quality
+        has_monitoring = _has_type(model, ComponentType.MONITORING)
+        if not has_monitoring:
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.MEDIUM,
+                title="RAG pipeline has no observability for retrieval quality",
+                description=(
+                    "Without tracing, you cannot tell if your vector retrieval is returning "
+                    "relevant chunks, if context windows are overflowing, or if prompt injection "
+                    "is occurring through retrieved documents."
+                ),
+                recommendation=(
+                    "Add LangSmith, W&B Weave, or Arize Phoenix to trace retrieval steps. "
+                    "Log chunk relevance scores and flag queries where top-k similarity < 0.7. "
+                    "Monitor for unusually long retrieved contexts that may indicate injection."
+                ),
+            ))
+        return findings
+
+    def _workload_fine_tuning(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # Fine-tuning without experiment tracking = waste
+        has_mlops = bool(services & _MLOPS_SERVICES)
+        if not has_mlops:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.MEDIUM,
+                title="Fine-tuning workload without experiment tracking",
+                description=(
+                    "Fine-tuning GPU runs cost hundreds to thousands of dollars each. "
+                    "Without MLflow or W&B you have no record of hyperparameters, loss curves, "
+                    "or which run produced which model — making it easy to repeat expensive "
+                    "failed experiments."
+                ),
+                recommendation=(
+                    "Add MLflow or Weights & Biases before starting fine-tuning runs. "
+                    "Log every hyperparameter, step loss, and checkpoint path. "
+                    "Use W&B Sweeps or Optuna for hyperparameter search to avoid manual tuning."
+                ),
+                estimated_savings=500,
+            ))
+        # Fine-tuning without versioned model storage
+        has_storage = bool(model.components_by_type(ComponentType.STORAGE))
+        if not has_storage:
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.MEDIUM,
+                title="Fine-tuning detected but no model artifact storage",
+                description=(
+                    "Trained model weights not stored in versioned object storage "
+                    "risk being lost on instance termination. GPU spot instances can be "
+                    "interrupted without warning."
+                ),
+                recommendation=(
+                    "Save checkpoints every N steps to S3/GCS. Use SageMaker Model Registry "
+                    "or MLflow Model Registry to version artifacts alongside their metadata."
+                ),
+            ))
+        return findings
+
+    def _workload_realtime_inference(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # Real-time inference without autoscaling = either over- or under-provisioned
+        has_cache = _has_type(model, ComponentType.CACHE)
+        if not has_cache:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.LOW,
+                title="Real-time inference without response caching",
+                description=(
+                    "Inference endpoints serving identical or near-identical requests "
+                    "waste GPU cycles and add latency on every call. "
+                    "Repeated API calls for the same input are common in chatbots and copilots."
+                ),
+                recommendation=(
+                    "Cache deterministic inference results (temperature=0) in Redis with a "
+                    "hash of the prompt as the key. For non-deterministic outputs, use "
+                    "semantic similarity cache with a tight threshold (>0.98)."
+                ),
+                estimated_savings=150,
+            ))
+        # Real-time inference without a CDN or gateway for global users
+        has_cdn = bool(model.components_by_type(ComponentType.CDN))
+        has_gateway = _has_type(model, ComponentType.GATEWAY)
+        if not has_cdn and not has_gateway:
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.MEDIUM,
+                title="Real-time inference endpoint exposed without gateway protection",
+                description=(
+                    "Direct exposure of inference endpoints bypasses rate limiting, "
+                    "auth, and DDoS protection. A single unauthenticated client can "
+                    "exhaust GPU capacity or generate runaway API costs."
+                ),
+                recommendation=(
+                    "Place an API Gateway or ALB in front of inference endpoints with "
+                    "rate limiting (requests/minute per API key), auth (Cognito or IAM), "
+                    "and WAF rules to block prompt-injection patterns."
+                ),
+            ))
+        return findings
+
+    def _workload_batch_inference(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # Batch inference should always use spot
+        has_training_compute = bool(services & _TRAINING_SERVICES)
+        if has_training_compute:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.HIGH,
+                title="Batch inference workload — use Spot/Preemptible instances",
+                description=(
+                    "Batch inference (offline scoring, bulk embeddings, nightly re-ranking) "
+                    "is inherently fault-tolerant. On-demand GPU instances for batch jobs "
+                    "are the most common source of avoidable AI infrastructure cost."
+                ),
+                recommendation=(
+                    "Use AWS Spot or GCP Preemptible VMs for all batch jobs. "
+                    "Implement checkpointing at the batch level — restart from the last "
+                    "completed chunk on interruption. SageMaker Processing Jobs have "
+                    "built-in spot support with automatic retry."
+                ),
+                estimated_savings=800,
+            ))
+        # Batch without a queue = polling anti-pattern
+        has_queue = bool(services & _QUEUE_SERVICES)
+        if not has_queue:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.LOW,
+                title="Batch inference without a job queue",
+                description=(
+                    "Without a queue (SQS, Pub/Sub), batch jobs typically run on a fixed "
+                    "schedule or via polling — wasting compute during idle periods and "
+                    "struggling to handle burst workloads."
+                ),
+                recommendation=(
+                    "Use SQS + Lambda or Pub/Sub + Cloud Run to trigger inference workers "
+                    "only when jobs are queued. Scale workers to zero between batches."
+                ),
+                estimated_savings=100,
+            ))
+        return findings
+
+    def _workload_mlops(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # MLOps without CI/CD = manual model deployment
+        has_cicd = any(
+            c.service in {"github_actions", "gitlab_ci", "jenkins", "terraform"}
+            for c in model.components
+        )
+        if not has_cicd:
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.MEDIUM,
+                title="MLOps pipeline without CI/CD for model deployment",
+                description=(
+                    "Manually deploying model updates bypasses validation gates — "
+                    "a degraded model can reach production without accuracy checks, "
+                    "bias evaluation, or canary testing."
+                ),
+                recommendation=(
+                    "Automate model deployment via GitHub Actions or GitLab CI. "
+                    "Gate promotion on: evaluation metrics above baseline, bias/fairness "
+                    "checks, and a canary deployment at 5% traffic before full rollout."
+                ),
+            ))
+        # MLOps without feature store = training/serving skew risk
+        has_feast = "feast" in services
+        has_storage = bool(model.components_by_type(ComponentType.STORAGE))
+        if not has_feast and has_storage:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.LOW,
+                title="MLOps pipeline without a feature store — training/serving skew risk",
+                description=(
+                    "Without a feature store, training features are computed differently "
+                    "from serving features — a leading cause of model accuracy degradation "
+                    "in production that is hard to debug."
+                ),
+                recommendation=(
+                    "Add Feast or use SageMaker Feature Store to share feature definitions "
+                    "between training and serving pipelines. This also eliminates duplicate "
+                    "feature computation that inflates infrastructure costs."
+                ),
+                estimated_savings=100,
+            ))
+        return findings
+
+    def _workload_managed_ai(self, model: ArchitectureModel) -> list[Finding]:
+        services = _services_in_model(model)
+        findings = []
+        # Managed API only — suggest multi-provider fallback
+        llm_providers = [c for c in model.components if c.service in _LLM_API_SERVICES]
+        if len(llm_providers) == 1:
+            provider = llm_providers[0].name
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.LOW,
+                title=f"Single LLM provider ({provider}) — no fallback strategy",
+                description=(
+                    f"Relying on a single LLM API ({provider}) means any provider outage, "
+                    "rate limit, or price change directly impacts your service. "
+                    "LLM provider incidents have caused multi-hour outages for dependent apps."
+                ),
+                recommendation=(
+                    "Implement a provider abstraction layer (LiteLLM, LangChain) that "
+                    "can fall back to a secondary provider (e.g. OpenAI → Anthropic → Gemini). "
+                    "Route by latency and cost using a smart proxy, not hardcoded fallback."
+                ),
+            ))
+        # Managed AI without rate limiting
+        has_gateway = _has_type(model, ComponentType.GATEWAY)
+        if not has_gateway:
+            findings.append(Finding(
+                type=FindingType.COST,
+                severity=Severity.MEDIUM,
+                title="Managed LLM API without rate limiting",
+                description=(
+                    "Without a gateway enforcing per-user token limits, a single runaway "
+                    "client, prompt injection loop, or misconfigured retry can exhaust "
+                    "your monthly token budget in minutes."
+                ),
+                recommendation=(
+                    "Add an API Gateway with per-key rate limits before your LLM calls. "
+                    "Set max_tokens on every request. Implement exponential backoff with "
+                    "jitter on retries — never retry immediately on 429s."
+                ),
+                estimated_savings=300,
+            ))
+        return findings
