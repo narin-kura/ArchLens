@@ -21,6 +21,42 @@ _CLOUD_ACTIONS = {
     "azure/login": "azure",
 }
 
+# GitHub-hosted runner base images: ubuntu-latest, windows-2022, macos-14, ...
+_GH_HOSTED_BASE = re.compile(r"^(ubuntu|windows|macos)-(latest|\d+(\.\d+)?)$", re.I)
+# "Larger runner" naming convention: ubuntu-latest-4-cores, macos-latest-large, ...
+_LARGER_SUFFIX = re.compile(r"(-\d+-cores?$|-large$|-xl$)", re.I)
+
+
+def _classify_runs_on(value: Any) -> set[str]:
+    """Classify a job's `runs-on` value into runner type(s).
+
+    Returns a subset of {"github-hosted", "github-hosted-larger", "self-hosted",
+    "dynamic-expression"}. A custom label that doesn't match GitHub's documented
+    hosted-runner naming (e.g. an Actions Runner Controller scale-set name) is
+    treated as "self-hosted", since that's how GitHub Actions itself routes it.
+    """
+    if isinstance(value, str):
+        labels = [value]
+    elif isinstance(value, list):
+        labels = [str(v) for v in value]
+    else:
+        return set()
+
+    types: set[str] = set()
+    for label in labels:
+        l = label.strip()
+        if "${{" in l:
+            types.add("dynamic-expression")
+        elif l.lower() == "self-hosted":
+            types.add("self-hosted")
+        elif _LARGER_SUFFIX.search(l) and any(b in l.lower() for b in ("ubuntu", "windows", "macos")):
+            types.add("github-hosted-larger")
+        elif _GH_HOSTED_BASE.match(l):
+            types.add("github-hosted")
+        else:
+            types.add("self-hosted")
+    return types
+
 
 class GitHubActionsParser(BaseParser):
     def can_parse(self, source: str | Path) -> bool:
@@ -114,10 +150,11 @@ class GitHubActionsParser(BaseParser):
         )
 
         job_count = len(jobs)
-        has_self_hosted = any(
-            "self-hosted" in str((job.get("runs-on") or ""))
-            for job in jobs.values() if isinstance(job, dict)
-        )
+        runner_types: set[str] = set()
+        for job in jobs.values():
+            if isinstance(job, dict):
+                runner_types |= _classify_runs_on(job.get("runs-on"))
+        has_self_hosted = "self-hosted" in runner_types
         has_docker_publish = any(
             re.search(r"docker\s+(push|build)", str(s.get("run", "")), re.I)
             for s in all_steps if isinstance(s, dict)
@@ -143,6 +180,7 @@ class GitHubActionsParser(BaseParser):
                 "pr_trigger": pr_trigger,
                 "push_to_main": push_to_main,
                 "has_self_hosted_runner": has_self_hosted,
+                "runner_types": sorted(runner_types),
                 "has_docker_publish": has_docker_publish,
             },
         )

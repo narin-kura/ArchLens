@@ -25,6 +25,7 @@ from archlens.parsers.registry import detect_parser
 from archlens.analyzers.security import SecurityAnalyzer
 from archlens.analyzers.cost import CostAnalyzer
 from archlens.analyzers.kubernetes_security import KubernetesSecurityAnalyzer
+from archlens.analyzers.cicd_security import CicdSecurityAnalyzer
 from archlens.models.findings import AnalysisReport
 from archlens.models.architecture import ArchitectureModel, Component, Connection, ComponentType
 from archlens.recommender import recommend as build_recommendation
@@ -60,7 +61,7 @@ async def analyze(
             # threadpool: LLM-backed parse must not block the event loop
             model = await run_in_threadpool(_parse_text, text, format_hint)
 
-        findings = SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
+        findings = SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model) + CicdSecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
         report = AnalysisReport(architecture_name=model.name, findings=findings)
         return _report_to_dict(report, len(model.components))
 
@@ -117,7 +118,7 @@ async def analyze_interactive(request: Request):
             except Exception:
                 continue
 
-        findings = SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
+        findings = SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model) + CicdSecurityAnalyzer().analyze(model) + CostAnalyzer().analyze(model)
         report = AnalysisReport(architecture_name=model.name, findings=findings)
         return _report_to_dict(report, len(model.components))
 

@@ -18,6 +18,8 @@ from .helm import HelmParser
 from .serverless_framework import ServerlessFrameworkParser
 from .openapi import OpenAPIParser
 from .github_actions import GitHubActionsParser
+from .jenkins import JenkinsParser
+from .azure_pipelines import AzurePipelinesParser
 from .ansible import AnsibleParser
 
 
@@ -30,6 +32,8 @@ _PARSERS: list[BaseParser] = [
     KubernetesParser(),
     ServerlessFrameworkParser(),
     GitHubActionsParser(),
+    JenkinsParser(),
+    AzurePipelinesParser(),
     AnsibleParser(),
     DrawioParser(),
     CloudFormationParser(),
@@ -58,6 +62,10 @@ def detect_parser(source: str, format_hint: str | None = None) -> BaseParser:
             "swagger":      OpenAPIParser(),
             "github-actions": GitHubActionsParser(),
             "gha":          GitHubActionsParser(),
+            "jenkins":      JenkinsParser(),
+            "jenkinsfile":  JenkinsParser(),
+            "azure-pipelines": AzurePipelinesParser(),
+            "ado":          AzurePipelinesParser(),
             "ansible":      AnsibleParser(),
             "drawio":       DrawioParser(),
             "cloudformation": CloudFormationParser(),
