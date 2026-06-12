@@ -770,6 +770,7 @@
             <button class="cat-tab"        data-cat="aws"       onclick="setCat(this)">AWS</button>
             <button class="cat-tab"        data-cat="gcp"       onclick="setCat(this)">GCP</button>
             <button class="cat-tab"        data-cat="azure"     onclick="setCat(this)">Azure</button>
+            <button class="cat-tab"        data-cat="data"      onclick="setCat(this)">Data</button>
             <button class="cat-tab"        data-cat="cicd"      onclick="setCat(this)">CI/CD</button>
             <button class="cat-tab"        data-cat="monitoring" onclick="setCat(this)">Monitoring</button>
             <button class="cat-tab"        data-cat="security"  onclick="setCat(this)">Security</button>
@@ -1090,6 +1091,17 @@
     {id:'aws_sg',        name:'Security Group',provider:'aws',     cat:'aws',       type:'NETWORK',    service:'security_group',  icon:'SG'},
     {id:'aws_secrets',   name:'Secrets Mgr',  provider:'aws',     cat:'aws',       type:'IAM',        service:'secrets_manager', icon:'SM'},
     {id:'aws_kms',       name:'KMS',          provider:'aws',     cat:'aws',       type:'IAM',        service:'kms',             icon:'KMS'},
+    {id:'aws_route53',   name:'Route 53',      provider:'aws',     cat:'aws',       type:'NETWORK',    service:'route53',          icon:'R53'},
+    {id:'aws_redshift',  name:'Redshift',      provider:'aws',     cat:'aws',       type:'DATABASE',   service:'redshift',         icon:'RSH'},
+    {id:'aws_efs',       name:'EFS',           provider:'aws',     cat:'aws',       type:'STORAGE',    service:'efs',              icon:'EFS'},
+    {id:'aws_ecr',       name:'ECR',           provider:'aws',     cat:'aws',       type:'CONTAINER',  service:'ecr',              icon:'ECR'},
+    {id:'aws_beanstalk', name:'Beanstalk',     provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'elastic_beanstalk',icon:'EB'},
+    {id:'aws_apprunner', name:'App Runner',    provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'app_runner',       icon:'APR'},
+    {id:'aws_stepfn',    name:'Step Functions',provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'step_functions',   icon:'SFN'},
+    {id:'aws_eventbridge',name:'EventBridge',  provider:'aws',     cat:'aws',       type:'QUEUE',      service:'eventbridge',      icon:'EVB'},
+    {id:'aws_kinesis',   name:'Kinesis',       provider:'aws',     cat:'aws',       type:'QUEUE',      service:'kinesis',          icon:'KIN'},
+    {id:'aws_cloudtrail',name:'CloudTrail',    provider:'aws',     cat:'aws',       type:'MONITORING', service:'cloudtrail',       icon:'CT'},
+    {id:'aws_nlb',       name:'NLB',           provider:'aws',     cat:'aws',       type:'GATEWAY',    service:'nlb',              icon:'NLB'},
     // GCP
     {id:'gcp_gce',       name:'Compute Engine',provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'gce_instance',    icon:'GCE'},
     {id:'gcp_cloudrun',  name:'Cloud Run',     provider:'gcp',     cat:'gcp',       type:'SERVERLESS', service:'cloud_run',       icon:'CR'},
@@ -1103,6 +1115,15 @@
     {id:'gcp_monitor',   name:'Cloud Monitor', provider:'gcp',     cat:'gcp',       type:'MONITORING', service:'cloud_monitoring', icon:'MON'},
     {id:'gcp_secrets',   name:'Secret Manager',provider:'gcp',    cat:'gcp',       type:'IAM',        service:'secret_manager',  icon:'GSM'},
     {id:'gcp_kms',       name:'Cloud KMS',     provider:'gcp',    cat:'gcp',       type:'IAM',        service:'cloud_kms',       icon:'KMS'},
+    {id:'gcp_functions', name:'Cloud Functions',provider:'gcp',   cat:'gcp',       type:'SERVERLESS', service:'cloud_functions', icon:'GCF'},
+    {id:'gcp_appengine', name:'App Engine',    provider:'gcp',     cat:'gcp',       type:'SERVERLESS', service:'app_engine',      icon:'GAE'},
+    {id:'gcp_bigquery',  name:'BigQuery',      provider:'gcp',     cat:'gcp',       type:'DATABASE',   service:'bigquery',        icon:'BQ'},
+    {id:'gcp_bigtable',  name:'Bigtable',      provider:'gcp',     cat:'gcp',       type:'DATABASE',   service:'bigtable',        icon:'BGT'},
+    {id:'gcp_cdn',       name:'Cloud CDN',     provider:'gcp',     cat:'gcp',       type:'CDN',        service:'cloud_cdn',       icon:'CDN'},
+    {id:'gcp_lb',        name:'Cloud LB',      provider:'gcp',     cat:'gcp',       type:'GATEWAY',    service:'cloud_lb',        icon:'CLB'},
+    {id:'gcp_armor',     name:'Cloud Armor',   provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'cloud_armor',     icon:'ARM'},
+    {id:'gcp_dns',       name:'Cloud DNS',     provider:'gcp',     cat:'gcp',       type:'NETWORK',    service:'cloud_dns',       icon:'DNS'},
+    {id:'gcp_artifactreg',name:'Artifact Reg.',provider:'gcp',    cat:'gcp',       type:'CONTAINER',  service:'artifact_registry',icon:'GAR'},
     // Azure
     {id:'az_vm',         name:'Azure VM',      provider:'azure',   cat:'azure',     type:'COMPUTE',    service:'azure_vm',        icon:'VM'},
     {id:'az_functions',  name:'Functions',     provider:'azure',   cat:'azure',     type:'SERVERLESS', service:'azure_functions', icon:'FN'},
@@ -1112,6 +1133,28 @@
     {id:'az_monitor',    name:'Azure Monitor', provider:'azure',   cat:'azure',     type:'MONITORING', service:'azure_monitor',   icon:'MON'},
     {id:'az_iam',        name:'Azure AD',      provider:'azure',   cat:'azure',     type:'IAM',        service:'azure_ad',        icon:'AAD'},
     {id:'az_keyvault',   name:'Key Vault',     provider:'azure',   cat:'azure',     type:'IAM',        service:'key_vault',       icon:'KV'},
+    {id:'az_appservice', name:'App Service',   provider:'azure',   cat:'azure',     type:'COMPUTE',    service:'app_service',     icon:'APS'},
+    {id:'az_aci',        name:'Container Inst.',provider:'azure',  cat:'azure',     type:'CONTAINER',  service:'aci',             icon:'ACI'},
+    {id:'az_acr',        name:'Container Reg.', provider:'azure',  cat:'azure',     type:'CONTAINER',  service:'acr',             icon:'ACR'},
+    {id:'az_cosmos',     name:'Cosmos DB',     provider:'azure',   cat:'azure',     type:'DATABASE',   service:'cosmos_db',       icon:'COS'},
+    {id:'az_redis',      name:'Cache (Redis)', provider:'azure',   cat:'azure',     type:'CACHE',      service:'azure_redis',     icon:'RDS'},
+    {id:'az_servicebus', name:'Service Bus',   provider:'azure',   cat:'azure',     type:'QUEUE',      service:'service_bus',     icon:'SB'},
+    {id:'az_eventhubs',  name:'Event Hubs',    provider:'azure',   cat:'azure',     type:'QUEUE',      service:'event_hubs',      icon:'EH'},
+    {id:'az_frontdoor',  name:'Front Door',    provider:'azure',   cat:'azure',     type:'CDN',        service:'front_door',      icon:'FD'},
+    {id:'az_appgw',      name:'App Gateway',   provider:'azure',   cat:'azure',     type:'GATEWAY',    service:'app_gateway',     icon:'AGW'},
+    // Data stores & streaming (self-managed)
+    {id:'d_postgres',    name:'PostgreSQL',    provider:'generic', cat:'data',      type:'DATABASE',   service:'postgresql',      icon:'PG'},
+    {id:'d_mysql',       name:'MySQL',         provider:'generic', cat:'data',      type:'DATABASE',   service:'mysql',           icon:'MYS'},
+    {id:'d_mariadb',     name:'MariaDB',       provider:'generic', cat:'data',      type:'DATABASE',   service:'mariadb',         icon:'MDB'},
+    {id:'d_mongodb',     name:'MongoDB',       provider:'generic', cat:'data',      type:'DATABASE',   service:'mongodb',         icon:'MGO'},
+    {id:'d_cassandra',   name:'Cassandra',     provider:'generic', cat:'data',      type:'DATABASE',   service:'cassandra',       icon:'CAS'},
+    {id:'d_elasticsearch',name:'Elasticsearch',provider:'generic', cat:'data',      type:'DATABASE',   service:'elasticsearch',   icon:'ES'},
+    {id:'d_clickhouse',  name:'ClickHouse',    provider:'generic', cat:'data',      type:'DATABASE',   service:'clickhouse',      icon:'CH'},
+    {id:'d_influxdb',    name:'InfluxDB',      provider:'generic', cat:'data',      type:'DATABASE',   service:'influxdb',        icon:'IDB'},
+    {id:'d_neo4j',       name:'Neo4j',         provider:'generic', cat:'data',      type:'DATABASE',   service:'neo4j',           icon:'N4J'},
+    {id:'d_memcached',   name:'Memcached',     provider:'generic', cat:'data',      type:'CACHE',      service:'memcached',       icon:'MC'},
+    {id:'d_kafka',       name:'Kafka',         provider:'generic', cat:'data',      type:'QUEUE',      service:'kafka',           icon:'KFK'},
+    {id:'d_rabbitmq',    name:'RabbitMQ',      provider:'generic', cat:'data',      type:'QUEUE',      service:'rabbitmq',        icon:'RMQ'},
     // CI/CD & Tools
     {id:'t_jenkins',     name:'Jenkins',       provider:'generic', cat:'cicd',      type:'OTHER',      service:'jenkins',         icon:'JNK'},
     {id:'t_gha',         name:'GitHub Actions',provider:'generic', cat:'cicd',      type:'OTHER',      service:'github_actions',  icon:'GHA'},
@@ -1134,6 +1177,11 @@
     {id:'s_snyk',        name:'Snyk',          provider:'generic', cat:'security',  type:'MONITORING', service:'snyk',            icon:'SNK'},
     {id:'s_waf',         name:'AWS WAF',       provider:'aws',     cat:'security',  type:'NETWORK',    service:'waf',             icon:'WAF'},
     {id:'s_sg',          name:'Sec. Group',    provider:'aws',     cat:'security',  type:'NETWORK',    service:'security_group',  icon:'SG'},
+    {id:'s_auth0',       name:'Auth0',         provider:'generic', cat:'security',  type:'IAM',        service:'auth0',           icon:'AU0'},
+    {id:'s_okta',        name:'Okta',          provider:'generic', cat:'security',  type:'IAM',        service:'okta',            icon:'OKT'},
+    {id:'s_keycloak',    name:'Keycloak',      provider:'generic', cat:'security',  type:'IAM',        service:'keycloak',        icon:'KC'},
+    {id:'s_firebaseauth',name:'Firebase Auth', provider:'generic', cat:'security',  type:'IAM',        service:'firebase_auth',   icon:'FBA'},
+    {id:'s_cloudflare',  name:'Cloudflare',    provider:'generic', cat:'security',  type:'CDN',        service:'cloudflare',      icon:'CFL'},
     // AI / ML — AWS
     {id:'aws_sagemaker', name:'SageMaker',     provider:'aws',     cat:'ai',        type:'COMPUTE',    service:'sagemaker',       icon:'SM'},
     {id:'aws_bedrock',   name:'Bedrock',       provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'bedrock',         icon:'BDR'},
@@ -1170,6 +1218,12 @@
     {id:'ai_ray',        name:'Ray',           provider:'generic', cat:'ai',        type:'COMPUTE',    service:'ray',             icon:'RAY'},
     {id:'ai_feast',      name:'Feast',         provider:'generic', cat:'ai',        type:'DATABASE',   service:'feast',           icon:'FST'},
     {id:'ai_triton',     name:'Triton Server', provider:'generic', cat:'ai',        type:'COMPUTE',    service:'triton',          icon:'TRI'},
+    {id:'ai_cohere',     name:'Cohere API',    provider:'generic', cat:'ai',        type:'GATEWAY',    service:'cohere_api',      icon:'COH'},
+    {id:'ai_mistral',    name:'Mistral API',   provider:'generic', cat:'ai',        type:'GATEWAY',    service:'mistral_api',     icon:'MST'},
+    {id:'ai_groq',       name:'Groq',          provider:'generic', cat:'ai',        type:'GATEWAY',    service:'groq_api',        icon:'GRQ'},
+    {id:'ai_replicate',  name:'Replicate',     provider:'generic', cat:'ai',        type:'GATEWAY',    service:'replicate',       icon:'RPL'},
+    {id:'ai_milvus',     name:'Milvus',        provider:'generic', cat:'ai',        type:'DATABASE',   service:'milvus',          icon:'MLV'},
+    {id:'ai_langsmith',  name:'LangSmith',     provider:'generic', cat:'ai',        type:'MONITORING', service:'langsmith',       icon:'LS'},
   ];
 
   let selectedSvcs = new Map();
