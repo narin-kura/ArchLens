@@ -2,6 +2,15 @@ name: Deploy to Cloud Run (GCP)
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
 
 env:
   PROJECT_ID: project-f281922f-0040-402f-b61
