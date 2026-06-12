@@ -614,7 +614,7 @@
   <div class="hero">
     <div class="hero-badge">Free &amp; Open Source</div>
     <h1>Spot security risks &amp;<br><em>cut cloud costs</em> instantly</h1>
-    <p>Upload Terraform, Kubernetes YAML, Helm, Docker Compose, Dockerfile, Serverless Framework, OpenAPI, GitHub Actions, Ansible, CloudFormation, Azure ARM, or describe in plain English. 77+ security checks, instantly.</p>
+    <p>Upload Terraform, Kubernetes YAML, Helm, Docker Compose, Dockerfile, Serverless, OpenAPI, GitHub Actions, Ansible, CloudFormation, ARM, draw.io, AWS Config, GCP Asset Inventory — or describe in plain English. 59+ security checks and 15+ cost optimisations, including AI/ML workload analysis.</p>
     <div class="hero-actions">
       <a class="btn-white" href="#analyzer">Start Analyzing</a>
       <a class="btn-outline-white" href="https://github.com/narin-kura/ArchLens" target="_blank">View on GitHub</a>
@@ -633,25 +633,25 @@
     <span class="fix">Fix: Set bucket ACL to private. Use pre-signed URLs for public content.</span>
     <span class="crit">[CRIT]  Deployment 'api' runs a privileged container  <em style="color:#64748b;font-size:11px;">kubernetes</em></span>
     <span class="fix">Fix: Remove privileged: true. Use specific capabilities instead.</span>
-    <span class="high">[HIGH]  Dockerfile 'api' runs as root (no USER instruction)  <em style="color:#64748b;font-size:11px;">dockerfile</em></span>
-    <span class="fix">Fix: Add USER 1000 before the final CMD/ENTRYPOINT.</span>
+    <span class="high">[HIGH]  LLM API keys may not be managed securely  <em style="color:#64748b;font-size:11px;">ai stack</em></span>
+    <span class="fix">Fix: Store API keys in Secrets Manager. Use IAM roles — not hardcoded env vars.</span>
     <span class="high">[HIGH]  Workflow 'deploy.yml' has unpinned third-party actions  <em style="color:#64748b;font-size:11px;">github actions</em></span>
     <span class="fix">Fix: Pin actions to a full commit SHA (e.g. uses: org/action@a1b2c3d).</span>
-    <span class="med"> [MED]   GET /users unauthenticated — no authorizer defined  <em style="color:#64748b;font-size:11px;">openapi</em></span>
-    <span class="fix">Fix: Add a security scheme (JWT, OAuth2, API key) to the endpoint.</span>
+    <span class="sav"> [COST]  GPU/ML compute — use Spot instances for training  <em style="color:#64748b;font-size:11px;">ai stack</em></span>
+    <span class="fix">Fix: AWS Spot saves up to 90%. Checkpoint every epoch to resume on interruption.</span>
     <span class="sav"> [COST]  RDS db.r5.2xlarge may be oversized &mdash; est. -$687/mo  <em style="color:#64748b;font-size:11px;">terraform</em></span>
-    <span class="fix">Fix: Switch to db.t3.micro after reviewing CloudWatch metrics.</span>
+    <span class="fix">Fix: Switch to db.r5.large after reviewing CloudWatch metrics.</span>
   </div>
 </div>
 
 <!-- STATS -->
 <div class="stats-wrap">
   <div class="stat-card">
-    <div class="stat-num purple">77+</div>
+    <div class="stat-num purple">59+</div>
     <div class="stat-label">Security checks</div>
   </div>
   <div class="stat-card">
-    <div class="stat-num orange">4+</div>
+    <div class="stat-num orange">15+</div>
     <div class="stat-label">Cost optimizations</div>
   </div>
   <div class="stat-card">
@@ -668,17 +668,17 @@
     <div class="feature-card purple">
       <div class="feature-icon">&#128274;</div>
       <h3>Security Analysis</h3>
-      <p>77+ checks across cloud infrastructure and Kubernetes — public buckets, unencrypted data, open ports, overpermissive IAM, privileged containers, missing NetworkPolicies, and more.</p>
+      <p>59+ checks across cloud infra, Kubernetes, CI/CD pipelines, and AI stacks — public buckets, unencrypted data, overpermissive IAM, privileged containers, missing NetworkPolicies, exposed LLM endpoints, and more.</p>
     </div>
     <div class="feature-card orange">
       <div class="feature-icon">&#128176;</div>
       <h3>Cost Optimization</h3>
-      <p>Flags oversized instances, NAT Gateway inefficiencies, idle resources, and missing Reserved Instance savings.</p>
+      <p>15+ optimisations: oversized RDS, GPU spot instances for AI training, LLM API caching, SageMaker serverless rightsizing, NAT Gateway vs VPC endpoints, Reserved Instance savings, and more.</p>
     </div>
     <div class="feature-card teal">
       <div class="feature-icon">&#129302;</div>
-      <h3>AI-Powered Parsing</h3>
-      <p>Describe your architecture in plain English — Gemini AI extracts every component and runs the full analysis.</p>
+      <h3>AI/ML Architecture Analysis</h3>
+      <p>Detects your AI workload type — RAG pipeline, fine-tuning, real-time inference, batch processing, MLOps — and fires targeted findings: GPU cost, LLM key security, vector DB auth, semantic caching, and training/serving skew.</p>
     </div>
     <div class="feature-card green">
       <div class="feature-icon">&#128196;</div>
