@@ -2,15 +2,12 @@ name: Deploy to Cloud Run (GCP)
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Deploy to Hugging Face Spaces"]
+    types:
+      - completed
   schedule:
     - cron: '*/30 * * * *'
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - 'LICENSE'
 
 env:
   PROJECT_ID: project-f281922f-0040-402f-b61
@@ -18,7 +15,30 @@ env:
   SERVICE: archlens
 
 jobs:
+  check-hf-deployment:
+    name: Check HF deployment status
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check HF space health
+        run: |
+          HF_URL="https://knnarin-archlens.hf.space"
+          echo "Checking HF space: $HF_URL"
+          for i in 1 2 3 4 5; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" "$HF_URL")
+            echo "Attempt $i: HTTP $response"
+            if [ "$response" = "200" ]; then
+              echo "HF space is healthy"
+              exit 0
+            fi
+            if [ $i -lt 5 ]; then
+              sleep 10
+            fi
+          done
+          echo "HF space health check failed"
+          exit 1
+
   deploy:
+    needs: check-hf-deployment
     runs-on: ubuntu-latest
     permissions:
       contents: read
