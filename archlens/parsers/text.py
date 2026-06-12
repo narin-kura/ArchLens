@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 import json
+import logging
 import os
 from pathlib import Path
 
 from .base import BaseParser
 from ..models.architecture import ArchitectureModel, Component, ComponentType, Connection
+
+logger = logging.getLogger(__name__)
 
 _PROMPT = """Extract the architecture components from this description and return JSON only.
 
@@ -150,6 +153,7 @@ class TextParser(BaseParser):
             )
             raw = _strip_fences(response.text)
         except Exception as exc:
+            logger.exception("Gemini text parse failed")
             raise ValueError(f"Gemini API error: {exc}") from exc
 
         try:
@@ -176,6 +180,7 @@ class TextParser(BaseParser):
             )
             raw = _strip_fences(message.content[0].text)
         except Exception as exc:
+            logger.exception("Anthropic text parse failed")
             raise ValueError(f"Anthropic API error: {exc}") from exc
 
         try:

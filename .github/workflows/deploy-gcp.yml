@@ -53,6 +53,7 @@ jobs:
             --region ${{ env.REGION }} \
             --port 7860 \
             --allow-unauthenticated \
+            --execution-environment gen2 \
             --set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest
 
       - name: Show service URL
