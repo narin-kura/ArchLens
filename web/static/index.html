@@ -345,6 +345,16 @@
     .summary-card.cost   { background: linear-gradient(135deg, #052e16, #0a2e1f); border: 1px solid #065f46; color: #6ee7b7; }
     .summary-card .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; margin-bottom: 6px; }
     .summary-card .value { font-size: 28px; font-weight: 900; }
+    .summary-card .card-sub { font-size: 12px; margin-top: 5px; opacity: 0.75; }
+    .sev-pills { display: flex; gap: 5px; margin-top: 9px; flex-wrap: wrap; }
+    .sev-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+    .sev-pill.critical { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+    .sev-pill.high     { background: #431407; color: #fdba74; border: 1px solid #f97316; }
+    .sev-pill.medium   { background: #422006; color: #fde68a; border: 1px solid #f59e0b; }
+    .sev-pill.low      { background: #1c1917; color: #d6d3d1; border: 1px solid #78716c; }
+    .sev-pill.info     { background: #0c1a2e; color: #93c5fd; border: 1px solid #3b82f6; }
+    .card-tags { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+    .card-tag  { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: #312e81; color: #a5b4fc; border: 1px solid #4338ca; }
 
     .export-bar {
       display: flex; gap: 10px; justify-content: flex-end;
@@ -955,15 +965,18 @@
       <div class="summary-card arch">
         <div class="label">Architecture</div>
         <div class="value" id="archName" style="font-size:15px; margin-top:6px;"></div>
-        <div style="font-size:12px;margin-top:6px;opacity:0.7;" id="compCount"></div>
+        <div class="card-sub" id="compCount"></div>
+        <div class="card-tags" id="workloadTags"></div>
       </div>
       <div class="summary-card sec">
         <div class="label">Security Findings</div>
         <div class="value" id="secCount">0</div>
+        <div class="sev-pills" id="sevPills"></div>
       </div>
       <div class="summary-card cost">
-        <div class="label">Est. Monthly Savings</div>
-        <div class="value" id="costSavings">--</div>
+        <div class="label">Cost Optimizations</div>
+        <div class="value" id="costCount">0</div>
+        <div class="card-sub" id="costSavings"></div>
       </div>
     </div>
     <div class="warn-banner" id="warnBanner" style="display:none;">
@@ -1107,14 +1120,44 @@
   function renderResults(data) {
     lastReport = data;
     document.getElementById('archName').textContent = data.architecture;
+
+    // Security card
     document.getElementById('secCount').textContent = data.summary.security_count;
     document.getElementById('secCountBadge').textContent = data.summary.security_count;
-    document.getElementById('costCountBadge').textContent = data.summary.cost_count;
-    document.getElementById('costSavings').textContent =
-      data.summary.estimated_savings > 0 ? '$' + Math.round(data.summary.estimated_savings) + '/mo' : '--';
 
+    // Severity breakdown pills
+    const sec = data.findings.filter(f => f.type === 'security');
+    const sevOrder = ['critical','high','medium','low','info'];
+    const sevCounts = {};
+    for (const f of sec) sevCounts[f.severity] = (sevCounts[f.severity] || 0) + 1;
+    document.getElementById('sevPills').innerHTML = sevOrder
+      .filter(s => sevCounts[s])
+      .map(s => `<span class="sev-pill ${s}">${sevCounts[s]} ${s}</span>`)
+      .join('');
+
+    // Cost card — count + savings
+    document.getElementById('costCount').textContent = data.summary.cost_count;
+    document.getElementById('costCountBadge').textContent = data.summary.cost_count;
+    const savings = data.summary.estimated_savings;
+    document.getElementById('costSavings').textContent =
+      savings > 0 ? '$' + Math.round(savings) + '/mo potential savings' : 'No savings estimated';
+
+    // Architecture card — components + workload tags
     const n = data.components_found || 0;
     document.getElementById('compCount').textContent = n + ' component' + (n === 1 ? '' : 's') + ' detected';
+    const allText = data.findings.map(f => f.title + ' ' + (f.description || '')).join(' ');
+    const workloadMap = [
+      ['RAG',        /rag pipeline|retrieval/i],
+      ['Fine-tuning',/fine.tuning|training workload/i],
+      ['Inference',  /inference endpoint|model serving/i],
+      ['Batch AI',   /batch inference/i],
+      ['MLOps',      /mlops|experiment tracking|feature store/i],
+      ['Managed AI', /single llm provider|managed.*llm/i],
+    ];
+    const tags = workloadMap.filter(([,re]) => re.test(allText)).map(([label]) => label);
+    document.getElementById('workloadTags').innerHTML =
+      tags.map(t => `<span class="card-tag">\u{1F916} ${t}</span>`).join('');
+
     const warn = document.getElementById('warnBanner');
     warn.style.display = n === 0 ? 'block' : 'none';
 
@@ -1122,7 +1165,6 @@
     const costEl = document.getElementById('costFindings');
     secEl.innerHTML = ''; costEl.innerHTML = '';
 
-    const sec = data.findings.filter(f => f.type === 'security');
     const cost = data.findings.filter(f => f.type === 'cost');
     const order = ['critical','high','medium','low','info'];
     sec.sort((a,b) => order.indexOf(a.severity) - order.indexOf(b.severity));
