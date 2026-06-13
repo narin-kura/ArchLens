@@ -81,7 +81,17 @@ def _ping_gemini(api_key: str) -> None:
 
 
 def _ping_anthropic(api_key: str) -> None:
+    import socket
     import anthropic
+
+    # Step 1: raw TCP check — separates "can't reach host" from "SDK/auth issue"
+    try:
+        socket.setdefaulttimeout(8)
+        socket.getaddrinfo("api.anthropic.com", 443)
+    except OSError as exc:
+        raise RuntimeError(f"DNS/TCP failed for api.anthropic.com: {exc}") from exc
+
+    # Step 2: authenticated SDK call
     client = anthropic.Anthropic(api_key=api_key, timeout=10.0, max_retries=0)
     client.models.list(limit=1)
 
