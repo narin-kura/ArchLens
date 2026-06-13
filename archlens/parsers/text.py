@@ -81,6 +81,20 @@ def _is_architecture_text(text: str) -> bool:
     return any(kw in lower for kw in _ARCH_KEYWORDS)
 
 
+def _friendly_api_error(exc: Exception) -> str:
+    """Convert an SDK exception into a short, actionable user message."""
+    msg = str(exc).lower()
+    if "connection" in msg or "connect" in msg or "network" in msg or "timeout" in msg:
+        return "connection failed — check network access to the API endpoint"
+    if "401" in msg or "authentication" in msg or "invalid" in msg or "api key" in msg:
+        return "authentication failed — check your API key is correct and active"
+    if "429" in msg or "rate" in msg or "quota" in msg:
+        return "rate limit or quota exceeded — wait a moment and retry"
+    if "500" in msg or "502" in msg or "503" in msg:
+        return "provider server error — try again in a few seconds"
+    return str(exc)
+
+
 def _strip_fences(raw: str) -> str:
     raw = raw.strip()
     if raw.startswith("```"):
@@ -128,14 +142,31 @@ class TextParser(BaseParser):
                 "or ANTHROPIC_API_KEY in your environment."
             )
 
+        gemini_err: Exception | None = None
         if gemini_key:
             try:
                 return self._parse_gemini(text, gemini_key)
-            except Exception:
-                if anthropic_key:
-                    return self._parse_anthropic(text, anthropic_key)
-                raise
-        return self._parse_anthropic(text, anthropic_key)
+            except Exception as exc:
+                gemini_err = exc
+                if not anthropic_key:
+                    raise
+                logger.warning("Gemini failed, trying Anthropic fallback: %s", exc)
+
+        try:
+            return self._parse_anthropic(text, anthropic_key)
+        except Exception as anthropic_exc:
+            # Surface both errors so the user knows what to fix
+            if gemini_err:
+                raise ValueError(
+                    f"Both AI providers failed.\n"
+                    f"• Gemini: {_friendly_api_error(gemini_err)}\n"
+                    f"• Anthropic: {_friendly_api_error(anthropic_exc)}\n"
+                    "Check that your API keys are set correctly and that the server "
+                    "can reach api.anthropic.com / generativelanguage.googleapis.com."
+                ) from anthropic_exc
+            raise ValueError(
+                f"Anthropic API error: {_friendly_api_error(anthropic_exc)}"
+            ) from anthropic_exc
 
     def _parse_gemini(self, text: str, api_key: str) -> ArchitectureModel:
         try:
@@ -153,8 +184,8 @@ class TextParser(BaseParser):
             )
             raw = _strip_fences(response.text)
         except Exception as exc:
-            logger.exception("Gemini text parse failed")
-            raise ValueError(f"Gemini API error: {exc}") from exc
+            logger.warning("Gemini text parse failed: %s", exc)
+            raise ValueError(f"Gemini: {_friendly_api_error(exc)}") from exc
 
         try:
             data = json.loads(raw)
@@ -180,8 +211,8 @@ class TextParser(BaseParser):
             )
             raw = _strip_fences(message.content[0].text)
         except Exception as exc:
-            logger.exception("Anthropic text parse failed")
-            raise ValueError(f"Anthropic API error: {exc}") from exc
+            logger.warning("Anthropic text parse failed: %s", exc)
+            raise ValueError(f"Anthropic: {_friendly_api_error(exc)}") from exc
 
         try:
             data = json.loads(raw)
