@@ -433,8 +433,9 @@ Recommended components (role: name):
 
 
 def _ai_summary(req: dict, recommended: list[dict]) -> Optional[str]:
-    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-    gemini_key = os.getenv("GEMINI_API_KEY")
+    # .strip() guards against secrets stored with a trailing newline/whitespace
+    anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
     if not anthropic_key and not gemini_key:
         return None
 

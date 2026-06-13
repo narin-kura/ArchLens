@@ -118,8 +118,11 @@ class TextParser(BaseParser):
         return self._parse_with_llm(text)
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-        gemini_key = os.getenv("GEMINI_API_KEY")
+        # .strip() guards against a secret accidentally stored with a trailing
+        # newline/whitespace (a common Windows `echo`/Out-File footgun), which
+        # otherwise corrupts the auth header and surfaces as "Connection error."
+        anthropic_key = (os.getenv("ANTHROPIC_API_KEY") or "").strip()
+        gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
 
         if not anthropic_key and not gemini_key:
             raise ValueError(

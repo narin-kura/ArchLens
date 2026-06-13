@@ -75,7 +75,8 @@ async def health():
 
 def _ping_gemini(api_key: str) -> None:
     import google.generativeai as genai
-    genai.configure(api_key=api_key, transport="rest")
+    # Strip whitespace/newlines a corrupted secret may carry (Windows echo footgun)
+    genai.configure(api_key=api_key.strip(), transport="rest")
     # list_models is the lightest authenticated call available
     next(iter(genai.list_models()), None)
 
@@ -84,6 +85,9 @@ def _ping_anthropic(api_key: str) -> None:
     import socket
     import anthropic
 
+    # Strip whitespace/newlines a corrupted secret may carry (Windows echo footgun)
+    api_key = api_key.strip()
+
     # Step 1: raw TCP check — separates "can't reach host" from "SDK/auth issue"
     try:
         socket.setdefaulttimeout(8)
@@ -91,9 +95,17 @@ def _ping_anthropic(api_key: str) -> None:
     except OSError as exc:
         raise RuntimeError(f"DNS/TCP failed for api.anthropic.com: {exc}") from exc
 
-    # Step 2: authenticated SDK call
+    # Step 2: authenticated SDK call. The SDK masks real causes (e.g. a malformed
+    # auth header) behind a generic "Connection error." — unwrap __cause__ so the
+    # /health detail is actionable.
     client = anthropic.Anthropic(api_key=api_key, timeout=10.0, max_retries=0)
-    client.models.list(limit=1)
+    try:
+        client.models.list(limit=1)
+    except Exception as exc:
+        cause = exc.__cause__
+        if cause is not None:
+            raise RuntimeError(f"{exc} (cause: {type(cause).__name__}: {cause})") from exc
+        raise
 
 
 @app.post("/analyze")
