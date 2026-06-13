@@ -83,7 +83,7 @@ jobs:
             --port 7860 \
             --allow-unauthenticated \
             --execution-environment gen2 \
-            --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
+            --set-secrets=GEMINI_API_KEY=gemini-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest
 
       - name: Health check — verify API connectivity
         run: |
