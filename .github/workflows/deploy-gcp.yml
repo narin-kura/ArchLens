@@ -83,7 +83,41 @@ jobs:
             --port 7860 \
             --allow-unauthenticated \
             --execution-environment gen2 \
-            --set-secrets=ANTHROPIC_API_KEY=anthropic-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest
+            --set-secrets=GEMINI_API_KEY=gemini-api-key:latest
+
+      - name: Health check — verify API connectivity
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE }} --region ${{ env.REGION }} --format 'value(status.url)')
+          echo "Running health check at $URL/health ..."
+
+          # Give Cloud Run up to 60s to become ready
+          for i in $(seq 1 12); do
+            HTTP=$(curl -s -o /tmp/health.json -w "%{http_code}" --max-time 15 "$URL/health" || echo "000")
+            if [ "$HTTP" = "200" ]; then break; fi
+            echo "Attempt $i: HTTP $HTTP — waiting 5s"
+            sleep 5
+          done
+
+          echo "--- health response ---"
+          cat /tmp/health.json
+          echo ""
+
+          GEMINI=$(python3 -c "import sys,json; print(json.load(open('/tmp/health.json'))['providers']['gemini']['status'])")
+          ANTHROPIC=$(python3 -c "import sys,json; print(json.load(open('/tmp/health.json'))['providers']['anthropic']['status'])")
+
+          echo "Gemini:    $GEMINI"
+          echo "Anthropic: $ANTHROPIC"
+
+          FAILED=""
+          [ "$GEMINI"    = "error" ] && FAILED="$FAILED gemini"
+          [ "$ANTHROPIC" = "error" ] && FAILED="$FAILED anthropic"
+
+          if [ -n "$FAILED" ]; then
+            echo "❌ Provider(s) unreachable:$FAILED"
+            exit 1
+          fi
+
+          echo "✅ All configured providers healthy"
 
       - name: Show service URL
         run: |

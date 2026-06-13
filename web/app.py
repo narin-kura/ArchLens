@@ -13,8 +13,6 @@ from typing import Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-if os.getenv("ANTHROPIC_API_KEY"):
-    os.environ["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
 
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
@@ -42,6 +40,50 @@ MAX_FILE_BYTES = 5 * 1024 * 1024  # 5 MB
 @app.get("/", response_class=HTMLResponse)
 def index():
     return (_STATIC / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/health")
+async def health():
+    """Check app liveness and connectivity to each LLM provider."""
+    providers: dict[str, dict] = {}
+
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key:
+        providers["gemini"] = {"status": "missing_key"}
+    else:
+        try:
+            await run_in_threadpool(_ping_gemini, gemini_key)
+            providers["gemini"] = {"status": "ok"}
+        except Exception as exc:
+            providers["gemini"] = {"status": "error", "detail": str(exc)[:200]}
+
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    if not anthropic_key:
+        providers["anthropic"] = {"status": "missing_key"}
+    else:
+        try:
+            await run_in_threadpool(_ping_anthropic, anthropic_key)
+            providers["anthropic"] = {"status": "ok"}
+        except Exception as exc:
+            providers["anthropic"] = {"status": "error", "detail": str(exc)[:200]}
+
+    # Degraded = a key is set but the provider can't be reached
+    any_error = any(v["status"] == "error" for v in providers.values())
+    overall = "degraded" if any_error else "healthy"
+    return {"status": overall, "providers": providers}
+
+
+def _ping_gemini(api_key: str) -> None:
+    import google.generativeai as genai
+    genai.configure(api_key=api_key, transport="rest")
+    # list_models is the lightest authenticated call available
+    next(iter(genai.list_models()), None)
+
+
+def _ping_anthropic(api_key: str) -> None:
+    import anthropic
+    client = anthropic.Anthropic(api_key=api_key, timeout=10.0, max_retries=0)
+    client.models.list(limit=1)
 
 
 @app.post("/analyze")
