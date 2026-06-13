@@ -433,23 +433,23 @@ Recommended components (role: name):
 
 
 def _ai_summary(req: dict, recommended: list[dict]) -> Optional[str]:
-    gemini_key = os.getenv("GEMINI_API_KEY")
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-    if not gemini_key and not anthropic_key:
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not anthropic_key and not gemini_key:
         return None
 
     components = "\n".join(f"- {r['role']}: {r['name']}" for r in recommended)
     prompt = _SUMMARY_PROMPT.format(req=json.dumps(req), components=components)
 
-    if gemini_key:
+    if anthropic_key:
         try:
-            return _summary_gemini(prompt, gemini_key)
+            return _summary_anthropic(prompt, anthropic_key)
         except Exception:
-            logger.exception("Gemini recommendation summary failed")
-            if not anthropic_key:
+            logger.exception("Anthropic recommendation summary failed")
+            if not gemini_key:
                 return None
     try:
-        return _summary_anthropic(prompt, anthropic_key)
+        return _summary_gemini(prompt, gemini_key)
     except Exception:
         logger.exception("Anthropic recommendation summary failed")
         return None

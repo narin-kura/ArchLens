@@ -118,24 +118,24 @@ class TextParser(BaseParser):
         return self._parse_with_llm(text)
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
-        gemini_key = os.getenv("GEMINI_API_KEY")
         anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        gemini_key = os.getenv("GEMINI_API_KEY")
 
-        if not gemini_key and not anthropic_key:
+        if not anthropic_key and not gemini_key:
             raise ValueError(
                 "Text analysis requires an API key. "
-                "Set GEMINI_API_KEY (free at aistudio.google.com) or ANTHROPIC_API_KEY."
+                "Set ANTHROPIC_API_KEY or GEMINI_API_KEY (free at aistudio.google.com)."
             )
 
-        if gemini_key:
+        if anthropic_key:
             try:
-                return self._parse_gemini(text, gemini_key)
+                return self._parse_anthropic(text, anthropic_key)
             except Exception as exc:
-                if not anthropic_key:
+                if not gemini_key:
                     raise
-                logger.warning("Gemini failed, falling back to Anthropic: %s", exc)
+                logger.warning("Anthropic failed, falling back to Gemini: %s", exc)
 
-        return self._parse_anthropic(text, anthropic_key)
+        return self._parse_gemini(text, gemini_key)
 
     def _parse_gemini(self, text: str, api_key: str) -> ArchitectureModel:
         try:
