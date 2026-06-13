@@ -81,36 +81,6 @@ def _is_architecture_text(text: str) -> bool:
     return any(kw in lower for kw in _ARCH_KEYWORDS)
 
 
-def _is_connection_error(exc: Exception) -> bool:
-    msg = str(exc).lower()
-    return any(w in msg for w in ("connection", "connect", "network", "timeout", "unreachable"))
-
-
-def _running_on_cloud_run() -> bool:
-    # K_SERVICE is injected by Cloud Run into every container
-    return bool(os.getenv("K_SERVICE"))
-
-
-def _friendly_api_error(exc: Exception) -> str:
-    """Convert an SDK exception into a short, actionable user message."""
-    msg = str(exc).lower()
-    if "connection" in msg or "connect" in msg or "network" in msg or "timeout" in msg:
-        hint = (
-            " On GCP Cloud Run: if you have a VPC connector set to "
-            "all-traffic egress, add Cloud NAT so the service can reach "
-            "external APIs — or remove the VPC connector if not needed."
-            if _running_on_cloud_run() else ""
-        )
-        return f"connection failed — check network access to the API endpoint.{hint}"
-    if "401" in msg or "authentication" in msg or "invalid" in msg or "api key" in msg:
-        return "authentication failed — check your API key is correct and active"
-    if "429" in msg or "rate" in msg or "quota" in msg:
-        return "rate limit or quota exceeded — wait a moment and retry"
-    if "500" in msg or "502" in msg or "503" in msg:
-        return "provider server error — try again in a few seconds"
-    return str(exc)
-
-
 def _strip_fences(raw: str) -> str:
     raw = raw.strip()
     if raw.startswith("```"):
@@ -149,49 +119,12 @@ class TextParser(BaseParser):
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
         gemini_key = os.getenv("GEMINI_API_KEY")
-        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
-
-        if not gemini_key and not anthropic_key:
+        if not gemini_key:
             raise ValueError(
-                "Text analysis requires an API key. "
-                "Set GEMINI_API_KEY (free tier available at aistudio.google.com) "
-                "or ANTHROPIC_API_KEY in your environment."
+                "Text analysis requires a GEMINI_API_KEY. "
+                "Get a free key at aistudio.google.com and add it to your environment secrets."
             )
-
-        gemini_err: Exception | None = None
-        if gemini_key:
-            try:
-                return self._parse_gemini(text, gemini_key)
-            except Exception as exc:
-                gemini_err = exc
-                if not anthropic_key:
-                    raise
-                # On Cloud Run a connection failure means the VPC blocks all
-                # external traffic — Anthropic will hit the same wall, so skip
-                # the fallback and give a targeted infrastructure hint instead.
-                if _running_on_cloud_run() and _is_connection_error(exc):
-                    raise ValueError(
-                        "Gemini API connection failed on Cloud Run. "
-                        "Likely cause: VPC connector with all-traffic egress and no Cloud NAT. "
-                        "Fix: add a Cloud NAT gateway to your VPC, or set egress to "
-                        "private-ranges-only so internet traffic bypasses the connector."
-                    ) from exc
-                logger.warning("Gemini failed, trying Anthropic fallback: %s", exc)
-
-        try:
-            return self._parse_anthropic(text, anthropic_key)
-        except Exception as anthropic_exc:
-            if gemini_err:
-                raise ValueError(
-                    f"Both AI providers failed.\n"
-                    f"• Gemini: {_friendly_api_error(gemini_err)}\n"
-                    f"• Anthropic: {_friendly_api_error(anthropic_exc)}\n"
-                    "Check that your API keys are set correctly and that the server "
-                    "can reach api.anthropic.com / generativelanguage.googleapis.com."
-                ) from anthropic_exc
-            raise ValueError(
-                f"Anthropic API error: {_friendly_api_error(anthropic_exc)}"
-            ) from anthropic_exc
+        return self._parse_gemini(text, gemini_key)
 
     def _parse_gemini(self, text: str, api_key: str) -> ArchitectureModel:
         try:
@@ -205,39 +138,24 @@ class TextParser(BaseParser):
         try:
             response = model.generate_content(
                 _PROMPT.format(text=text),
-                request_options={"timeout": 30},
+                request_options={"timeout": 20},
             )
             raw = _strip_fences(response.text)
         except Exception as exc:
             logger.warning("Gemini text parse failed: %s", exc)
-            raise ValueError(f"Gemini: {_friendly_api_error(exc)}") from exc
-
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            raise ValueError(
-                "Could not parse the AI response. Try rephrasing your description "
-                "with clear component names (e.g. 'EC2 instance', 'RDS database')."
-            )
-        return self._dict_to_model(data)
-
-    def _parse_anthropic(self, text: str, api_key: str) -> ArchitectureModel:
-        try:
-            import anthropic
-        except ImportError:
-            raise ImportError("Install anthropic: pip install anthropic")
-
-        client = anthropic.Anthropic(api_key=api_key, timeout=30.0, max_retries=1)
-        try:
-            message = client.messages.create(
-                model="claude-opus-4-8",
-                max_tokens=2048,
-                messages=[{"role": "user", "content": _PROMPT.format(text=text)}],
-            )
-            raw = _strip_fences(message.content[0].text)
-        except Exception as exc:
-            logger.warning("Anthropic text parse failed: %s", exc)
-            raise ValueError(f"Anthropic: {_friendly_api_error(exc)}") from exc
+            msg = str(exc).lower()
+            if any(w in msg for w in ("connection", "timeout", "network", "unreachable")):
+                raise ValueError(
+                    "Could not reach the Gemini API. "
+                    "Check that GEMINI_API_KEY is set in your environment secrets "
+                    "and that outbound HTTPS is allowed from your deployment."
+                ) from exc
+            if "401" in msg or "invalid" in msg or "api key" in msg:
+                raise ValueError(
+                    "Gemini API key rejected. Verify GEMINI_API_KEY is correct "
+                    "and has not expired."
+                ) from exc
+            raise ValueError(f"Gemini API error: {exc}") from exc
 
         try:
             data = json.loads(raw)
