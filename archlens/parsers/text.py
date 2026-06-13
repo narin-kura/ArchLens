@@ -81,11 +81,27 @@ def _is_architecture_text(text: str) -> bool:
     return any(kw in lower for kw in _ARCH_KEYWORDS)
 
 
+def _is_connection_error(exc: Exception) -> bool:
+    msg = str(exc).lower()
+    return any(w in msg for w in ("connection", "connect", "network", "timeout", "unreachable"))
+
+
+def _running_on_cloud_run() -> bool:
+    # K_SERVICE is injected by Cloud Run into every container
+    return bool(os.getenv("K_SERVICE"))
+
+
 def _friendly_api_error(exc: Exception) -> str:
     """Convert an SDK exception into a short, actionable user message."""
     msg = str(exc).lower()
     if "connection" in msg or "connect" in msg or "network" in msg or "timeout" in msg:
-        return "connection failed — check network access to the API endpoint"
+        hint = (
+            " On GCP Cloud Run: if you have a VPC connector set to "
+            "all-traffic egress, add Cloud NAT so the service can reach "
+            "external APIs — or remove the VPC connector if not needed."
+            if _running_on_cloud_run() else ""
+        )
+        return f"connection failed — check network access to the API endpoint.{hint}"
     if "401" in msg or "authentication" in msg or "invalid" in msg or "api key" in msg:
         return "authentication failed — check your API key is correct and active"
     if "429" in msg or "rate" in msg or "quota" in msg:
@@ -150,12 +166,21 @@ class TextParser(BaseParser):
                 gemini_err = exc
                 if not anthropic_key:
                     raise
+                # On Cloud Run a connection failure means the VPC blocks all
+                # external traffic — Anthropic will hit the same wall, so skip
+                # the fallback and give a targeted infrastructure hint instead.
+                if _running_on_cloud_run() and _is_connection_error(exc):
+                    raise ValueError(
+                        "Gemini API connection failed on Cloud Run. "
+                        "Likely cause: VPC connector with all-traffic egress and no Cloud NAT. "
+                        "Fix: add a Cloud NAT gateway to your VPC, or set egress to "
+                        "private-ranges-only so internet traffic bypasses the connector."
+                    ) from exc
                 logger.warning("Gemini failed, trying Anthropic fallback: %s", exc)
 
         try:
             return self._parse_anthropic(text, anthropic_key)
         except Exception as anthropic_exc:
-            # Surface both errors so the user knows what to fix
             if gemini_err:
                 raise ValueError(
                     f"Both AI providers failed.\n"
