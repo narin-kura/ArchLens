@@ -119,12 +119,23 @@ class TextParser(BaseParser):
 
     def _parse_with_llm(self, text: str) -> ArchitectureModel:
         gemini_key = os.getenv("GEMINI_API_KEY")
-        if not gemini_key:
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+
+        if not gemini_key and not anthropic_key:
             raise ValueError(
-                "Text analysis requires a GEMINI_API_KEY. "
-                "Get a free key at aistudio.google.com and add it to your environment secrets."
+                "Text analysis requires an API key. "
+                "Set GEMINI_API_KEY (free at aistudio.google.com) or ANTHROPIC_API_KEY."
             )
-        return self._parse_gemini(text, gemini_key)
+
+        if gemini_key:
+            try:
+                return self._parse_gemini(text, gemini_key)
+            except Exception as exc:
+                if not anthropic_key:
+                    raise
+                logger.warning("Gemini failed, falling back to Anthropic: %s", exc)
+
+        return self._parse_anthropic(text, anthropic_key)
 
     def _parse_gemini(self, text: str, api_key: str) -> ArchitectureModel:
         try:
@@ -156,6 +167,43 @@ class TextParser(BaseParser):
                     "and has not expired."
                 ) from exc
             raise ValueError(f"Gemini API error: {exc}") from exc
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            raise ValueError(
+                "Could not parse the AI response. Try rephrasing your description "
+                "with clear component names (e.g. 'EC2 instance', 'RDS database')."
+            )
+        return self._dict_to_model(data)
+
+    def _parse_anthropic(self, text: str, api_key: str) -> ArchitectureModel:
+        try:
+            import anthropic
+        except ImportError:
+            raise ImportError("Install anthropic: pip install anthropic")
+
+        client = anthropic.Anthropic(api_key=api_key, timeout=20.0, max_retries=1)
+        try:
+            message = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2048,
+                messages=[{"role": "user", "content": _PROMPT.format(text=text)}],
+            )
+            raw = _strip_fences(message.content[0].text)
+        except Exception as exc:
+            logger.warning("Anthropic text parse failed: %s", exc)
+            msg = str(exc).lower()
+            if any(w in msg for w in ("connection", "timeout", "network", "unreachable")):
+                raise ValueError(
+                    "Could not reach the Anthropic API. "
+                    "Check outbound HTTPS access from your deployment to api.anthropic.com."
+                ) from exc
+            if "401" in msg or "invalid" in msg or "api key" in msg:
+                raise ValueError(
+                    "Anthropic API key rejected. Verify ANTHROPIC_API_KEY is correct."
+                ) from exc
+            raise ValueError(f"Anthropic API error: {exc}") from exc
 
         try:
             data = json.loads(raw)
