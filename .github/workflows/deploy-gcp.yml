@@ -2,12 +2,6 @@ name: Deploy to Cloud Run (GCP)
 
 on:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Deploy to Hugging Face Spaces"]
-    types:
-      - completed
-  schedule:
-    - cron: '*/30 * * * *'
 
 env:
   PROJECT_ID: project-f281922f-0040-402f-b61
