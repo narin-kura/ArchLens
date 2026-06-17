@@ -622,6 +622,16 @@
   </div>
 </div>
 
+<!-- DEMO VIDEO -->
+<div class="preview-wrap">
+  <div style="text-align:center;margin-bottom:1.5rem;">
+    <p style="font-size:0.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;margin-bottom:0.75rem;">See it in action</p>
+    <video style="width:100%;max-width:860px;border-radius:14px;border:1px solid #1e2d4a;box-shadow:0 8px 32px rgba(0,0,0,0.3);" autoplay loop muted playsinline>
+      <source src="/static/demo.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
 <!-- PREVIEW -->
 <div class="preview-wrap">
   <div class="preview-box">
@@ -1073,12 +1083,33 @@
   }
 
   const dz = document.getElementById('dropZone');
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+
+  // Stop the browser from hijacking a dropped file (its default is to open/
+  // navigate to the file). Without this, a drop that lands even slightly off
+  // the zone — or before the zone handler runs — makes the file just open.
+  ['dragenter', 'dragover', 'drop'].forEach(evt =>
+    document.addEventListener(evt, e => e.preventDefault())
+  );
+
+  ['dragenter', 'dragover'].forEach(evt =>
+    dz.addEventListener(evt, e => { e.preventDefault(); dz.classList.add('drag-over'); })
+  );
+  // Only clear the highlight when the cursor actually leaves the zone, not when
+  // it crosses between the zone's child elements (which fire dragleave too).
+  dz.addEventListener('dragleave', e => {
+    if (!dz.contains(e.relatedTarget)) dz.classList.remove('drag-over');
+  });
   dz.addEventListener('drop', e => {
-    e.preventDefault(); dz.classList.remove('drag-over');
+    e.preventDefault();
+    e.stopPropagation();
+    dz.classList.remove('drag-over');
     const f = e.dataTransfer.files[0];
-    if (f) { selectedFile = f; document.getElementById('fileName').textContent = f.name; }
+    if (f) {
+      selectedFile = f;
+      document.getElementById('fileName').textContent = f.name;
+      // mirror into the file input so any input-based code path sees it too
+      try { document.getElementById('fileInput').files = e.dataTransfer.files; } catch (_) {}
+    }
   });
 
   async function runAnalysis() {
