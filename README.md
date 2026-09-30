@@ -29,3 +29,17 @@ pip install -r requirements.txt
 uvicorn web.app:app --host 0.0.0.0 --port 8000
 # Open http://localhost:8000
 ```
+
+## Examples
+
+- [`examples/architectures/`](examples/architectures/) — sixteen complete AWS
+  reference architectures (three-tier web, serverless API, EKS platform, data
+  lake, streaming, ML/GenAI, multi-region DR, IoT, media, governance baseline,
+  CI/CD, migration, workforce apps, batch/HPC) written to pass a clean analysis.
+  They double as the regression suite for the Terraform parser and the analyzers.
+- [`examples/terraform/main.tf`](examples/terraform/main.tf) — the opposite: a
+  small, deliberately insecure stack for demoing what the report looks like.
+
+The interactive builder's AWS service list lives in
+[`web/static/catalog_aws.js`](web/static/catalog_aws.js) and covers every AWS
+product, grouped by AWS's own product categories.

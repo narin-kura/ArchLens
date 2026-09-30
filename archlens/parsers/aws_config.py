@@ -104,4 +104,14 @@ class AWSConfigParser(BaseParser):
         sgs = config.get("securityGroups", [])
         if sgs:
             props["security_groups"] = str(len(sgs))
+        # IAM documents — a trust policy of "*" is what lets any principal
+        # assume a role, so it has to reach the analyzers.
+        for key, prop in (
+            ("assumeRolePolicyDocument", "assume_role_policy"),
+            ("policyDocument", "policy"),
+            ("policy", "policy"),
+        ):
+            if key in config:
+                value = config[key]
+                props[prop] = value if isinstance(value, str) else json.dumps(value)
         return props

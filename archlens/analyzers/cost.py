@@ -21,6 +21,26 @@ _EC2_INSTANCE_COSTS: dict[str, float] = {
 }
 
 
+# Managed compute that sizes itself: Batch scales its own vCPUs, a GameLift or
+# AppStream fleet its own instances, an ECS service its own task count. None of
+# them needs an Auto Scaling group, so recommending one is noise.
+_SELF_SCALING_SERVICES = {
+    "aws_batch_compute_environment", "aws_gamelift_fleet", "aws_appstream_fleet",
+    "aws_ecs_service", "aws_eks_node_group", "aws_emrserverless_application",
+    "aws_apprunner_service", "aws_workspaces_workspace",
+}
+
+_SCALING_PROPERTIES = (
+    "max_vcpus", "scaling_config", "compute_capacity", "max_capacity",
+    "max_size", "running_mode", "autoscaling",
+)
+
+
+def _scales_itself(component) -> bool:
+    return (component.service in _SELF_SCALING_SERVICES
+            or any(key in component.properties for key in _SCALING_PROPERTIES))
+
+
 class CostAnalyzer(BaseAnalyzer):
     def analyze(self, model: ArchitectureModel) -> list[Finding]:
         findings: list[Finding] = []
@@ -68,7 +88,13 @@ class CostAnalyzer(BaseAnalyzer):
             c.service in ("aws_s3_bucket", "aws_dynamodb_table")
             for c in model.components
         )
-        if has_nat and has_s3_or_dynamo:
+        # Nothing to recommend if the gateway endpoints are already in place.
+        has_gateway_endpoint = any(
+            c.service == "aws_vpc_endpoint"
+            and any(word in str(c.properties.get("service_name", "")).lower() for word in ("s3", "dynamodb"))
+            for c in model.components
+        )
+        if has_nat and has_s3_or_dynamo and not has_gateway_endpoint:
             return [Finding(
                 type=FindingType.COST,
                 severity=Severity.LOW,
@@ -84,6 +110,7 @@ class CostAnalyzer(BaseAnalyzer):
         compute = model.components_by_type(ComponentType.COMPUTE)
         has_asg = any(
             "autoscaling" in c.service.lower() or "asg" in c.name.lower()
+            or _scales_itself(c)
             for c in model.components
         )
         if compute and not has_asg:

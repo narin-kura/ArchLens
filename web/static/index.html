@@ -459,6 +459,16 @@
     .cat-tab.active { background:#1e1b4b; color:#c4b5fd; border-color:#3730a3; }
     .cat-tab:hover:not(.active) { border-color:#4c1d95; color:#a5b4fc; }
 
+    .group-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px; }
+    .group-tabs:empty { display:none; }
+    .group-tab { padding:5px 12px; border-radius:99px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #16243c; background:transparent; color:#55708f; transition:all 0.15s; }
+    .group-tab.active { background:#0f1f3d; color:#93c5fd; border-color:#1d4ed8; }
+    .group-tab:hover:not(.active) { border-color:#334f7a; color:#8ba6c9; }
+    .group-count { font-size:10px; opacity:0.65; margin-left:4px; }
+    .grid-group-head { grid-column:1/-1; font-size:11px; font-weight:800; color:#5b74a0; text-transform:uppercase; letter-spacing:0.6px; padding:10px 2px 2px; border-bottom:1px solid #16243c; }
+    .svc-legacy { position:absolute; top:6px; left:7px; font-size:8.5px; font-weight:800; color:#b45309; background:#2a1a06; border-radius:99px; padding:2px 5px; letter-spacing:0.3px; }
+    .service-card.legacy .svc-icon { color:#8d7fb8; }
+
     .service-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; max-height:320px; overflow-y:auto; padding-right:6px; margin-bottom:18px; scrollbar-width:thin; scrollbar-color:#1e2d4a transparent; }
     .service-card { background:#101e36; border:1.5px solid #1e3050; border-radius:12px; padding:14px 10px; cursor:pointer; text-align:center; transition:all 0.15s; user-select:none; position:relative; }
     .service-card:hover { border-color:#5b4fcf; background:#16254a; transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,0.3); }
@@ -831,6 +841,7 @@
             <button class="cat-tab"        data-cat="ai"        onclick="setCat(this)">AI / ML</button>
             <button class="cat-tab"        data-cat="embedded"  onclick="setCat(this)">Hardware / IoT</button>
           </div>
+          <div class="group-tabs" id="groupTabs"></div>
           <div class="service-grid" id="serviceGrid"></div>
 
           <div class="stack-row">
@@ -1021,6 +1032,7 @@
   </span>
 </footer>
 
+<script src="/static/catalog_aws.js"></script>
 <script>
   const ARCH_KEYWORDS = [
     'aws','gcp','azure','amazon','ec2','lambda','rds','s3','ecs','eks','fargate',
@@ -1278,49 +1290,8 @@
 
   // ===================== INTERACTIVE BUILDER =====================
   const SERVICES = [
-    // AWS
-    {id:'aws_ec2',       name:'EC2',           provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'ec2',             icon:'EC2'},
-    {id:'aws_lambda',    name:'Lambda',        provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'lambda',          icon:'&lambda;'},
-    {id:'aws_ecs',       name:'ECS',           provider:'aws',     cat:'aws',       type:'CONTAINER',  service:'ecs',             icon:'ECS'},
-    {id:'aws_eks',       name:'EKS',           provider:'aws',     cat:'aws',       type:'CONTAINER',  service:'eks',             icon:'EKS'},
-    {id:'aws_fargate',   name:'Fargate',       provider:'aws',     cat:'aws',       type:'CONTAINER',  service:'fargate',         icon:'FG'},
-    {id:'aws_rds',       name:'RDS',           provider:'aws',     cat:'aws',       type:'DATABASE',   service:'rds',             icon:'RDS'},
-    {id:'aws_aurora',    name:'Aurora',        provider:'aws',     cat:'aws',       type:'DATABASE',   service:'aurora',          icon:'AUR'},
-    {id:'aws_dynamodb',  name:'DynamoDB',      provider:'aws',     cat:'aws',       type:'DATABASE',   service:'dynamodb',        icon:'DDB'},
-    {id:'aws_s3',        name:'S3',            provider:'aws',     cat:'aws',       type:'STORAGE',    service:'s3',              icon:'S3'},
-    {id:'aws_vpc',       name:'VPC',           provider:'aws',     cat:'aws',       type:'NETWORK',    service:'vpc',             icon:'VPC'},
-    {id:'aws_cloudfront',name:'CloudFront',    provider:'aws',     cat:'aws',       type:'CDN',        service:'cloudfront',      icon:'CF'},
-    {id:'aws_apigw',     name:'API Gateway',   provider:'aws',     cat:'aws',       type:'GATEWAY',    service:'apigateway',      icon:'APIGW'},
-    {id:'aws_alb',       name:'ALB',           provider:'aws',     cat:'aws',       type:'GATEWAY',    service:'alb',             icon:'ALB'},
-    {id:'aws_nat',       name:'NAT Gateway',   provider:'aws',     cat:'aws',       type:'NETWORK',    service:'nat_gateway',     icon:'NAT'},
-    {id:'aws_elasticache',name:'ElastiCache',  provider:'aws',     cat:'aws',       type:'CACHE',      service:'elasticache',     icon:'EC'},
-    {id:'aws_sqs',       name:'SQS',           provider:'aws',     cat:'aws',       type:'QUEUE',      service:'sqs',             icon:'SQS'},
-    {id:'aws_sns',       name:'SNS',           provider:'aws',     cat:'aws',       type:'QUEUE',      service:'sns',             icon:'SNS'},
-    {id:'aws_iam',       name:'IAM',           provider:'aws',     cat:'aws',       type:'IAM',        service:'iam_role',        icon:'IAM'},
-    {id:'aws_cognito',   name:'Cognito',       provider:'aws',     cat:'aws',       type:'IAM',        service:'cognito',         icon:'COG'},
-    {id:'aws_cloudwatch',name:'CloudWatch',    provider:'aws',     cat:'aws',       type:'MONITORING', service:'cloudwatch',      icon:'CW'},
-    {id:'aws_sg',        name:'Security Group',provider:'aws',     cat:'aws',       type:'NETWORK',    service:'security_group',  icon:'SG'},
-    {id:'aws_secrets',   name:'Secrets Mgr',  provider:'aws',     cat:'aws',       type:'IAM',        service:'secrets_manager', icon:'SM'},
-    {id:'aws_kms',       name:'KMS',          provider:'aws',     cat:'aws',       type:'IAM',        service:'kms',             icon:'KMS'},
-    {id:'aws_route53',   name:'Route 53',      provider:'aws',     cat:'aws',       type:'NETWORK',    service:'route53',          icon:'R53'},
-    {id:'aws_redshift',  name:'Redshift',      provider:'aws',     cat:'aws',       type:'DATABASE',   service:'redshift',         icon:'RSH'},
-    {id:'aws_efs',       name:'EFS',           provider:'aws',     cat:'aws',       type:'STORAGE',    service:'efs',              icon:'EFS'},
-    {id:'aws_ecr',       name:'ECR',           provider:'aws',     cat:'aws',       type:'CONTAINER',  service:'ecr',              icon:'ECR'},
-    {id:'aws_beanstalk', name:'Beanstalk',     provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'elastic_beanstalk',icon:'EB'},
-    {id:'aws_apprunner', name:'App Runner',    provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'app_runner',       icon:'APR'},
-    {id:'aws_stepfn',    name:'Step Functions',provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'step_functions',   icon:'SFN'},
-    {id:'aws_eventbridge',name:'EventBridge',  provider:'aws',     cat:'aws',       type:'QUEUE',      service:'eventbridge',      icon:'EVB'},
-    {id:'aws_kinesis',   name:'Kinesis',       provider:'aws',     cat:'aws',       type:'QUEUE',      service:'kinesis',          icon:'KIN'},
-    {id:'aws_cloudtrail',name:'CloudTrail',    provider:'aws',     cat:'aws',       type:'MONITORING', service:'cloudtrail',       icon:'CT'},
-    {id:'aws_nlb',       name:'NLB',           provider:'aws',     cat:'aws',       type:'GATEWAY',    service:'nlb',              icon:'NLB'},
-    {id:'aws_glue',      name:'Glue',          provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'glue',             icon:'GLU'},
-    {id:'aws_athena',    name:'Athena',        provider:'aws',     cat:'aws',       type:'SERVERLESS', service:'athena',           icon:'ATH'},
-    {id:'aws_emr',       name:'EMR',           provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'emr',              icon:'EMR'},
-    {id:'aws_batch',     name:'AWS Batch',     provider:'aws',     cat:'aws',       type:'COMPUTE',    service:'aws_batch',        icon:'BAT'},
-    {id:'aws_cfn',       name:'CloudFormation',provider:'aws',     cat:'aws',       type:'OTHER',      service:'cloudformation',   icon:'CFN'},
-    {id:'aws_xray',      name:'X-Ray',         provider:'aws',     cat:'aws',       type:'MONITORING', service:'xray',             icon:'XRY'},
-    {id:'aws_tgw',       name:'Transit GW',    provider:'aws',     cat:'aws',       type:'NETWORK',    service:'transit_gateway',  icon:'TGW'},
-    {id:'aws_ga',        name:'Global Accel.', provider:'aws',     cat:'aws',       type:'NETWORK',    service:'global_accelerator',icon:'GA'},
+    // AWS — full product catalog (every AWS service, grouped) lives in /static/catalog_aws.js
+    ...(window.AWS_CATALOG || []),
     // GCP
     {id:'gcp_gce',       name:'Compute Engine',provider:'gcp',     cat:'gcp',       type:'COMPUTE',    service:'gce_instance',    icon:'GCE'},
     {id:'gcp_cloudrun',  name:'Cloud Run',     provider:'gcp',     cat:'gcp',       type:'SERVERLESS', service:'cloud_run',       icon:'CR'},
@@ -1399,7 +1370,6 @@
     {id:'nv_trtllm',     name:'TensorRT-LLM',  provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'tensorrt_llm',     icon:'TRT'},
     {id:'nv_rapids',     name:'RAPIDS',        provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'rapids',           icon:'RAP'},
     {id:'nv_nemo',       name:'NeMo',          provider:'nvidia',  cat:'gpu',       type:'COMPUTE',    service:'nvidia_nemo',      icon:'NMO'},
-    {id:'aws_gpu',       name:'EC2 GPU (P5/P4)',provider:'aws',    cat:'gpu',       type:'COMPUTE',    service:'ec2_gpu',          icon:'P5'},
     {id:'gcp_gpu',       name:'GPU VM (A3/A2)',provider:'gcp',     cat:'gpu',       type:'COMPUTE',    service:'gcp_gpu_vm',       icon:'A3'},
     {id:'az_gpu',        name:'GPU VM (ND/NC)',provider:'azure',   cat:'gpu',       type:'COMPUTE',    service:'azure_gpu_vm',     icon:'ND'},
     {id:'nv_vllm',       name:'vLLM',          provider:'generic', cat:'gpu',       type:'COMPUTE',    service:'vllm',             icon:'VLM'},
@@ -1446,8 +1416,6 @@
     // Security
     {id:'s_vault',       name:'Vault',         provider:'generic', cat:'security',  type:'IAM',        service:'vault',           icon:'VLT'},
     {id:'s_snyk',        name:'Snyk',          provider:'generic', cat:'security',  type:'MONITORING', service:'snyk',            icon:'SNK'},
-    {id:'s_waf',         name:'AWS WAF',       provider:'aws',     cat:'security',  type:'NETWORK',    service:'waf',             icon:'WAF'},
-    {id:'s_sg',          name:'Sec. Group',    provider:'aws',     cat:'security',  type:'NETWORK',    service:'security_group',  icon:'SG'},
     {id:'s_auth0',       name:'Auth0',         provider:'generic', cat:'security',  type:'IAM',        service:'auth0',           icon:'AU0'},
     {id:'s_okta',        name:'Okta',          provider:'generic', cat:'security',  type:'IAM',        service:'okta',            icon:'OKT'},
     {id:'s_keycloak',    name:'Keycloak',      provider:'generic', cat:'security',  type:'IAM',        service:'keycloak',        icon:'KC'},
@@ -1461,16 +1429,7 @@
     {id:'s_opa',         name:'OPA',           provider:'generic', cat:'security',  type:'IAM',        service:'opa',             icon:'OPA'},
     {id:'s_falco',       name:'Falco',         provider:'generic', cat:'security',  type:'MONITORING', service:'falco',           icon:'FAL'},
     {id:'s_crowdstrike', name:'CrowdStrike',   provider:'generic', cat:'security',  type:'MONITORING', service:'crowdstrike',     icon:'CRWD'},
-    {id:'aws_guardduty', name:'GuardDuty',     provider:'aws',     cat:'security',  type:'MONITORING', service:'guardduty',       icon:'GD'},
-    {id:'aws_inspector', name:'Inspector',     provider:'aws',     cat:'security',  type:'MONITORING', service:'inspector',       icon:'INS'},
     {id:'az_sentinel',   name:'Sentinel',      provider:'azure',   cat:'security',  type:'MONITORING', service:'sentinel',        icon:'SEN'},
-    // AI / ML — AWS
-    {id:'aws_sagemaker', name:'SageMaker',     provider:'aws',     cat:'ai',        type:'COMPUTE',    service:'sagemaker',       icon:'SM'},
-    {id:'aws_bedrock',   name:'Bedrock',       provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'bedrock',         icon:'BDR'},
-    {id:'aws_rekognition',name:'Rekognition',  provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'rekognition',     icon:'RKG'},
-    {id:'aws_textract',  name:'Textract',      provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'textract',        icon:'TXT'},
-    {id:'aws_comprehend',name:'Comprehend',    provider:'aws',     cat:'ai',        type:'SERVERLESS', service:'comprehend',      icon:'NLP'},
-    {id:'aws_kendra',    name:'Kendra',        provider:'aws',     cat:'ai',        type:'GATEWAY',    service:'kendra',          icon:'KND'},
     // AI / ML — GCP
     {id:'gcp_vertexai',  name:'Vertex AI',     provider:'gcp',     cat:'ai',        type:'COMPUTE',    service:'vertex_ai',       icon:'VAI'},
     {id:'gcp_bqml',      name:'BigQuery ML',   provider:'gcp',     cat:'ai',        type:'DATABASE',   service:'bigquery_ml',     icon:'BQML'},
@@ -1513,8 +1472,6 @@
     {id:'hw_synopsys',   name:'Synopsys',      provider:'generic', cat:'embedded',  type:'OTHER',      service:'synopsys',        icon:'SNPS'},
     {id:'hw_siemens',    name:'Siemens EDA',   provider:'generic', cat:'embedded',  type:'OTHER',      service:'siemens_eda',     icon:'MENT'},
     {id:'hw_fpga',       name:'FPGA Instance', provider:'generic', cat:'embedded',  type:'COMPUTE',    service:'fpga',            icon:'FPGA'},
-    {id:'aws_iotcore',   name:'IoT Core',      provider:'aws',     cat:'embedded',  type:'GATEWAY',    service:'iot_core',        icon:'IOT'},
-    {id:'aws_greengrass',name:'IoT Greengrass',provider:'aws',     cat:'embedded',  type:'COMPUTE',    service:'iot_greengrass',  icon:'GG'},
     {id:'az_iothub',     name:'IoT Hub',       provider:'azure',   cat:'embedded',  type:'GATEWAY',    service:'iot_hub',         icon:'IOTH'},
     {id:'az_iotedge',    name:'IoT Edge',      provider:'azure',   cat:'embedded',  type:'COMPUTE',    service:'iot_edge',        icon:'IOTE'},
     {id:'hw_freertos',   name:'FreeRTOS',      provider:'generic', cat:'embedded',  type:'OTHER',      service:'freertos',        icon:'RTOS'},
@@ -1524,34 +1481,82 @@
 
   let selectedSvcs = new Map();
   let currentCat = 'all';
+  let currentGroup = 'all';
 
   function renderServiceGrid() {
     const grid = document.getElementById('serviceGrid');
     if (!grid) return;
     const q = (document.getElementById('serviceSearch').value || '').toLowerCase();
-    const filtered = SERVICES.filter(s => {
-      const matchCat = currentCat === 'all' || s.cat === currentCat;
-      const matchQ   = !q || s.name.toLowerCase().includes(q) || s.provider.includes(q) || s.service.includes(q);
-      return matchCat && matchQ;
+    const inCat = SERVICES.filter(s => matchesCat(s, currentCat));
+    const filtered = inCat.filter(s => {
+      const matchGroup = currentGroup === 'all' || s.group === currentGroup;
+      const matchQ = !q || s.name.toLowerCase().includes(q) || s.provider.includes(q)
+        || s.service.includes(q) || (s.group || '').toLowerCase().includes(q);
+      return matchGroup && matchQ;
     });
-    grid.innerHTML = filtered.map(s => `
-      <div class="service-card ${selectedSvcs.has(s.id) ? 'selected' : ''}" onclick="toggleSvc('${s.id}')" title="${s.name} (${s.provider})">
+
+    renderGroupTabs(inCat);
+
+    // Group headers only help when the tab actually spans several categories.
+    // Non-AWS entries carry no AWS group, so they fall back to their tab label.
+    const label = s => s.group || CAT_LABELS[s.cat] || 'Other';
+    const showHeads = currentGroup === 'all' && new Set(filtered.map(label)).size > 1;
+    let lastGroup = null;
+    grid.innerHTML = filtered.map(s => {
+      const head = showHeads && label(s) !== lastGroup
+        ? `<div class="grid-group-head">${label(s)}</div>` : '';
+      lastGroup = label(s);
+      return head + `
+      <div class="service-card ${selectedSvcs.has(s.id) ? 'selected' : ''}${s.legacy ? ' legacy' : ''}"
+           onclick="toggleSvc('${s.id}')"
+           title="${s.name} (${s.provider})${s.group ? ' — ' + s.group : ''}${s.legacy ? ' — retired or closed to new customers' : ''}">
+        ${s.legacy ? '<span class="svc-legacy">LEGACY</span>' : ''}
         <div><span class="svc-prov prov-${s.provider}">${s.provider.toUpperCase()}</span></div>
         <div class="svc-icon">${s.icon}</div>
         <div class="svc-name">${s.name}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
+  }
+
+  function matchesCat(svc, cat) {
+    return cat === 'all' || svc.cat === cat || (svc.extraCats || []).includes(cat);
+  }
+
+  // Catalog ids change as services get renamed; aliases keep older saved picks
+  // and recommender responses resolving to the current entry.
+  function findService(id) {
+    return SERVICES.find(s => s.id === id)
+        || SERVICES.find(s => (s.aliases || []).includes(id));
+  }
+
+  function renderGroupTabs(inCat) {
+    const el = document.getElementById('groupTabs');
+    if (!el) return;
+    const counts = new Map();
+    inCat.forEach(s => { if (s.group) counts.set(s.group, (counts.get(s.group) || 0) + 1); });
+    if (counts.size < 2) { el.innerHTML = ''; return; }
+    const chip = (g, label, n) =>
+      `<button class="group-tab ${currentGroup === g ? 'active' : ''}" onclick="setGroup('${g.replace(/'/g, "\\'")}')">${label}<span class="group-count">${n}</span></button>`;
+    el.innerHTML = chip('all', 'All', inCat.length)
+      + [...counts.entries()].map(([g, n]) => chip(g, g, n)).join('');
   }
 
   function setCat(el) {
     currentCat = el.dataset.cat;
+    currentGroup = 'all';
     document.querySelectorAll('.cat-tab').forEach(t => t.classList.toggle('active', t.dataset.cat === currentCat));
     renderServiceGrid();
   }
 
+  function setGroup(group) {
+    currentGroup = group;
+    renderServiceGrid();
+  }
+
   function toggleSvc(id) {
-    const svc = SERVICES.find(s => s.id === id);
+    const svc = findService(id);
     if (!svc) return;
+    id = svc.id;
     if (selectedSvcs.has(id)) selectedSvcs.delete(id);
     else selectedSvcs.set(id, svc);
     renderServiceGrid();
@@ -1689,9 +1694,12 @@
     const sel = document.getElementById('recMustHaves');
     if (sel.options.length) return;
     const byCat = {};
-    SERVICES.forEach(s => { (byCat[s.cat] = byCat[s.cat] || []).push(s); });
+    SERVICES.forEach(s => {
+      const label = s.group ? `${CAT_LABELS[s.cat] || s.cat} — ${s.group}` : (CAT_LABELS[s.cat] || s.cat);
+      (byCat[label] = byCat[label] || []).push(s);
+    });
     sel.innerHTML = Object.keys(byCat).filter(c => c !== 'all').map(cat =>
-      `<optgroup label="${CAT_LABELS[cat] || cat}">${byCat[cat].map(s => `<option value="${s.id}">${s.name} (${s.provider})</option>`).join('')}</optgroup>`
+      `<optgroup label="${cat}">${byCat[cat].map(s => `<option value="${s.id}">${s.name} (${s.provider})</option>`).join('')}</optgroup>`
     ).join('');
   }
 
@@ -1705,7 +1713,7 @@
     btn.textContent = 'Thinking...';
     try {
       const mustHaves = [...document.getElementById('recMustHaves').selectedOptions]
-        .map(o => SERVICES.find(s => s.id === o.value))
+        .map(o => findService(o.value))
         .filter(Boolean)
         .map(s => ({id:s.id, name:s.name, type:s.type, provider:s.provider, service:s.service}));
 
@@ -1765,7 +1773,7 @@
   function useRecommendation() {
     if (!lastRecommendation) return;
     lastRecommendation.recommended.forEach(r => {
-      const svc = SERVICES.find(s => s.id === r.id);
+      const svc = findService(r.id);
       if (svc) selectedSvcs.set(svc.id, svc);
     });
     switchTab('builder');

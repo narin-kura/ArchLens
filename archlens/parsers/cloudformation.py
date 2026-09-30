@@ -90,4 +90,9 @@ class CloudFormationParser(BaseParser):
                 flat.update(self._flatten(v, prefix=f"{key}_"))
             elif isinstance(v, (str, int, float, bool)):
                 flat[key] = str(v).lower()
+            elif isinstance(v, list):
+                # A policy's Statement list is where the wildcards live; keeping
+                # it as JSON is the difference between seeing Action: "*" and
+                # dropping the whole document.
+                flat[key] = json.dumps(v)
         return flat
