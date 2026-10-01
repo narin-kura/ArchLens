@@ -9,6 +9,7 @@ from .analyzers.security import SecurityAnalyzer
 from .analyzers.cost import CostAnalyzer
 from .analyzers.kubernetes_security import KubernetesSecurityAnalyzer
 from .analyzers.cicd_security import CicdSecurityAnalyzer
+from .analyzers.topology import TopologyAnalyzer
 
 
 def run_analysis(source: str, format_hint: str | None = None) -> AnalysisReport:
@@ -16,7 +17,7 @@ def run_analysis(source: str, format_hint: str | None = None) -> AnalysisReport:
     model = parser.parse(source)
 
     findings: list[Finding] = []
-    for analyzer in [SecurityAnalyzer(), KubernetesSecurityAnalyzer(), CicdSecurityAnalyzer(), CostAnalyzer()]:
+    for analyzer in [SecurityAnalyzer(), KubernetesSecurityAnalyzer(), CicdSecurityAnalyzer(), TopologyAnalyzer(), CostAnalyzer()]:
         findings.extend(analyzer.analyze(model))
 
     return AnalysisReport(architecture_name=model.name, findings=findings)

@@ -595,6 +595,10 @@ class SecurityAnalyzer(BaseAnalyzer):
         return findings
 
     def _check_no_waf(self, model: ArchitectureModel) -> list[Finding]:
+        # With edges in the model, TopologyAnalyzer says which entry point is
+        # unprotected instead of whether a WAF exists somewhere.
+        if model.connections:
+            return []
         gateways = [
             c for c in model.components_by_type(ComponentType.GATEWAY)
             # An internal load balancer has no internet exposure to filter.

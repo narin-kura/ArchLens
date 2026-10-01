@@ -21,6 +21,9 @@ Architecture security & cost analyzer. Upload a Terraform file or describe your 
 - Accepts plain-text architecture descriptions (uses Claude AI)
 - Detects security risks (public storage, unencrypted DBs, open ports, missing monitoring)
 - Identifies cost optimizations (oversized instances, NAT Gateway vs VPC endpoints, missing auto-scaling)
+- Draw your architecture on a canvas — palette on the left, nodes and connections on the right — and the
+  connections are analysed too: an internet-facing entry point wired straight into a database, a CDN
+  origin that can be read directly, a function reaching a data store from outside its VPC
 
 ## Run locally
 
