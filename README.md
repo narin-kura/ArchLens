@@ -33,6 +33,19 @@ uvicorn web.app:app --host 0.0.0.0 --port 8000
 # Open http://localhost:8000
 ```
 
+## Pages
+
+| Route | What it is |
+|---|---|
+| `/` | Home — what ArchLens does and the four ways in |
+| `/analyze` | Upload a config, describe it in text, or get a stack recommended |
+| `/diagram` | Full-screen canvas: drag services, connect them, analyse the topology |
+| `/examples` | The 16 bundled reference architectures, analysed in one click |
+
+Front-end assets live in `web/static/css/` and `web/static/js/` — one shared
+`app.css`, and JS split by concern (`canvas.js`, `report.js`, `suggestions.js`,
+`analyze.js`, `recommend.js`, `services.js`, `catalog_aws.js`).
+
 ## Examples
 
 - [`examples/architectures/`](examples/architectures/) — sixteen complete AWS

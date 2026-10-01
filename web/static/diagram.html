@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagram — ArchLens</title>
+  <meta name="description" content="Draw your cloud architecture on a canvas and analyse it, connections included." />
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DWV9TV9GPL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DWV9TV9GPL');
+  </script>
+  <link rel="stylesheet" href="/static/css/app.css" />
+  <link rel="stylesheet" href="/static/css/diagram.css" />
+</head>
+<body class="app-body">
+<header class="app-header">
+  <a class="app-logo" href="/"><span class="arch">Arch</span><span class="lens">Lens</span></a>
+  <nav class="app-nav">
+    <a href="/analyze">Analyze a file</a>
+    <a href="/examples">Examples</a>
+  </nav>
+  <span class="app-spacer"></span>
+  <span class="canvas-counts" id="canvasCounts">0 services · 0 connections</span>
+  <button class="canvas-btn" onclick="autoArrange()" title="Lay nodes out in tiers">Auto-arrange</button>
+  <button class="canvas-btn" onclick="deleteSelection()" id="canvasDeleteBtn" disabled title="Delete the selected node or connection">Delete</button>
+  <button class="canvas-btn danger" onclick="clearCanvas()" title="Remove everything">Clear</button>
+  <button class="app-analyze" id="builderAnalyzeBtn" onclick="runBuilderAnalysis()" disabled>Analyze Diagram &#8594;</button>
+</header>
+
+<div class="app-shell">
+  <aside class="palette">
+    <input class="palette-search" id="serviceSearch" type="text" placeholder="Search services..." oninput="renderPalette()">
+    <select class="palette-cat" id="paletteCat" onchange="setCat(this)" aria-label="Provider or category">
+      <option value="all">All providers</option>
+      <option value="aws" selected>AWS</option>
+      <option value="gcp">GCP</option>
+      <option value="azure">Azure</option>
+      <option value="data">Data Stores</option>
+      <option value="gpu">GPU / NVIDIA</option>
+      <option value="cicd">CI/CD</option>
+      <option value="monitoring">Monitoring</option>
+      <option value="security">Security</option>
+      <option value="ai">AI / ML</option>
+      <option value="embedded">Hardware / IoT</option>
+    </select>
+    <div class="group-tabs" id="groupTabs"></div>
+    <div class="palette-list" id="paletteList"></div>
+    <div class="palette-hint">Click or drag onto the canvas</div>
+  </aside>
+
+  <main class="canvas-col">
+    <div class="canvas" id="canvas" tabindex="0">
+      <div class="canvas-inner" id="canvasInner">
+        <svg class="canvas-edges" id="canvasEdges">
+          <defs>
+            <marker id="arrowEnd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6bb5"/>
+            </marker>
+            <marker id="arrowEndSel" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#a5b4fc"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+      <div class="canvas-empty" id="canvasEmpty">
+        <div class="canvas-empty-icon">&#9634;</div>
+        <div><strong>Empty canvas</strong></div>
+        <div class="canvas-empty-sub">Drag a service here, or click one in the palette.<br/>Then drag from a node's right-hand dot to connect it to another.</div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="app-rail">
+    <div class="sugg-panel">
+      <div class="sugg-title">&#128161; Live Suggestions</div>
+      <div id="suggList"><div class="sugg-item info"><div class="sugg-dot info"></div><span>Add services to see instant recommendations</span></div></div>
+    </div>
+    <div class="rail-note">Connections are analysed too &mdash; what reaches what.</div>
+  </aside>
+</div>
+
+<div class="report-drawer" id="reportDrawer">
+  <div class="drawer-bar">
+    <strong>Analysis</strong>
+    <span class="app-spacer"></span>
+    <button class="canvas-btn" onclick="closeReport()">Close</button>
+  </div>
+  <div class="drawer-body">
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Analyzing your architecture...</p>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="results" id="results">
+    <div class="summary-bar">
+      <div class="summary-card arch">
+        <div class="label">Architecture</div>
+        <div class="value" id="archName" style="font-size:15px; margin-top:6px;"></div>
+        <div class="card-sub" id="compCount"></div>
+        <div class="card-tags" id="workloadTags"></div>
+      </div>
+      <div class="summary-card sec">
+        <div class="label">Security Findings</div>
+        <div class="value" id="secCount">0</div>
+        <div class="sev-pills" id="sevPills"></div>
+      </div>
+      <div class="summary-card cost">
+        <div class="label">Cost Optimizations</div>
+        <div class="value" id="costCount">0</div>
+        <div class="card-sub" id="costSavings"></div>
+      </div>
+    </div>
+    <div class="warn-banner" id="warnBanner" style="display:none;">
+      &#9888; No components were detected in your input. The file may be empty, unsupported, or in an unexpected format.
+    </div>
+
+    <div class="export-bar">
+      <button class="export-btn json" onclick="downloadReport('json')">&#8595; JSON</button>
+      <button class="export-btn md"   onclick="downloadReport('markdown')">&#8595; Markdown</button>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Security Findings <span class="count" id="secCountBadge">0</span></div>
+      <div id="secFindings"></div>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Cost Optimizations <span class="count" id="costCountBadge">0</span></div>
+      <div id="costFindings"></div>
+    </div>
+  </div>
+</section>
+  </div>
+</div>
+
+<script>
+  function openReport() { document.getElementById('reportDrawer').classList.add('open'); }
+  function closeReport() { document.getElementById('reportDrawer').classList.remove('open'); }
+</script>
+<script src="/static/js/catalog_aws.js"></script>
+<script src="/static/js/services.js"></script>
+<script src="/static/js/report.js"></script>
+<script src="/static/js/suggestions.js"></script>
+<script src="/static/js/canvas.js"></script>
+<script>
+  // The canvas is the whole page here, so set it up on load rather than on a
+  // tab switch, and pick up a stack handed over by the recommender.
+  renderPalette();
+  initCanvas();
+  if (!applyHandoff()) restoreDraft();
+  renderCanvas();
+</script>
+</body>
+</html>

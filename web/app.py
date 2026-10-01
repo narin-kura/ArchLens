@@ -38,9 +38,101 @@ app.mount("/static", StaticFiles(directory=str(_STATIC)), name="static")
 MAX_FILE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
+def _page(name: str) -> HTMLResponse:
+    return HTMLResponse((_STATIC / name).read_text(encoding="utf-8"))
+
+
 @app.get("/", response_class=HTMLResponse)
 def index():
-    return (_STATIC / "index.html").read_text(encoding="utf-8")
+    return _page("index.html")
+
+
+@app.get("/analyze", response_class=HTMLResponse)
+def analyze_page():
+    return _page("analyze.html")
+
+
+@app.get("/diagram", response_class=HTMLResponse)
+def diagram_page():
+    return _page("diagram.html")
+
+
+@app.get("/examples", response_class=HTMLResponse)
+def examples_page():
+    return _page("examples.html")
+
+
+# The bundled reference architectures. Keyed by slug so a request can never
+# reach a path outside this directory.
+_EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples" / "architectures"
+
+
+def _example_slugs() -> dict[str, Path]:
+    if not _EXAMPLES_DIR.is_dir():
+        return {}
+    return {
+        d.name: d / "main.tf"
+        for d in sorted(_EXAMPLES_DIR.iterdir())
+        if d.is_dir() and (d / "main.tf").is_file()
+    }
+
+
+def _example_summary(slug: str, path: Path) -> dict:
+    """Title, blurb and service list come from the file's header comment."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    comment = []
+    for line in lines:
+        if line.startswith("#"):
+            comment.append(line.lstrip("#").strip())
+        elif comment:
+            break
+    title = comment[0].split("—")[-1].strip() if comment else slug
+    body = " ".join(comment[1:]).strip()
+    services, expected, blurb = "", "", body
+    for marker, field in (("Services:", "services"), ("Expected ArchLens findings:", "expected")):
+        if marker in body:
+            after = body.split(marker, 1)[1]
+            for other in ("Services:", "Expected ArchLens findings:"):
+                if other != marker and other in after:
+                    after = after.split(other, 1)[0]
+            value = after.strip()
+            if field == "services":
+                services = value
+            else:
+                expected = value
+    blurb = body.split("Services:")[0].strip()
+    return {
+        "slug": slug,
+        "number": slug.split("-", 1)[0],
+        "title": title,
+        "description": blurb,
+        "services": [s.strip(" .") for s in services.split(",") if s.strip(" .")],
+        "expected": expected,
+        "lines": len(lines),
+    }
+
+
+@app.get("/api/examples")
+def list_examples():
+    return {"examples": [_example_summary(slug, path) for slug, path in _example_slugs().items()]}
+
+
+@app.post("/api/examples/{slug}/analyze")
+async def analyze_example(slug: str):
+    path = _example_slugs().get(slug)
+    if path is None:
+        raise HTTPException(status_code=404, detail="No such example architecture.")
+    try:
+        parser = detect_parser(str(path.parent), "terraform")
+        model = await run_in_threadpool(parser.parse, str(path.parent))
+        findings = (SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model)
+                    + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
+                    + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
+        report = AnalysisReport(architecture_name=slug, findings=findings)
+        return _report_to_dict(report, len(model.components))
+    except Exception:
+        logger.exception("Failed to analyze bundled example %s", slug)
+        raise HTTPException(status_code=500, detail="Could not analyze that example.")
 
 
 @app.get("/health")

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples — ArchLens</title>
+  <meta name="description" content="Sixteen complete AWS reference architectures, each analysed in one click." />
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DWV9TV9GPL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DWV9TV9GPL');
+  </script>
+  <link rel="stylesheet" href="/static/css/app.css" />
+  <link rel="stylesheet" href="/static/css/examples.css" />
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><span class="arch">Arch</span><span class="lens">Lens</span></a>
+  <div class="nav-links">
+    <a class="nav-link" href="/">Home</a>
+    <a class="nav-link" href="/analyze">Analyze</a>
+    <a class="nav-link" href="/diagram">Diagram</a>
+    <a class="nav-link active" href="/examples">Examples</a>
+  </div>
+  <a class="nav-cta" href="/diagram">Draw a Diagram</a>
+</nav>
+<section class="page-section">
+  <div class="section-title">Reference architectures</div>
+  <p class="page-lede">Sixteen complete AWS architectures, written to pass a clean analysis &mdash; between them they
+  use 238 distinct AWS resource types. Analyse one to see what a good report looks like, or
+  <a href="/analyze">upload your own</a> for comparison.</p>
+
+  <div class="examples-grid" id="examplesGrid">
+    <div class="examples-loading">Loading architectures…</div>
+  </div>
+</section>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Analyzing your architecture...</p>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="results" id="results">
+    <div class="summary-bar">
+      <div class="summary-card arch">
+        <div class="label">Architecture</div>
+        <div class="value" id="archName" style="font-size:15px; margin-top:6px;"></div>
+        <div class="card-sub" id="compCount"></div>
+        <div class="card-tags" id="workloadTags"></div>
+      </div>
+      <div class="summary-card sec">
+        <div class="label">Security Findings</div>
+        <div class="value" id="secCount">0</div>
+        <div class="sev-pills" id="sevPills"></div>
+      </div>
+      <div class="summary-card cost">
+        <div class="label">Cost Optimizations</div>
+        <div class="value" id="costCount">0</div>
+        <div class="card-sub" id="costSavings"></div>
+      </div>
+    </div>
+    <div class="warn-banner" id="warnBanner" style="display:none;">
+      &#9888; No components were detected in your input. The file may be empty, unsupported, or in an unexpected format.
+    </div>
+
+    <div class="export-bar">
+      <button class="export-btn json" onclick="downloadReport('json')">&#8595; JSON</button>
+      <button class="export-btn md"   onclick="downloadReport('markdown')">&#8595; Markdown</button>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Security Findings <span class="count" id="secCountBadge">0</span></div>
+      <div id="secFindings"></div>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Cost Optimizations <span class="count" id="costCountBadge">0</span></div>
+      <div id="costFindings"></div>
+    </div>
+  </div>
+</section>
+<footer>
+  <strong>ArchLens</strong> &mdash;
+  <a href="https://github.com/narin-kura/ArchLens" target="_blank">GitHub</a>
+  &nbsp;|&nbsp;
+  <a href="https://huggingface.co/spaces/knnarin/ArchLens" target="_blank">Hugging Face</a>
+  <br/>
+  <span style="font-size:.75rem;opacity:.65">
+    © 2026 <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#818cf8">K.N.Narin</a> &nbsp;·&nbsp; Non-commercial use only &nbsp;·&nbsp;
+    Commercial licensing: <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#818cf8">contact via GitHub</a><br/>
+    For informational purposes only — not a substitute for a professional security audit. See LICENSE for full terms.
+  </span>
+</footer>
+<script src="/static/js/report.js"></script>
+<script src="/static/js/examples.js"></script>
+</body>
+</html>

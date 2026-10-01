@@ -1,0 +1,48 @@
+/* Copyright (c) 2026 K.N.Narin (github.com/narin-kura). All rights reserved.
+   Non-commercial use only. See LICENSE. */
+
+/* The diagram page is a tool, not a document: it fills the viewport and the
+   canvas — not the page — is what scrolls. */
+html, body.app-body { height:100%; overflow:hidden; }
+body.app-body { display:flex; flex-direction:column; }
+
+.app-header { display:flex; align-items:center; gap:8px; flex-shrink:0; padding:10px 16px;
+  background:#0b1222; border-bottom:1.5px solid #1b2b47; }
+.app-logo { font-size:18px; font-weight:800; text-decoration:none; letter-spacing:-0.5px; }
+.app-nav { display:flex; gap:12px; margin-left:18px; }
+.app-nav a { font-size:12.5px; font-weight:650; color:#7e95b8; text-decoration:none; }
+.app-nav a:hover { color:#c4b5fd; }
+.app-spacer { flex:1; }
+.app-analyze { padding:9px 17px; border:none; border-radius:9px; font-size:13px; font-weight:800;
+  cursor:pointer; color:#fff; background:linear-gradient(135deg,#6366f1,#8b5cf6); font-family:inherit; }
+.app-analyze:disabled { opacity:.45; cursor:default; }
+
+.app-shell { flex:1; display:flex; min-height:0; }
+.app-shell .palette { width:224px; padding:12px; border-right:1.5px solid #1b2b47; overflow:hidden;
+  background:#0b1222; }
+.app-shell .palette-list { flex:1; height:auto; min-height:0; }
+.app-shell .canvas-col { flex:1; min-width:0; padding:0; gap:0; }
+/* The canvas owns the remaining space; the dot grid and scroll come from app.css */
+.app-shell .canvas { height:100%; border:none; border-radius:0; }
+.app-rail { width:252px; flex-shrink:0; padding:12px; border-left:1.5px solid #1b2b47;
+  background:#0b1222; display:flex; flex-direction:column; gap:10px; overflow-y:auto; }
+.rail-note { font-size:11px; color:#4a6080; line-height:1.6; text-align:center; }
+
+/* Report slides in over the canvas rather than pushing the layout around. */
+.report-drawer { position:fixed; top:0; right:0; bottom:0; width:min(680px, 94vw); z-index:120;
+  background:#0d1224; border-left:1.5px solid #27406b; box-shadow:-18px 0 50px rgba(0,0,0,.45);
+  transform:translateX(102%); transition:transform .22s ease; display:flex; flex-direction:column; }
+.report-drawer.open { transform:translateX(0); }
+.drawer-bar { display:flex; align-items:center; gap:8px; padding:12px 16px; flex-shrink:0;
+  border-bottom:1.5px solid #1b2b47; color:#dde8ff; font-size:14px; }
+.drawer-body { flex:1; overflow-y:auto; padding:4px 16px 26px; }
+.drawer-body .results, .drawer-body .analyzer-section { max-width:none; padding:0; margin:0; }
+
+@media (max-width: 860px) {
+  html, body.app-body { height:auto; overflow:auto; }
+  .app-shell { flex-direction:column; }
+  .app-shell .palette, .app-rail { width:100%; border:none; border-bottom:1.5px solid #1b2b47; }
+  .app-shell .palette-list { height:170px; }
+  .app-shell .canvas { height:460px; }
+  .app-header { flex-wrap:wrap; }
+}

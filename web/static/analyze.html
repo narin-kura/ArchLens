@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analyze — ArchLens</title>
+  <meta name="description" content="Upload an infrastructure file or describe your architecture in plain English and get security and cost findings." />
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DWV9TV9GPL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DWV9TV9GPL');
+  </script>
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/"><span class="arch">Arch</span><span class="lens">Lens</span></a>
+  <div class="nav-links">
+    <a class="nav-link" href="/">Home</a>
+    <a class="nav-link active" href="/analyze">Analyze</a>
+    <a class="nav-link" href="/diagram">Diagram</a>
+    <a class="nav-link" href="/examples">Examples</a>
+  </div>
+  <a class="nav-cta" href="/diagram">Draw a Diagram</a>
+</nav>
+<section class="analyzer-section page-section" id="analyzer">
+  <div class="section-title">Analyze your architecture</div>
+  <p class="page-lede">Upload a config, describe it in words, or let ArchLens pick a stack for you. Want to draw it instead? <a href="/diagram">Use the canvas</a>.</p>
+<!-- ANALYZER -->
+<section class="analyzer-section" id="analyzer">
+  <div class="section-title">Analyze your architecture</div>
+
+  <div class="input-panel">
+    <div class="tabs">
+      <button class="tab active" data-tab="file" onclick="switchTab('file')">Upload File</button>
+      <button class="tab" data-tab="text" onclick="switchTab('text')">Describe in Text</button>
+      <button class="tab" data-tab="recommend" onclick="switchTab('recommend')">Recommend My Stack</button>
+    </div>
+
+    <div id="tab-file" class="tab-content active">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md,.dockerfile" onchange="onFileSelect(this)" />
+        <div class="icon">&#128194;</div>
+        <p><strong>Click to upload</strong> or drag &amp; drop</p>
+        <p>Terraform &nbsp;&#183;&nbsp; Kubernetes YAML &nbsp;&#183;&nbsp; Helm &nbsp;&#183;&nbsp; Docker Compose &nbsp;&#183;&nbsp; Dockerfile &nbsp;&#183;&nbsp; Azure ARM &nbsp;&#183;&nbsp; CloudFormation &nbsp;&#183;&nbsp; Serverless Framework &nbsp;&#183;&nbsp; OpenAPI/Swagger &nbsp;&#183;&nbsp; GitHub Actions &nbsp;&#183;&nbsp; Ansible &nbsp;&#183;&nbsp; draw.io &nbsp;&#183;&nbsp; Text</p>
+        <div class="file-name" id="fileName"></div>
+      </div>
+    </div>
+
+    <div id="tab-text" class="tab-content">
+      <textarea id="textInput"
+        placeholder="Describe your cloud infrastructure — services, databases, tools...&#10;&#10;Example: We run a Node.js API on AWS EC2, a PostgreSQL RDS database with no encryption, an S3 bucket for file uploads, Jenkins for CI/CD, and no monitoring configured."
+        oninput="validateTextInput(this)"></textarea>
+      <div class="text-hint" id="textHint"></div>
+    </div>
+<!-- RECOMMEND TAB -->
+    <div id="tab-recommend" class="tab-content">
+      <div class="builder-intro">
+        <div class="builder-intro-icon">&#10024;</div>
+        <div>
+          <div class="builder-intro-title">Not sure where to start?</div>
+          <div class="builder-intro-sub">Answer a few questions and we'll pick a cost-optimized, secure starter stack from the catalog — you can tweak it before analyzing.</div>
+        </div>
+      </div>
+
+      <div class="rec-form">
+        <div class="rec-field">
+          <label for="recProjectType">What are you building?</label>
+          <select class="rec-select" id="recProjectType">
+            <option value="web_api">Web app / API backend</option>
+            <option value="microservices">Microservices platform</option>
+            <option value="data_pipeline">Data pipeline / analytics</option>
+            <option value="ai_llm">AI / LLM application</option>
+            <option value="mobile_backend">Mobile app backend</option>
+            <option value="iot_embedded">IoT / embedded system</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recScale">Expected scale</label>
+          <select class="rec-select" id="recScale">
+            <option value="startup">Startup / MVP — low traffic</option>
+            <option value="growth">Growth — moderate traffic</option>
+            <option value="enterprise">Enterprise — high scale</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recCloud">Preferred cloud</label>
+          <select class="rec-select" id="recCloud">
+            <option value="generic">No preference / self-hosted</option>
+            <option value="aws">AWS</option>
+            <option value="gcp">GCP</option>
+            <option value="azure">Azure</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recPriority">Optimize for</label>
+          <select class="rec-select" id="recPriority">
+            <option value="cost">Lowest cost</option>
+            <option value="balanced" selected>Balanced</option>
+            <option value="performance">Best performance &amp; scale</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recDatabase">Database needs</label>
+          <select class="rec-select" id="recDatabase">
+            <option value="relational">Relational (SQL)</option>
+            <option value="nosql">NoSQL / document</option>
+            <option value="analytics">Analytics / data warehouse</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recAiNeeds">AI / ML needs</label>
+          <select class="rec-select" id="recAiNeeds">
+            <option value="none">None</option>
+            <option value="llm_api">LLM API — chatbot / RAG</option>
+            <option value="custom_ml">Custom ML training</option>
+            <option value="gpu_inference">Self-hosted LLM / GPU inference</option>
+          </select>
+        </div>
+        <div class="rec-field">
+          <label for="recSecurityLevel">Security level</label>
+          <select class="rec-select" id="recSecurityLevel">
+            <option value="basic">Basic</option>
+            <option value="standard" selected>Standard (recommended)</option>
+            <option value="high">High — regulated / compliance</option>
+          </select>
+        </div>
+        <div class="rec-checkbox-row">
+          <input type="checkbox" id="recRealtime" />
+          <label for="recRealtime">Needs async / event-driven processing (queues, streaming)</label>
+        </div>
+        <div class="rec-field rec-field-wide">
+          <label for="recMustHaves">Already know some services you want to use? (optional, ctrl/cmd-click for multiple)</label>
+          <select class="rec-multiselect" id="recMustHaves" multiple></select>
+        </div>
+      </div>
+
+      <button class="rec-submit-btn" id="recSubmitBtn" onclick="getRecommendation()">Get My Recommendation &#8594;</button>
+
+      <div class="rec-result" id="recResult" style="display:none;">
+        <div class="rec-summary" id="recSummary"></div>
+
+        <div class="rec-list-title">Recommended Stack</div>
+        <div id="recList"></div>
+
+        <div class="rec-tips-title">Cost Tips</div>
+        <ul class="rec-tips" id="recCostTips"></ul>
+
+        <div class="rec-tips-title">Security Tips</div>
+        <ul class="rec-tips" id="recSecurityTips"></ul>
+
+        <button class="builder-analyze-btn rec-use-btn" onclick="useRecommendation()">Use This Stack &#8594;</button>
+      </div>
+    </div>
+    <!-- /RECOMMEND TAB -->
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">Analyze Architecture</button>
+  </div>
+</section>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <p>Analyzing your architecture...</p>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="results" id="results">
+    <div class="summary-bar">
+      <div class="summary-card arch">
+        <div class="label">Architecture</div>
+        <div class="value" id="archName" style="font-size:15px; margin-top:6px;"></div>
+        <div class="card-sub" id="compCount"></div>
+        <div class="card-tags" id="workloadTags"></div>
+      </div>
+      <div class="summary-card sec">
+        <div class="label">Security Findings</div>
+        <div class="value" id="secCount">0</div>
+        <div class="sev-pills" id="sevPills"></div>
+      </div>
+      <div class="summary-card cost">
+        <div class="label">Cost Optimizations</div>
+        <div class="value" id="costCount">0</div>
+        <div class="card-sub" id="costSavings"></div>
+      </div>
+    </div>
+    <div class="warn-banner" id="warnBanner" style="display:none;">
+      &#9888; No components were detected in your input. The file may be empty, unsupported, or in an unexpected format.
+    </div>
+
+    <div class="export-bar">
+      <button class="export-btn json" onclick="downloadReport('json')">&#8595; JSON</button>
+      <button class="export-btn md"   onclick="downloadReport('markdown')">&#8595; Markdown</button>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Security Findings <span class="count" id="secCountBadge">0</span></div>
+      <div id="secFindings"></div>
+    </div>
+
+    <div class="findings-section">
+      <div class="section-hdr">Cost Optimizations <span class="count" id="costCountBadge">0</span></div>
+      <div id="costFindings"></div>
+    </div>
+  </div>
+</section>
+<footer>
+  <strong>ArchLens</strong> &mdash;
+  <a href="https://github.com/narin-kura/ArchLens" target="_blank">GitHub</a>
+  &nbsp;|&nbsp;
+  <a href="https://huggingface.co/spaces/knnarin/ArchLens" target="_blank">Hugging Face</a>
+  <br/>
+  <span style="font-size:.75rem;opacity:.65">
+    © 2026 <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#818cf8">K.N.Narin</a> &nbsp;·&nbsp; Non-commercial use only &nbsp;·&nbsp;
+    Commercial licensing: <a href="https://github.com/narin-kura" target="_blank" rel="noopener" style="color:#818cf8">contact via GitHub</a><br/>
+    For informational purposes only — not a substitute for a professional security audit. See LICENSE for full terms.
+  </span>
+</footer>
+<script src="/static/js/catalog_aws.js"></script>
+<script src="/static/js/services.js"></script>
+<script src="/static/js/report.js"></script>
+<script src="/static/js/analyze.js"></script>
+<script src="/static/js/recommend.js"></script>
+</body>
+</html>
