@@ -120,6 +120,9 @@ _ALWAYS_ENCRYPTED_QUEUES = {
     "azurerm_servicebus_topic", "azurerm_servicebus_subscription",
     "azurerm_servicebus_queue", "azurerm_eventgrid_topic",
     "azurerm_eventgrid_system_topic", "azurerm_eventhub_namespace",
+    # Encryption is set once at the namespace; the hub itself is a partitioned
+    # topic within it with no encryption attribute of its own.
+    "azurerm_eventhub",
 }
 
 # Rules, subscriptions and event-source mappings route messages; they do not
@@ -129,6 +132,9 @@ _MESSAGE_ROUTERS = {
     "aws_lambda_event_source_mapping", "aws_pipes_pipe", "aws_iot_topic_rule",
     # These send or schedule messages; none of them stores a payload of its own.
     "aws_ses_domain_identity", "aws_pinpoint_app", "aws_batch_job_queue",
+    # A consumer group is a read cursor, not a message store; a Stream
+    # Analytics input is a job's binding to an existing Event Hub.
+    "azurerm_eventhub_consumer_group", "azurerm_stream_analytics_stream_input_eventhub",
 }
 
 # These origins only ever serve over HTTPS — there is no plaintext option to
@@ -733,8 +739,10 @@ class SecurityAnalyzer(BaseAnalyzer):
             return []
         gateways = [
             c for c in model.components_by_type(ComponentType.GATEWAY)
-            # An internal load balancer has no internet exposure to filter.
+            # An internal load balancer has no internet exposure to filter;
+            # neither does an Azure resource with public access turned off.
             if str(c.properties.get("internal", "false")).lower() not in ("true", "yes", "1")
+            and str(c.properties.get("public_network_access_enabled", "true")).lower() not in ("false", "no", "0")
             and c.service not in _NON_HTTP_GATEWAYS
         ]
         cdns = model.components_by_type(ComponentType.CDN)
