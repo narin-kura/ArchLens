@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .base import BaseAnalyzer
-from ..models.architecture import ArchitectureModel, Component, ComponentType
+from ..models.architecture import ArchitectureModel, Component, ComponentType, grouped_properties
 from ..models.findings import Finding, FindingType, Severity
 
 # MFA applies to identities a person signs in as. A service role assumed by
@@ -38,7 +38,30 @@ def _is_api_gateway(component: Component) -> bool:
 _NO_DELETION_PROTECTION = {
     "aws_opensearch_domain", "aws_elasticsearch_domain", "aws_memorydb_cluster",
     "aws_redshift_cluster", "aws_docdb_cluster",
+    # Azure SQL protects via RBAC/locks, not a resource-level flag — neither
+    # the server nor the database has a deletion-protection attribute at all.
+    "azurerm_mssql_server", "azurerm_sql_server",
+    "azurerm_mssql_database", "azurerm_sql_database",
 }
+
+# Encryption at rest is Microsoft-managed and unconditional for these — TDE
+# for SQL, platform encryption for Cosmos DB and the flexible-server engines.
+# An optional customer-managed key changes who holds the key, not whether the
+# data is encrypted, so there is no meaningful "is it encrypted" to assert.
+_ALWAYS_ENCRYPTED_DATABASES = {
+    "azurerm_mssql_database", "azurerm_sql_database", "azurerm_cosmosdb_account",
+    "azurerm_postgresql_flexible_server", "azurerm_mysql_flexible_server",
+}
+
+# The logical server resource (connection endpoint, TLS policy, firewall
+# rules) holds no data of its own — encryption, backup retention and zone
+# redundancy belong to the database resource it hosts, not the server.
+_LOGICAL_DB_SERVERS = {"azurerm_mssql_server", "azurerm_sql_server"}
+
+# TLS enforcement and audit logging are configured once, at the server, and
+# apply to every database on it — checking the database too would double
+# the same missing-setting finding without adding information.
+_DELEGATES_TO_SERVER = {"azurerm_mssql_database", "azurerm_sql_database"}
 
 # Snapshots, failover and deletion windows on a serverless data service are
 # AWS's job — there is no retention or deletion-protection setting to assert.
@@ -145,15 +168,81 @@ def _rule_direction(component: Component) -> str:
     return "both"
 
 
+# Azure NSGs describe rules on entirely different axes than an AWS security
+# group — direction is "Inbound"/"Outbound" (not a block name), a rule only
+# applies if access is "Allow" (a "Deny" rule exposes nothing), and "any
+# source" is spelled "*"/"Internet"/"Any", not "0.0.0.0/0". Normalizing a rule
+# down to the same (cidr, from_port, to_port) shape the AWS checks already
+# understand means one check — not a parallel Azure-only copy — covers both.
+_NSG_SERVICES = {"azurerm_network_security_group", "azurerm_network_security_rule"}
+_OPEN_SOURCE_TOKENS = {"*", "0.0.0.0/0", "internet", "any"}
+
+
+def _azure_nsg_rules(component: Component) -> list[dict]:
+    if component.service not in _NSG_SERVICES:
+        return []
+    grouped = grouped_properties(component.properties, "security_rule")
+    if grouped:
+        return grouped
+    if component.service == "azurerm_network_security_rule":
+        return [component.properties]
+    return []
+
+
+def _azure_port_bounds(port_range: str) -> tuple[int, int]:
+    port_range = str(port_range).strip()
+    if port_range in ("*", ""):
+        return 0, 65535
+    if "-" in port_range:
+        lo, hi = port_range.split("-", 1)
+        try:
+            return int(lo), int(hi)
+        except ValueError:
+            return 0, 65535
+    try:
+        value = int(port_range)
+        return value, value
+    except ValueError:
+        return 0, 65535
+
+
+def _azure_normalized_rules(component: Component, direction: str) -> list[dict]:
+    """NSG rules matching `direction` ("inbound"/"outbound"), reshaped into
+    the {cidr_blocks, from_port, to_port} dict the AWS-oriented checks read."""
+    out = []
+    for rule in _azure_nsg_rules(component):
+        if str(rule.get("direction", "")).lower() != direction:
+            continue
+        if str(rule.get("access", "")).lower() != "allow":
+            continue
+        prefix_key = "source_address_prefix" if direction == "inbound" else "destination_address_prefix"
+        prefix = str(rule.get(prefix_key, rule.get(f"{prefix_key}es", ""))).strip()
+        if prefix.lower() in _OPEN_SOURCE_TOKENS:
+            cidr = "0.0.0.0/0"
+        elif "::/0" in prefix:
+            cidr = "::/0"
+        else:
+            continue  # a real, scoped CIDR — not what these checks flag
+        lo, hi = _azure_port_bounds(rule.get("destination_port_range", "*"))
+        out.append({"cidr_blocks": cidr, "from_port": lo, "to_port": hi})
+    return out
+
+
 def _inbound_cidrs(component: Component) -> str:
     props = component.properties
     if _rule_direction(component) == "egress":
         return ""
+    azure_open = _azure_normalized_rules(component, "inbound")
+    if azure_open:
+        return " ".join(r["cidr_blocks"] for r in azure_open)
     return str(props.get("ingress_cidr_blocks", props.get("cidr_blocks", props.get("cidr_ipv4", ""))))
 
 
 def _inbound_rules(component: Component) -> list:
     """Every inbound rule as a searchable string, one entry per rule set."""
+    azure_open = _azure_normalized_rules(component, "inbound")
+    if azure_open:
+        return azure_open
     props = component.properties
     if _rule_direction(component) == "egress":
         return []
@@ -170,6 +259,9 @@ def _inbound_rules(component: Component) -> list:
 
 
 def _outbound_rules(component: Component) -> list:
+    azure_open = _azure_normalized_rules(component, "outbound")
+    if azure_open:
+        return [str(r) for r in azure_open]
     props = component.properties
     if _rule_direction(component) == "ingress":
         return []
@@ -210,6 +302,11 @@ _ALWAYS_ENCRYPTED_CACHES = {
     "aws_elasticache_serverless_cache", "aws_file_cache", "aws_memorydb_cluster",
 }
 
+# These require an access key or Entra ID to connect (there is no "no auth"
+# mode) and encrypt at rest unconditionally. enable_non_ssl_port is the one
+# real toggle Azure exposes — whether a client may skip TLS entirely.
+_ALWAYS_AUTHENTICATED_CACHES = {"azurerm_redis_cache", "azurerm_redis_enterprise_cluster"}
+
 
 def _defines_containers(component: Component) -> bool:
     return component.service not in _CONTAINER_PLATFORMS
@@ -234,9 +331,6 @@ def _is_function(component: Component) -> bool:
 _HOST_RESOURCES = {
     "aws_instance", "aws_launch_template", "aws_launch_configuration",
     "aws_spot_instance_request", "aws_emr_cluster", "aws_lightsail_instance",
-    "azurerm_virtual_machine", "azurerm_linux_virtual_machine",
-    "azurerm_windows_virtual_machine", "azurerm_virtual_machine_scale_set",
-    "google_compute_instance", "google_compute_instance_template",
 }
 
 
@@ -355,7 +449,9 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_unencrypted_databases(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if c.service in _MANAGED_DATA_SERVICES:
+            if c.service in _MANAGED_DATA_SERVICES or c.service in _ALWAYS_ENCRYPTED_DATABASES:
+                continue
+            if c.service in _LOGICAL_DB_SERVERS:
                 continue
             encrypted = str(c.properties.get("storage_encrypted", "")).lower()
             # DynamoDB, OpenSearch and Redshift each name this differently.
@@ -424,7 +520,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_unencrypted_storage(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
-            if c.service in _ARCHIVE_STORAGE:
+            if c.service in _ARCHIVE_STORAGE or c.service == "azurerm_storage_account":
                 continue
             sse = str(
                 c.properties.get("server_side_encryption",
@@ -469,7 +565,10 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_publicly_accessible(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            publicly_accessible = str(c.properties.get("publicly_accessible", "false")).lower()
+            publicly_accessible = str(
+                c.properties.get("publicly_accessible",
+                c.properties.get("public_network_access_enabled", "false"))
+            ).lower()
             if publicly_accessible in ("true", "yes", "1"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -511,11 +610,12 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components:
             if c.type not in backup_types or c.service in _ARCHIVE_STORAGE:
                 continue
-            if c.service in _MANAGED_DATA_SERVICES:
+            if c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS:
                 continue
             retention = str(c.properties.get("backup_retention_period",
                             c.properties.get("snapshot_retention_limit",
-                            c.properties.get("automated_snapshot_start_hour", "0"))))
+                            c.properties.get("automated_snapshot_start_hour",
+                            c.properties.get("retention_days", "0")))))
             backup_enabled = str(
                 c.properties.get("backup_enabled",
                 c.properties.get("point_in_time_recovery",
@@ -702,18 +802,34 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.STORAGE):
             if not _is_object_store(c):
                 continue
-            block = str(c.properties.get("block_public_acls", c.properties.get("public_access_block", "false"))).lower()
-            if block not in ("true", "yes", "1", "enabled"):
-                findings.append(Finding(
-                    type=FindingType.SECURITY,
-                    severity=Severity.HIGH,
-                    title=f"Storage '{c.name}' is missing the public access block",
-                    description="Without block_public_acls/block_public_policy, future ACL or policy changes can silently expose the bucket.",
-                    component_id=c.id,
-                    component_name=c.name,
-                    recommendation="Enable all four S3 Block Public Access settings at the bucket and account level.",
-                    references=["https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"],
-                ))
+            if c.service == "azurerm_storage_account":
+                # Azure has no single "block public access" switch — the
+                # equivalent posture comes from three independent settings.
+                allow_public = str(c.properties.get("allow_nested_items_to_be_public", "true")).lower()
+                public_network = str(c.properties.get("public_network_access_enabled", "true")).lower()
+                default_deny = str(c.properties.get("default_action", "")).lower() == "deny"
+                blocked = allow_public in ("false", "no", "0") or public_network in ("false", "no", "0") or default_deny
+                description = "Without allow_nested_items_to_be_public = false (or a network_rules default_action of Deny), a container or blob can be made public by a future ACL or policy change."
+                recommendation = "Set allow_nested_items_to_be_public = false and add a network_rules block with default_action = \"Deny\"."
+                reference = "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent"
+            else:
+                block = str(c.properties.get("block_public_acls", c.properties.get("public_access_block", "false"))).lower()
+                blocked = block in ("true", "yes", "1", "enabled")
+                description = "Without block_public_acls/block_public_policy, future ACL or policy changes can silently expose the bucket."
+                recommendation = "Enable all four S3 Block Public Access settings at the bucket and account level."
+                reference = "https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html"
+            if blocked:
+                continue
+            findings.append(Finding(
+                type=FindingType.SECURITY,
+                severity=Severity.HIGH,
+                title=f"Storage '{c.name}' is missing the public access block",
+                description=description,
+                component_id=c.id,
+                component_name=c.name,
+                recommendation=recommendation,
+                references=[reference],
+            ))
         return findings
 
     # ----------------------------------------------------------------- Database
@@ -721,14 +837,16 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_no_multi_az(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if not _is_instance_database(c):
+            if not _is_instance_database(c) or c.service in _LOGICAL_DB_SERVERS:
                 continue
             multi_az = str(
                 c.properties.get("multi_az",
                 c.properties.get("availability",
-                # OpenSearch and Redshift call it zone awareness.
+                # OpenSearch and Redshift call it zone awareness; Azure SQL
+                # and Postgres/MySQL Flexible Server call it zone redundancy.
                 c.properties.get("zone_awareness_enabled",
-                c.properties.get("multi_az_enabled", "false"))))
+                c.properties.get("multi_az_enabled",
+                c.properties.get("zone_redundant", "false")))))
             ).lower()
             if multi_az not in ("true", "yes", "1", "enabled"):
                 findings.append(Finding(
@@ -746,9 +864,13 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_no_audit_log(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if not _is_instance_database(c):
+            if not _is_instance_database(c) or c.service in _DELEGATES_TO_SERVER:
                 continue
-            audit = str(c.properties.get("audit_log", c.properties.get("enable_audit_log", ""))).lower()
+            audit = str(
+                c.properties.get("audit_log",
+                c.properties.get("enable_audit_log",
+                c.properties.get("extended_auditing_policy", "")))
+            ).lower()
             # Terraform's real knob is a log-export list, e.g.
             # enabled_cloudwatch_logs_exports = ["postgresql", "audit"]
             exports = str(
@@ -759,7 +881,7 @@ class SecurityAnalyzer(BaseAnalyzer):
             ).lower()
             if any(kind in exports for kind in ("audit", "postgresql", "pgaudit", "general", "slowquery", "error")):
                 continue
-            if audit not in ("true", "yes", "1", "enabled"):
+            if audit not in ("true", "yes", "1", "enabled", "configured"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.MEDIUM,
@@ -1053,7 +1175,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_cache_no_auth(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.CACHE):
-            if c.service in _ALWAYS_ENCRYPTED_CACHES:
+            if c.service in _ALWAYS_ENCRYPTED_CACHES or c.service in _ALWAYS_AUTHENTICATED_CACHES:
                 continue
             auth = str(c.properties.get("auth_token", c.properties.get("authentication", ""))).strip()
             if auth in ("", "none", "false"):
@@ -1073,6 +1195,20 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         for c in model.components_by_type(ComponentType.CACHE):
             if c.service in _ALWAYS_ENCRYPTED_CACHES:
+                continue
+            if c.service in _ALWAYS_AUTHENTICATED_CACHES:
+                non_ssl = str(c.properties.get("enable_non_ssl_port", "false")).lower()
+                if non_ssl in ("true", "yes", "1"):
+                    findings.append(Finding(
+                        type=FindingType.SECURITY,
+                        severity=Severity.HIGH,
+                        title=f"Cache '{c.name}' is not encrypted (in transit)",
+                        description="enable_non_ssl_port = true accepts connections on the plaintext Redis port, bypassing TLS.",
+                        component_id=c.id,
+                        component_name=c.name,
+                        recommendation="Set enable_non_ssl_port = false so only the TLS port (6380) accepts connections.",
+                        references=["https://learn.microsoft.com/azure/azure-cache-for-redis/cache-configure#access-ports"],
+                    ))
                 continue
             at_rest = str(c.properties.get("at_rest_encryption_enabled", "false")).lower()
             in_transit = str(c.properties.get("transit_encryption_enabled", "false")).lower()
@@ -1266,7 +1402,15 @@ class SecurityAnalyzer(BaseAnalyzer):
                 continue
             if c.type == ComponentType.DATABASE and not _is_instance_database(c):
                 continue
-            if c.service in _ALWAYS_ENCRYPTED_CACHES:
+            if c.type == ComponentType.DATABASE and c.service in _DELEGATES_TO_SERVER:
+                continue
+            if c.service in _ALWAYS_ENCRYPTED_CACHES or c.service in _ALWAYS_AUTHENTICATED_CACHES:
+                continue
+            # Azure spells TLS enforcement as a minimum version string
+            # ("1.2"/"TLS1_2"), not a boolean — any version at or above 1.2
+            # satisfies the same intent as the AWS/GCP require_ssl toggles.
+            tls_version = str(c.properties.get("minimum_tls_version", c.properties.get("min_tls_version", ""))).strip().lower()
+            if tls_version and tls_version not in ("1.0", "1.1", "tls1_0", "tls1_1"):
                 continue
             tls = str(c.properties.get("transit_encryption_enabled",
                       c.properties.get("ssl_enabled",
