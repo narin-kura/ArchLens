@@ -325,7 +325,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_mysql_flexible_server":      C.DATABASE,
     "azurerm_mysql_server":               C.DATABASE,
     "azurerm_mariadb_server":             C.DATABASE,
-    "azurerm_synapse_workspace":          C.DATABASE,
+    "azurerm_synapse_workspace":          C.OTHER,
     "azurerm_synapse_sql_pool":           C.DATABASE,
     "azurerm_synapse_spark_pool":         C.COMPUTE,
     "azurerm_synapse_firewall_rule":      C.NETWORK,
@@ -340,10 +340,10 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_storage_account":            C.STORAGE,
     "azurerm_storage_account_network_rules": C.NETWORK,
     "azurerm_storage_container":          C.STORAGE,
-    "azurerm_storage_share":              C.STORAGE,
+    "azurerm_storage_share":              C.OTHER,
     "azurerm_storage_queue":              C.QUEUE,
     "azurerm_storage_table":              C.DATABASE,
-    "azurerm_storage_data_lake_gen2_filesystem": C.STORAGE,
+    "azurerm_storage_data_lake_gen2_filesystem": C.OTHER,
     "azurerm_storage_management_policy":  C.OTHER,
     "azurerm_managed_disk":               C.STORAGE,
     "azurerm_disk_encryption_set":        C.IAM,
@@ -593,12 +593,14 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
         ("target_resource_id", None, [("logging", "enabled", "")]),
     "azurerm_storage_management_policy":
         ("storage_account_id", "azurerm_storage_account", [("lifecycle_rules", "configured", "")]),
+    "azurerm_backup_protected_file_share":
+        ("source_storage_account_id", "azurerm_storage_account", [("backup_policy", "configured", "")]),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
 _FOLD_SKIP_KEYS = {
     "bucket", "id", "name", "tags", "api_id", "rest_api_id", "file_system_id",
-    "target_resource_id", "storage_account_id", "depends_on",
+    "target_resource_id", "storage_account_id", "source_storage_account_id", "depends_on",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces

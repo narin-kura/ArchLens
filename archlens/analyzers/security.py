@@ -44,7 +44,7 @@ _NO_DELETION_PROTECTION = {
     "azurerm_mssql_database", "azurerm_sql_database",
     # No resource-level flag exists — Cosmos DB is protected by RBAC and
     # resource locks, the same as the SQL resources above.
-    "azurerm_cosmosdb_account",
+    "azurerm_cosmosdb_account", "azurerm_synapse_sql_pool",
 }
 
 # Encryption at rest is Microsoft-managed and unconditional for these — TDE
@@ -54,6 +54,7 @@ _NO_DELETION_PROTECTION = {
 _ALWAYS_ENCRYPTED_DATABASES = {
     "azurerm_mssql_database", "azurerm_sql_database", "azurerm_cosmosdb_account",
     "azurerm_postgresql_flexible_server", "azurerm_mysql_flexible_server",
+    "azurerm_synapse_sql_pool",
 }
 
 # The logical server resource (connection endpoint, TLS policy, firewall
@@ -167,8 +168,8 @@ _CONTAINER_PLATFORMS = {
     "aws_ecs_anywhere", "aws_eks_cluster", "aws_eks_node_group",
     "aws_eks_fargate_profile", "aws_eks_addon", "aws_eks_anywhere", "aws_eks_distro",
     "aws_ecr_repository", "aws_ecrpublic_repository", "aws_rosa", "aws_bottlerocket",
-    "azurerm_kubernetes_cluster", "azurerm_container_registry",
-    "azurerm_container_app_environment",
+    "azurerm_kubernetes_cluster", "azurerm_kubernetes_cluster_node_pool",
+    "azurerm_container_registry", "azurerm_container_app_environment",
     "google_container_cluster", "google_container_node_pool",
     "google_artifact_registry_repository",
 }
@@ -304,7 +305,7 @@ def _outbound_rules(component: Component) -> list:
 # so asking them for their own backup or encryption setting makes no sense.
 _ARCHIVE_STORAGE = {
     "aws_backup_vault", "aws_glacier_vault", "aws_securitylake_data_lake",
-    "aws_codeartifact_repository",
+    "aws_codeartifact_repository", "azurerm_recovery_services_vault",
 }
 
 # Versioning, bucket ACLs, Block Public Access and server access logging are
@@ -650,7 +651,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("point_in_time_recovery",
                 c.properties.get("backup_policy",
                 c.properties.get("snapshot_options",
-                c.properties.get("backup", "")))))
+                c.properties.get("backup",
+                c.properties.get("geo_backup_policy_enabled", ""))))))
             ).lower()
             # Object stores have no retention window — versioning plus lifecycle
             # rules are how a bucket survives deletion and corruption.
@@ -813,6 +815,8 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
             if not _is_object_store(c):
+                continue
+            if c.properties.get("account_kind", "").lower() == "filestorage":
                 continue
             versioning = str(c.properties.get("versioning", c.properties.get("versioning_enabled", ""))).lower()
             if versioning not in ("enabled", "true", "yes", "1"):
