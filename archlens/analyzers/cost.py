@@ -28,11 +28,17 @@ _SELF_SCALING_SERVICES = {
     "aws_batch_compute_environment", "aws_gamelift_fleet", "aws_appstream_fleet",
     "aws_ecs_service", "aws_eks_node_group", "aws_emrserverless_application",
     "aws_apprunner_service", "aws_workspaces_workspace",
+    # Azure: a dedicated autoscale-setting resource, or compute that scales
+    # itself the same way Lambda/Fargate do.
+    "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",
+    "azurerm_windows_function_app", "azurerm_function_app", "azurerm_container_app",
 }
 
 _SCALING_PROPERTIES = (
     "max_vcpus", "scaling_config", "compute_capacity", "max_capacity",
     "max_size", "running_mode", "autoscaling",
+    # AKS node pool autoscaling; Container Apps' KEDA-based replica scaling.
+    "enable_auto_scaling", "min_replicas",
 )
 
 

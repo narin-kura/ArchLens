@@ -42,6 +42,9 @@ _NO_DELETION_PROTECTION = {
     # the server nor the database has a deletion-protection attribute at all.
     "azurerm_mssql_server", "azurerm_sql_server",
     "azurerm_mssql_database", "azurerm_sql_database",
+    # No resource-level flag exists — Cosmos DB is protected by RBAC and
+    # resource locks, the same as the SQL resources above.
+    "azurerm_cosmosdb_account",
 }
 
 # Encryption at rest is Microsoft-managed and unconditional for these — TDE
@@ -103,8 +106,20 @@ _FUNCTION_SERVICES = {
     "google_cloudfunctions_function", "google_cloudfunctions2_function", "lambda",
 }
 
+# Dead-lettering is configured per-trigger in the function's code/bindings,
+# not as an attribute on the function resource itself the way AWS Lambda's
+# dead_letter_config is — there is nothing on these resources to check.
+_AZURE_FUNCTION_SERVICES = {
+    "azurerm_function_app", "azurerm_linux_function_app", "azurerm_windows_function_app",
+}
+
 # MSK Serverless encrypts at rest with no attribute to set or unset.
-_ALWAYS_ENCRYPTED_QUEUES = {"aws_msk_serverless_cluster"}
+_ALWAYS_ENCRYPTED_QUEUES = {
+    "aws_msk_serverless_cluster", "azurerm_servicebus_namespace",
+    "azurerm_servicebus_topic", "azurerm_servicebus_subscription",
+    "azurerm_servicebus_queue", "azurerm_eventgrid_topic",
+    "azurerm_eventgrid_system_topic", "azurerm_eventhub_namespace",
+}
 
 # Rules, subscriptions and event-source mappings route messages; they do not
 # store them, so they have no encryption or redrive settings of their own.
@@ -120,6 +135,14 @@ _MESSAGE_ROUTERS = {
 _HTTPS_ONLY_ORIGINS = {
     "aws_mediapackage_channel", "aws_media_package_channel", "aws_ivs_channel",
     "aws_mediapackagev2_channel",
+}
+
+# Front Door splits one logical CDN across four resources — profile, endpoint,
+# origin and origin group carry no protocol-policy attribute at all; only the
+# route does.
+_CDN_NO_PROTOCOL_CONCEPT = {
+    "azurerm_cdn_frontdoor_profile", "azurerm_cdn_frontdoor_endpoint",
+    "azurerm_cdn_frontdoor_origin", "azurerm_cdn_frontdoor_origin_group",
 }
 
 # A WAF sits in front of HTTP. An SFTP server, a contact-center instance or a
@@ -145,9 +168,15 @@ _CONTAINER_PLATFORMS = {
     "aws_eks_fargate_profile", "aws_eks_addon", "aws_eks_anywhere", "aws_eks_distro",
     "aws_ecr_repository", "aws_ecrpublic_repository", "aws_rosa", "aws_bottlerocket",
     "azurerm_kubernetes_cluster", "azurerm_container_registry",
+    "azurerm_container_app_environment",
     "google_container_cluster", "google_container_node_pool",
     "google_artifact_registry_repository",
 }
+
+# Container Apps exposes no security-context attribute via Terraform at all —
+# there is no "user"/"run_as_user" field on the container block to assert
+# either way, unlike an ECS task definition or a Kubernetes pod spec.
+_NO_CONTAINER_USER_CONCEPT = {"azurerm_container_app"}
 
 _REGISTRY_MARKERS = ("ecr", "container_registry", "artifact_registry", "acr")
 
@@ -620,7 +649,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("backup_enabled",
                 c.properties.get("point_in_time_recovery",
                 c.properties.get("backup_policy",
-                c.properties.get("snapshot_options", ""))))
+                c.properties.get("snapshot_options",
+                c.properties.get("backup", "")))))
             ).lower()
             # Object stores have no retention window — versioning plus lifecycle
             # rules are how a bucket survives deletion and corruption.
@@ -708,8 +738,9 @@ class SecurityAnalyzer(BaseAnalyzer):
         cdns = model.components_by_type(ComponentType.CDN)
         if not gateways and not cdns:
             return []
+        waf_markers = ("waf", "application_firewall", "frontdoor_firewall")
         has_waf = any(
-            "waf" in c.service.lower() or "waf" in c.name.lower()
+            any(marker in c.service.lower() for marker in waf_markers)
             for c in model.components
         )
         if not has_waf:
@@ -1075,7 +1106,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_container_root_user(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.CONTAINER):
-            if not _defines_containers(c):
+            if not _defines_containers(c) or c.service in _NO_CONTAINER_USER_CONCEPT:
                 continue
             user = str(c.properties.get("user", c.properties.get("run_as_user", "0"))).strip()
             if user in ("0", "root", ""):
@@ -1096,8 +1127,13 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.CONTAINER):
             if not _defines_containers(c):
                 continue
-            cpu = c.properties.get("cpu_limit", c.properties.get("cpu", ""))
-            memory = c.properties.get("memory_limit", c.properties.get("memory", ""))
+            containers = grouped_properties(c.properties, "container")
+            if containers:
+                cpu = containers[0].get("cpu_limit", containers[0].get("cpu", ""))
+                memory = containers[0].get("memory_limit", containers[0].get("memory", ""))
+            else:
+                cpu = c.properties.get("cpu_limit", c.properties.get("cpu", ""))
+                memory = c.properties.get("memory_limit", c.properties.get("memory", ""))
             if not cpu or not memory:
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1113,8 +1149,18 @@ class SecurityAnalyzer(BaseAnalyzer):
 
     def _check_container_no_image_scanning(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
+        # ACR's scanning is enabled account-wide through Defender for Cloud,
+        # not a per-registry attribute — a resource_type naming the registry
+        # or containers covers every ACR instance in the subscription.
+        defender_covers_registries = any(
+            c.service == "azurerm_security_center_subscription_pricing"
+            and any(t in str(c.properties.get("resource_type", "")) for t in ("Registry", "Containers", "ContainerRegistry"))
+            for c in model.components
+        )
         for c in model.components_by_type(ComponentType.CONTAINER):
             if not _scans_images(c):
+                continue
+            if c.service == "azurerm_container_registry" and defender_covers_registries:
                 continue
             scan = str(c.properties.get("image_scanning_enabled", c.properties.get("scan_on_push", "false"))).lower()
             if scan not in ("true", "yes", "1", "enabled"):
@@ -1135,7 +1181,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_serverless_no_dead_letter(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.SERVERLESS):
-            if not _is_function(c):
+            if not _is_function(c) or c.service in _AZURE_FUNCTION_SERVICES:
                 continue
             dlq = str(c.properties.get("dead_letter_config", c.properties.get("dlq", ""))).lower()
             if dlq in ("", "none", "false", "{}"):
@@ -1156,7 +1202,11 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.SERVERLESS):
             if not _is_function(c):
                 continue
-            vpc = str(c.properties.get("vpc_config", c.properties.get("vpc_id", ""))).strip()
+            vpc = str(
+                c.properties.get("vpc_config",
+                c.properties.get("vpc_id",
+                c.properties.get("virtual_network_subnet_id", "")))
+            ).strip()
             if vpc in ("", "none", "{}", "null"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1266,8 +1316,14 @@ class SecurityAnalyzer(BaseAnalyzer):
             if (c.service not in _REDRIVE_CAPABLE
                     and c.service.startswith(("aws_", "google_", "azurerm_"))):
                 continue
-            dlq = str(c.properties.get("redrive_policy", c.properties.get("dlq", ""))).strip()
-            if dlq in ("", "none", "false", "{}"):
+            # Service Bus dead-letters automatically once a message exceeds
+            # max_delivery_count — there is no separate DLQ resource to wire up.
+            dlq = str(
+                c.properties.get("redrive_policy",
+                c.properties.get("dlq",
+                c.properties.get("max_delivery_count", "")))
+            ).strip()
+            if dlq in ("", "none", "false", "{}", "0"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.MEDIUM,
@@ -1285,9 +1341,15 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_cdn_no_https_only(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.CDN):
-            if c.service in _HTTPS_ONLY_ORIGINS:
+            if c.service in _HTTPS_ONLY_ORIGINS or c.service in _CDN_NO_PROTOCOL_CONCEPT:
                 continue
-            protocol = str(c.properties.get("viewer_protocol_policy", c.properties.get("https_only", ""))).lower()
+            # Front Door's redirect policy lives on the route (https_redirect_
+            # enabled), not on the profile/endpoint CloudFront-style attributes.
+            protocol = str(
+                c.properties.get("viewer_protocol_policy",
+                c.properties.get("https_only",
+                c.properties.get("https_redirect_enabled", "")))
+            ).lower()
             if protocol not in ("redirect-to-https", "https-only", "true", "yes", "1"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1375,7 +1437,7 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components:
             for key, value in c.properties.items():
                 if key.lower() in sensitive_keys and isinstance(value, str) and value and value.lower() not in (
-                    "true", "false", "", "null", "none", "var.", "${", "arn:", "ssm:", "secretsmanager:"
+                    "true", "false", "", "null", "none", "var.", "${", "arn:", "ssm:", "secretsmanager:", "configured"
                 ) and not value.startswith(("${", "var.", "data.", "arn:", "ssm:", "/aws/"))                         and not _is_expression(value):
                     findings.append(Finding(
                         type=FindingType.SECURITY,

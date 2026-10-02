@@ -316,8 +316,8 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_mssql_firewall_rule":        C.NETWORK,
     "azurerm_mssql_server_transparent_data_encryption": C.IAM,
     "azurerm_cosmosdb_account":           C.DATABASE,
-    "azurerm_cosmosdb_sql_database":      C.DATABASE,
-    "azurerm_cosmosdb_sql_container":     C.DATABASE,
+    "azurerm_cosmosdb_sql_database":      C.OTHER,
+    "azurerm_cosmosdb_sql_container":     C.OTHER,
     "azurerm_cosmosdb_cassandra_cluster": C.DATABASE,
     "azurerm_postgresql_flexible_server": C.DATABASE,
     "azurerm_postgresql_server":          C.DATABASE,
@@ -344,7 +344,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_storage_queue":              C.QUEUE,
     "azurerm_storage_table":              C.DATABASE,
     "azurerm_storage_data_lake_gen2_filesystem": C.STORAGE,
-    "azurerm_storage_management_policy":  C.STORAGE,
+    "azurerm_storage_management_policy":  C.OTHER,
     "azurerm_managed_disk":               C.STORAGE,
     "azurerm_disk_encryption_set":        C.IAM,
     "azurerm_netapp_volume":              C.STORAGE,
@@ -591,12 +591,14 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
     # reference actually names rather than one fixed type.
     "azurerm_monitor_diagnostic_setting":
         ("target_resource_id", None, [("logging", "enabled", "")]),
+    "azurerm_storage_management_policy":
+        ("storage_account_id", "azurerm_storage_account", [("lifecycle_rules", "configured", "")]),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
 _FOLD_SKIP_KEYS = {
     "bucket", "id", "name", "tags", "api_id", "rest_api_id", "file_system_id",
-    "target_resource_id", "depends_on",
+    "target_resource_id", "storage_account_id", "depends_on",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces
