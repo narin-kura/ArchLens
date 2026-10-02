@@ -293,12 +293,22 @@ function initCanvas() {
     ev.preventDefault();
   });
 
+  // setPointerCapture retargets every move/up event's `ev.target` to the
+  // capturing element itself (`inner`), not whatever the cursor is actually
+  // over — ev.target.closest('.node') would look for a .node *ancestor* of
+  // inner, which can never exist since inner is the nodes' parent. Real
+  // screen-coordinate hit-testing sidesteps the capture retargeting.
+  const nodeUnderPointer = ev => {
+    const hit = document.elementFromPoint(ev.clientX, ev.clientY);
+    return hit && hit.closest ? hit.closest('.node') : null;
+  };
+
   inner.addEventListener('pointermove', ev => {
     if (link) {
       const a = nodeById(link.fromUid);
       const p = localPoint(ev);
       link.path.setAttribute('d', `M ${a.x + NODE_W} ${a.y + NODE_H / 2} L ${p.x} ${p.y}`);
-      const over = ev.target.closest('.node');
+      const over = nodeUnderPointer(ev);
       inner.querySelectorAll('.node.link-target').forEach(el => el.classList.remove('link-target'));
       if (over && over.dataset.uid !== link.fromUid) over.classList.add('link-target');
       return;
@@ -317,7 +327,7 @@ function initCanvas() {
 
   inner.addEventListener('pointerup', ev => {
     if (link) {
-      const over = ev.target.closest('.node');
+      const over = nodeUnderPointer(ev);
       if (over && over.dataset.uid !== link.fromUid) addEdge(link.fromUid, over.dataset.uid);
       link.path.remove();
       inner.querySelectorAll('.node.link-target').forEach(el => el.classList.remove('link-target'));
