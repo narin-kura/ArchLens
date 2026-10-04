@@ -163,6 +163,10 @@ _NON_HTTP_GATEWAYS = {
     # Device/control-plane endpoints (AMQP/MQTT/provisioning), not a browsable
     # web surface a WAF protects.
     "azurerm_iothub", "azurerm_iothub_dps",
+    # A calling/chat/SMS API consumed through an SDK, not a browsable web
+    # surface — there is no public_network_access_enabled toggle on this
+    # resource at all because there is no network path to turn off.
+    "azurerm_communication_service",
 }
 
 # Only a real queue has a redrive policy.
@@ -321,6 +325,10 @@ _ARCHIVE_STORAGE = {
     # policy) — not data that needs encryption or a backup of its own.
     "azurerm_site_recovery_fabric", "azurerm_site_recovery_replication_policy",
 }
+
+# Azure NetApp Files volumes are encrypted with platform-managed AES-256 at
+# all times — there is no Terraform attribute to disable it.
+_ALWAYS_ENCRYPTED_STORAGE = {"azurerm_netapp_volume"}
 
 # Versioning, bucket ACLs, Block Public Access and server access logging are
 # object-store features. A file system or block volume has none of them, so the
@@ -564,7 +572,8 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_unencrypted_storage(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
-            if c.service in _ARCHIVE_STORAGE or c.service == "azurerm_storage_account":
+            if (c.service in _ARCHIVE_STORAGE or c.service in _ALWAYS_ENCRYPTED_STORAGE
+                    or c.service == "azurerm_storage_account"):
                 continue
             sse = str(
                 c.properties.get("server_side_encryption",
@@ -667,7 +676,10 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("backup_policy",
                 c.properties.get("snapshot_options",
                 c.properties.get("backup",
-                c.properties.get("geo_backup_policy_enabled", ""))))))
+                # Azure NetApp Files attaches backup via a referenced policy —
+                # `policy_enabled` inside the volume's data_protection_backup_policy block.
+                c.properties.get("policy_enabled",
+                c.properties.get("geo_backup_policy_enabled", "")))))))
             ).lower()
             # Object stores have no retention window — versioning plus lifecycle
             # rules are how a bucket survives deletion and corruption.

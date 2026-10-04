@@ -34,6 +34,7 @@ _SELF_SCALING_SERVICES = {
     "azurerm_windows_function_app", "azurerm_function_app", "azurerm_container_app",
     "azurerm_synapse_spark_pool", "azurerm_kubernetes_cluster_node_pool",
     "azurerm_machine_learning_compute_cluster",
+    "azurerm_virtual_desktop_scaling_plan",
 }
 
 _SCALING_PROPERTIES = (

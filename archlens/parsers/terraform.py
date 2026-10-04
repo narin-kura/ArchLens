@@ -347,9 +347,14 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_storage_management_policy":  C.OTHER,
     "azurerm_managed_disk":               C.STORAGE,
     "azurerm_disk_encryption_set":        C.IAM,
+    # The account and capacity pool are management/capacity containers with no
+    # data and no security posture of their own — the volume is the
+    # data-bearing resource that actually carries encryption/backup settings.
     "azurerm_netapp_volume":              C.STORAGE,
-    "azurerm_netapp_account":             C.STORAGE,
-    "azurerm_netapp_pool":                C.STORAGE,
+    "azurerm_netapp_account":             C.OTHER,
+    "azurerm_netapp_pool":                C.OTHER,
+    "azurerm_netapp_backup_vault":        C.OTHER,
+    "azurerm_netapp_backup_policy":       C.OTHER,
     "azurerm_elastic_san":                C.STORAGE,
     "azurerm_storage_mover":              C.OTHER,
     "azurerm_databox_edge_device":        C.STORAGE,
