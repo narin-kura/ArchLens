@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Examples — ArchLens</title>
-  <meta name="description" content="Sixteen complete AWS reference architectures, each analysed in one click." />
+  <meta name="description" content="32 complete AWS and Azure reference architectures, each analysed in one click." />
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-DWV9TV9GPL"></script>
   <script>
@@ -29,9 +29,15 @@
 </nav>
 <section class="page-section">
   <div class="section-title">Reference architectures</div>
-  <p class="page-lede">Sixteen complete AWS architectures, written to pass a clean analysis &mdash; between them they
-  use 238 distinct AWS resource types. Analyse one to see what a good report looks like, or
+  <p class="page-lede">32 complete AWS and Azure architectures, written to pass a clean analysis &mdash; between them they
+  cover hundreds of distinct cloud resource types. Analyse one to see what a good report looks like, or
   <a href="/analyze">upload your own</a> for comparison.</p>
+
+  <div class="ex-filter-bar">
+    <button class="ex-filter-btn active" onclick="filterExamples('all', this)">All</button>
+    <button class="ex-filter-btn" onclick="filterExamples('aws', this)">AWS</button>
+    <button class="ex-filter-btn" onclick="filterExamples('azure', this)">Azure</button>
+  </div>
 
   <div class="examples-grid" id="examplesGrid">
     <div class="examples-loading">Loading architectures…</div>

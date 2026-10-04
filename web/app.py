@@ -63,21 +63,28 @@ def examples_page():
 
 
 # The bundled reference architectures. Keyed by slug so a request can never
-# reach a path outside this directory.
-_EXAMPLES_DIR = Path(__file__).resolve().parent.parent / "examples" / "architectures"
+# reach a path outside these directories. Both clouds reuse the same
+# "01-three-tier-web-app"-style directory names, so the slug is prefixed with
+# the provider to stay unique and URL-safe.
+_EXAMPLES_ROOT = Path(__file__).resolve().parent.parent / "examples"
+_EXAMPLE_DIRS = {
+    "aws": _EXAMPLES_ROOT / "architectures",
+    "azure": _EXAMPLES_ROOT / "architectures-azure",
+}
 
 
-def _example_slugs() -> dict[str, Path]:
-    if not _EXAMPLES_DIR.is_dir():
-        return {}
-    return {
-        d.name: d / "main.tf"
-        for d in sorted(_EXAMPLES_DIR.iterdir())
-        if d.is_dir() and (d / "main.tf").is_file()
-    }
+def _example_slugs() -> dict[str, tuple[str, Path]]:
+    slugs: dict[str, tuple[str, Path]] = {}
+    for provider, base in _EXAMPLE_DIRS.items():
+        if not base.is_dir():
+            continue
+        for d in sorted(base.iterdir()):
+            if d.is_dir() and (d / "main.tf").is_file():
+                slugs[f"{provider}-{d.name}"] = (provider, d / "main.tf")
+    return slugs
 
 
-def _example_summary(slug: str, path: Path) -> dict:
+def _example_summary(slug: str, provider: str, path: Path) -> dict:
     """Title, blurb and service list come from the file's header comment."""
     lines = path.read_text(encoding="utf-8").splitlines()
     comment = []
@@ -103,7 +110,8 @@ def _example_summary(slug: str, path: Path) -> dict:
     blurb = body.split("Services:")[0].strip()
     return {
         "slug": slug,
-        "number": slug.split("-", 1)[0],
+        "provider": provider,
+        "number": path.parent.name.split("-", 1)[0],
         "title": title,
         "description": blurb,
         "services": [s.strip(" .") for s in services.split(",") if s.strip(" .")],
@@ -114,14 +122,20 @@ def _example_summary(slug: str, path: Path) -> dict:
 
 @app.get("/api/examples")
 def list_examples():
-    return {"examples": [_example_summary(slug, path) for slug, path in _example_slugs().items()]}
+    return {
+        "examples": [
+            _example_summary(slug, provider, path)
+            for slug, (provider, path) in _example_slugs().items()
+        ]
+    }
 
 
 @app.post("/api/examples/{slug}/analyze")
 async def analyze_example(slug: str):
-    path = _example_slugs().get(slug)
-    if path is None:
+    entry = _example_slugs().get(slug)
+    if entry is None:
         raise HTTPException(status_code=404, detail="No such example architecture.")
+    _, path = entry
     try:
         parser = detect_parser(str(path.parent), "terraform")
         model = await run_in_threadpool(parser.parse, str(path.parent))
