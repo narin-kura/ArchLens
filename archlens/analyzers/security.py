@@ -45,6 +45,7 @@ _NO_DELETION_PROTECTION = {
     # No resource-level flag exists — Cosmos DB is protected by RBAC and
     # resource locks, the same as the SQL resources above.
     "azurerm_cosmosdb_account", "azurerm_synapse_sql_pool",
+    "azurerm_digital_twins_instance",
 }
 
 # Encryption at rest is Microsoft-managed and unconditional for these — TDE
@@ -54,7 +55,7 @@ _NO_DELETION_PROTECTION = {
 _ALWAYS_ENCRYPTED_DATABASES = {
     "azurerm_mssql_database", "azurerm_sql_database", "azurerm_cosmosdb_account",
     "azurerm_postgresql_flexible_server", "azurerm_mysql_flexible_server",
-    "azurerm_synapse_sql_pool",
+    "azurerm_synapse_sql_pool", "azurerm_digital_twins_instance",
 }
 
 # The logical server resource (connection endpoint, TLS policy, firewall
@@ -158,6 +159,9 @@ _NON_HTTP_GATEWAYS = {
     "aws_transfer_server", "aws_connect_instance", "aws_db_proxy",
     "aws_storagegateway_gateway",
     "aws_lexv2models_bot", "aws_workspaces_secure_browser",
+    # Device/control-plane endpoints (AMQP/MQTT/provisioning), not a browsable
+    # web surface a WAF protects.
+    "azurerm_iothub", "azurerm_iothub_dps",
 }
 
 # Only a real queue has a redrive policy.
@@ -646,7 +650,8 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components:
             if c.type not in backup_types or c.service in _ARCHIVE_STORAGE:
                 continue
-            if c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS:
+            if (c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS
+                    or c.service == "azurerm_digital_twins_instance"):
                 continue
             retention = str(c.properties.get("backup_retention_period",
                             c.properties.get("snapshot_retention_limit",
