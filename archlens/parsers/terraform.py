@@ -521,7 +521,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_mobile_network":             C.NETWORK,
     # ---- Azure developer tools (azurerm)
     "azurerm_dev_center":                 C.OTHER,
-    "azurerm_dev_center_project":         C.COMPUTE,
+    "azurerm_dev_center_project":         C.OTHER,
     "azurerm_dev_center_environment_type":C.OTHER,
     "azurerm_load_test":                  C.OTHER,
     "azurerm_chaos_studio_experiment":    C.OTHER,

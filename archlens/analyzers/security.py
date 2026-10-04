@@ -317,6 +317,9 @@ def _outbound_rules(component: Component) -> list:
 _ARCHIVE_STORAGE = {
     "aws_backup_vault", "aws_glacier_vault", "aws_securitylake_data_lake",
     "aws_codeartifact_repository", "azurerm_recovery_services_vault",
+    # Part of the DR mechanism itself (a replication boundary, a retention
+    # policy) — not data that needs encryption or a backup of its own.
+    "azurerm_site_recovery_fabric", "azurerm_site_recovery_replication_policy",
 }
 
 # Versioning, bucket ACLs, Block Public Access and server access logging are
