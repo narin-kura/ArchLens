@@ -339,7 +339,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     # ---- Azure storage
     "azurerm_storage_account":            C.STORAGE,
     "azurerm_storage_account_network_rules": C.NETWORK,
-    "azurerm_storage_container":          C.STORAGE,
+    "azurerm_storage_container":          C.OTHER,
     "azurerm_storage_share":              C.OTHER,
     "azurerm_storage_queue":              C.QUEUE,
     "azurerm_storage_table":              C.DATABASE,

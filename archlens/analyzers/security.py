@@ -136,6 +136,7 @@ _MESSAGE_ROUTERS = {
     # A consumer group is a read cursor, not a message store; a Stream
     # Analytics input is a job's binding to an existing Event Hub.
     "azurerm_eventhub_consumer_group", "azurerm_stream_analytics_stream_input_eventhub",
+    "azurerm_eventgrid_event_subscription",
 }
 
 # These origins only ever serve over HTTPS — there is no plaintext option to
@@ -324,7 +325,7 @@ _ARCHIVE_STORAGE = {
 _OBJECT_STORES = {
     "aws_s3_bucket", "aws_s3_directory_bucket", "aws_s3_access_point",
     "aws_s3tables_table_bucket", "s3", "google_storage_bucket", "gcs_bucket",
-    "azurerm_storage_account", "azurerm_storage_container", "blob_storage",
+    "azurerm_storage_account", "blob_storage",
 }
 
 
