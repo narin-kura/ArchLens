@@ -42,6 +42,9 @@ _SCALING_PROPERTIES = (
     "max_size", "running_mode", "autoscaling",
     # AKS node pool autoscaling; Container Apps' KEDA-based replica scaling.
     "enable_auto_scaling", "min_replicas",
+    # A Dataproc cluster's autoscaling_config block, referencing a separate
+    # autoscaling-policy resource rather than carrying bounds inline.
+    "autoscaling_config",
 )
 
 

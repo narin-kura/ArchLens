@@ -93,6 +93,10 @@ _MANAGED_DATA_SERVICES = {
     # (google_firestore_backup_schedule), and deletion protection is a
     # database-level flag Terraform doesn't expose a toggle for either way.
     "google_firestore_database",
+    # BigQuery has no retention window or deletion-protection flag at all —
+    # durability is Google's job, and encryption is always on (Google-
+    # managed by default, CMEK via default_encryption_configuration).
+    "google_bigquery_dataset",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
