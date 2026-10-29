@@ -315,6 +315,8 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_compute_target_http_proxy":    C.GATEWAY,
     "google_compute_target_tcp_proxy":     C.GATEWAY,
     "google_compute_ssl_certificate":      C.IAM,
+    "google_compute_managed_ssl_certificate": C.IAM,
+    "google_storage_bucket_iam_member":    C.IAM,
     "google_compute_ssl_policy":           C.IAM,
     "google_compute_security_policy":      C.NETWORK,
     "google_dns_record_set":               C.OTHER,
