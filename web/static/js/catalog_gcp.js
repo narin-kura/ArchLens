@@ -28,6 +28,11 @@ const GCP_PRODUCTS = [
     {id:'gcp_vmware_engine', name:'VMware Engine',            type:'COMPUTE',   service:'google_vmwareengine_private_cloud',     icon:'GVE'},
   ]},
 
+  {g: 'Migration', items: [
+    {id:'gcp_dms_profile', name:'Database Migration — Connection Profile', type:'OTHER', service:'google_database_migration_service_connection_profile', icon:'DMSC'},
+    {id:'gcp_dms_job',     name:'Database Migration Job',    type:'OTHER',     service:'google_database_migration_service_migration_job', icon:'DMSJ'},
+  ]},
+
   {g: 'Containers', items: [
     {id:'gcp_gke',           name:'GKE Cluster',              type:'CONTAINER', service:'google_container_cluster',              icon:'GKE'},
     {id:'gcp_gke_nodepool',  name:'GKE Node Pool',           type:'CONTAINER', service:'google_container_node_pool',            icon:'NP'},
