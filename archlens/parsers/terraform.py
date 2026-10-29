@@ -722,6 +722,13 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "oci_database_migration_migration":    C.OTHER,
     "oci_database_migration_job":          C.OTHER,
     "oci_ocvp_datastore":                  C.STORAGE,
+    "oci_cloud_guard_security_recipe":     C.MONITORING,
+    "oci_cloud_guard_managed_list":        C.OTHER,
+    "oci_cloud_guard_data_mask_rule":      C.OTHER,
+    "oci_audit_configuration":             C.MONITORING,
+    "oci_identity_domains_password_policy": C.IAM,
+    "oci_optimizer_profile":               C.MONITORING,
+    "oci_announcements_service_announcement_subscription": C.OTHER,
     # ---- Azure compute
     "azurerm_virtual_machine":            C.COMPUTE,
     "azurerm_linux_virtual_machine":      C.COMPUTE,
