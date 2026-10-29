@@ -31,6 +31,8 @@ _SELF_SCALING_SERVICES = {
     # A Workbench notebook is a single provisioned dev environment, same
     # shape as a WorkSpaces desktop — there is nothing to put in an ASG.
     "google_notebooks_instance",
+    # Cloud Build's private pool scales to the build queue automatically.
+    "google_cloudbuild_worker_pool",
     # Azure: a dedicated autoscale-setting resource, or compute that scales
     # itself the same way Lambda/Fargate do.
     "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",
