@@ -33,6 +33,9 @@ _SELF_SCALING_SERVICES = {
     "google_notebooks_instance",
     # Cloud Build's private pool scales to the build queue automatically.
     "google_cloudbuild_worker_pool",
+    # Looker (Google Cloud core) is a managed SaaS-like instance with no
+    # user-configurable scaling — there's nothing to put in an ASG.
+    "google_looker_instance",
     # Azure: a dedicated autoscale-setting resource, or compute that scales
     # itself the same way Lambda/Fargate do.
     "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",

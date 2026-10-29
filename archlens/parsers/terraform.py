@@ -285,6 +285,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_database_migration_service_connection_profile": C.OTHER,
     "google_database_migration_service_migration_job": C.OTHER,
     "google_compute_router_interface":     C.NETWORK,
+    "google_compute_region_network_endpoint_group": C.GATEWAY,
     "google_cloudfunctions2_function":     C.SERVERLESS,
     "google_app_engine_application":       C.SERVERLESS,
     "google_app_engine_standard_app_version": C.SERVERLESS,

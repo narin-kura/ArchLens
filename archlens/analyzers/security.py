@@ -1193,6 +1193,12 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.IAM):
             if not _is_human_principal(c):
                 continue
+            if c.service in _GCP_IAM_BINDINGS:
+                # 2-Step Verification enforcement in GCP is an org-level
+                # Cloud Identity Admin Console setting with no Terraform
+                # resource at all — there is nothing on this grant, or any
+                # other, to assert true or false.
+                continue
             mfa = str(c.properties.get("mfa_required", c.properties.get("mfa", ""))).lower()
             if mfa not in ("true", "yes", "1", "required", "enabled"):
                 findings.append(Finding(
