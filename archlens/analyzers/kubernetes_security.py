@@ -6,7 +6,10 @@ from .base import BaseAnalyzer
 from ..models.architecture import ArchitectureModel, ComponentType
 from ..models.findings import Finding, FindingType, Severity
 
-_WORKLOAD_SERVICES = {"deployment", "statefulset", "daemonset", "replicaset", "job", "cronjob", "pod"}
+_WORKLOAD_SERVICES = {"deployment", "statefulset", "daemonset", "replicaset", "job", "cronjob", "pod",
+                      "replicationcontroller",
+                      # CRDs whose spec.template.spec is an ordinary pod spec.
+                      "knative_service", "argo_rollout"}
 
 _DANGEROUS_CAPS = {
     "ALL", "SYS_ADMIN", "NET_ADMIN", "SYS_PTRACE", "SYS_MODULE",
@@ -76,8 +79,9 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
 
     def _workloads(self, model: ArchitectureModel) -> list:
         return [
-            c for c in model.components_by_type(ComponentType.CONTAINER)
-            if c.provider == "kubernetes"
+            c for c in model.components
+            if c.type in (ComponentType.CONTAINER, ComponentType.SERVERLESS)
+            and c.provider == "kubernetes"
             and c.service in _WORKLOAD_SERVICES
         ]
 
@@ -571,7 +575,10 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     # -------------------------------------------------------------- Network
 
     def _check_no_network_policy(self, model: ArchitectureModel) -> list[Finding]:
-        has_netpol = any(c.properties.get("k8s_kind") == "NetworkPolicy" for c in model.components)
+        # Cilium's and Calico's policies (incl. cluster-wide ones) enforce the
+        # same isolation as a core NetworkPolicy.
+        has_netpol = any(str(c.properties.get("k8s_kind", "")).endswith("NetworkPolicy")
+                         for c in model.components)
         if self._workloads(model) and not has_netpol:
             return [Finding(
                 type=FindingType.SECURITY,

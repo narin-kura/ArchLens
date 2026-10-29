@@ -6,6 +6,7 @@ from typing import Any
 
 from .base import BaseParser
 from ..models.architecture import ArchitectureModel, Component, ComponentType, Connection
+from .k8s_kinds import classify
 
 try:
     import yaml
@@ -14,29 +15,8 @@ except ImportError:
     _YAML_AVAILABLE = False
 
 
-_KIND_TO_COMPONENT_TYPE: dict[str, ComponentType] = {
-    "Pod":                  ComponentType.CONTAINER,
-    "Deployment":           ComponentType.CONTAINER,
-    "StatefulSet":          ComponentType.CONTAINER,
-    "DaemonSet":            ComponentType.CONTAINER,
-    "ReplicaSet":           ComponentType.CONTAINER,
-    "Job":                  ComponentType.CONTAINER,
-    "CronJob":              ComponentType.CONTAINER,
-    "Service":              ComponentType.NETWORK,
-    "Ingress":              ComponentType.GATEWAY,
-    "NetworkPolicy":        ComponentType.NETWORK,
-    "ServiceAccount":       ComponentType.IAM,
-    "Role":                 ComponentType.IAM,
-    "ClusterRole":          ComponentType.IAM,
-    "RoleBinding":          ComponentType.IAM,
-    "ClusterRoleBinding":   ComponentType.IAM,
-    "PersistentVolume":     ComponentType.STORAGE,
-    "PersistentVolumeClaim": ComponentType.STORAGE,
-    "ConfigMap":            ComponentType.OTHER,
-    "Secret":               ComponentType.OTHER,
-    "Namespace":            ComponentType.OTHER,
-    "HorizontalPodAutoscaler": ComponentType.COMPUTE,
-}
+# CRDs whose spec.template.spec is a plain pod spec, same shape as a Deployment.
+_POD_TEMPLATE_CRDS = {"knative_service", "argo_rollout"}
 
 _WORKLOAD_KINDS = {"Pod", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Job", "CronJob"}
 
@@ -79,14 +59,22 @@ class KubernetesParser(BaseParser):
         kind = doc.get("kind", "")
         if not kind:
             return None
-        component_type = _KIND_TO_COMPONENT_TYPE.get(kind, ComponentType.OTHER)
+        api_version = str(doc.get("apiVersion", ""))
+        service, component_type, is_builtin = classify(kind, api_version)
         metadata = doc.get("metadata", {}) or {}
         name = metadata.get("name", "unknown")
         namespace = metadata.get("namespace", "default")
 
-        props: dict[str, Any] = {"k8s_kind": kind, "k8s_namespace": namespace}
+        props: dict[str, Any] = {"k8s_kind": kind, "k8s_namespace": namespace,
+                                 "k8s_api_version": api_version}
 
-        if kind in _WORKLOAD_KINDS:
+        if not is_builtin:
+            # A CRD that reuses a built-in kind name (Knative Service, Istio
+            # Gateway) has a different schema, so the built-in extractors don't
+            # apply — except where the CRD embeds an ordinary pod template.
+            if service in _POD_TEMPLATE_CRDS:
+                self._extract_workload_props(doc, "Deployment", props)
+        elif kind in _WORKLOAD_KINDS or kind == "ReplicationController":
             self._extract_workload_props(doc, kind, props)
         elif kind == "Service":
             self._extract_service_props(doc, props)
@@ -108,11 +96,11 @@ class KubernetesParser(BaseParser):
             self._extract_pv_props(doc, props)
 
         return Component(
-            id=f"k8s.{kind.lower()}.{namespace}.{name}",
+            id=f"k8s.{service}.{namespace}.{name}",
             name=name,
             type=component_type,
             provider="kubernetes",
-            service=kind.lower(),
+            service=service,
             properties=props,
             tags=dict(metadata.get("labels") or {}),
         )

@@ -181,6 +181,8 @@ _NO_FUNCTION_DLQ_CONCEPT = {
     # OCI Functions has no dead-letter attribute; failed async invocations
     # are handled by whatever invoked it (Events, Connector Hub, a queue).
     "oci_functions_function",
+    # Knative: dead-lettering is a Trigger/Broker's delivery.deadLetterSink.
+    "knative_service",
 }
 
 # MSK Serverless encrypts at rest with no attribute to set or unset.
