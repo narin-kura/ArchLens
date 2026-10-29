@@ -35,6 +35,9 @@ _SELF_SCALING_SERVICES = {
     "azurerm_synapse_spark_pool", "azurerm_kubernetes_cluster_node_pool",
     "azurerm_machine_learning_compute_cluster",
     "azurerm_virtual_desktop_scaling_plan",
+    # A streaming Dataflow job autoscales its worker count by default
+    # (THROUGHPUT_BASED); a batch job just runs to completion.
+    "google_dataflow_job",
 }
 
 _SCALING_PROPERTIES = (

@@ -764,7 +764,11 @@ class SecurityAnalyzer(BaseAnalyzer):
             if c.type not in backup_types or c.service in _ARCHIVE_STORAGE:
                 continue
             if (c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS
-                    or c.service == "azurerm_digital_twins_instance"):
+                    or c.service == "azurerm_digital_twins_instance"
+                    # A Bigtable backup names a specific table
+                    # (google_bigtable_backup), never "the instance" —
+                    # there is no instance-level backup setting to ask for.
+                    or c.service == "google_bigtable_instance"):
                 continue
             retention = str(c.properties.get("backup_retention_period",
                             c.properties.get("snapshot_retention_limit",
