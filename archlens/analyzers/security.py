@@ -65,6 +65,7 @@ _ALWAYS_ENCRYPTED_DATABASES = {
     # a CMEK key is an optional settings.encryption_key_name, never a
     # plain on/off toggle like storage_encrypted.
     "google_sql_database_instance", "google_spanner_instance", "google_alloydb_cluster",
+    "google_firestore_database", "google_bigtable_instance",
 }
 
 # The logical server resource (connection endpoint, TLS policy, firewall
@@ -88,6 +89,10 @@ _MANAGED_DATA_SERVICES = {
     # A global cluster is a container: retention and encryption are set on the
     # regional clusters that belong to it.
     "aws_rds_global_cluster", "aws_dynamodb_global_table",
+    # Firestore's backup is a scheduled policy on a separate resource
+    # (google_firestore_backup_schedule), and deletion protection is a
+    # database-level flag Terraform doesn't expose a toggle for either way.
+    "google_firestore_database",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
@@ -133,6 +138,9 @@ _ALWAYS_ENCRYPTED_QUEUES = {
     # Encryption is set once at the namespace; the hub itself is a partitioned
     # topic within it with no encryption attribute of its own.
     "azurerm_eventhub",
+    # Cloud Tasks queues are always encrypted with a Google-managed key —
+    # there is no CMEK or encryption attribute exposed on this resource.
+    "google_cloud_tasks_queue",
 }
 
 # Rules, subscriptions and event-source mappings route messages; they do not
@@ -207,6 +215,11 @@ _CONTAINER_PLATFORMS = {
 _NO_CONTAINER_USER_CONCEPT = {"azurerm_container_app"}
 
 _REGISTRY_MARKERS = ("ecr", "container_registry", "artifact_registry", "acr")
+
+# Artifact Registry's vulnerability scanning is an API you enable once at the
+# project level (Container/On-Demand Scanning), not a per-repository
+# attribute — there is nothing on this resource to assert true or false.
+_NO_SCAN_TOGGLE_CONCEPT = {"google_artifact_registry_repository"}
 
 
 # A security group holds rules in both directions, and a standalone rule
@@ -1300,7 +1313,7 @@ class SecurityAnalyzer(BaseAnalyzer):
             for c in model.components
         )
         for c in model.components_by_type(ComponentType.CONTAINER):
-            if not _scans_images(c):
+            if not _scans_images(c) or c.service in _NO_SCAN_TOGGLE_CONCEPT:
                 continue
             if c.service == "azurerm_container_registry" and defender_covers_registries:
                 continue
@@ -1468,7 +1481,10 @@ class SecurityAnalyzer(BaseAnalyzer):
             dlq = str(
                 c.properties.get("redrive_policy",
                 c.properties.get("dlq",
-                c.properties.get("max_delivery_count", "")))
+                # Pub/Sub's dead_letter_policy block carries no name, so it
+                # flattens to this key directly.
+                c.properties.get("max_delivery_attempts",
+                c.properties.get("max_delivery_count", ""))))
             ).strip()
             if dlq in ("", "none", "false", "{}", "0"):
                 findings.append(Finding(
