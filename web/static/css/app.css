@@ -530,6 +530,7 @@ textarea::placeholder { color: #3d5080; }
 .prov-oracle  { background:#2a0f0f; color:#f87171; }
 .prov-kubernetes { background:#0f1a3a; color:#93b4ff; }
 .prov-docker  { background:#06223a; color:#5fb3f9; }
+.prov-onprem  { background:#1f1f24; color:#c8c8d0; }
 .prov-generic { background:#1a1d30; color:#a3b4cc; }
 .prov-nvidia  { background:#1a2906; color:#76b900; }
 .svc-icon { font-size:20px; font-weight:900; color:#c4b5fd; margin:4px 0 6px; font-family:monospace; letter-spacing:-1px; }

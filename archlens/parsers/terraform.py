@@ -12,6 +12,8 @@ C = ComponentType
 # Maps Terraform resource types → ComponentType.
 # Anything not listed falls back to ComponentType.OTHER, which still shows up in
 # the component count but skips the type-specific checks.
+from .onprem_resources import PREFIXES as _ONPREM_PREFIXES, TYPE_MAP as _ONPREM_TYPES
+
 _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     # ---- AWS compute
     "aws_instance":                       C.COMPUTE,
@@ -742,6 +744,8 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "docker_plugin":                      C.OTHER,
     "docker_buildx_builder":              C.COMPUTE,
     "docker_compose":                     C.CONTAINER,
+    # ---- On-premises (vSphere, OpenStack, Nutanix, Proxmox VE): see onprem_resources.py
+    **_ONPREM_TYPES,
     # ---- Azure compute
     "azurerm_virtual_machine":            C.COMPUTE,
     "azurerm_linux_virtual_machine":      C.COMPUTE,
@@ -1183,6 +1187,8 @@ def _detect_provider(resource_type: str) -> str:
         return "oracle"
     if resource_type.startswith("docker_"):
         return "docker"
+    if resource_type.startswith(_ONPREM_PREFIXES):
+        return "onprem"
     return "generic"
 
 

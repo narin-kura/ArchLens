@@ -16,6 +16,9 @@ const SERVICES = [
   ...(window.K8S_CATALOG || []),
   // Docker — Compose, Engine/Swarm, registries, tools: /static/js/catalog_docker.js
   ...(window.DOCKER_CATALOG || []),
+  // On-premises — vSphere, OpenStack, Nutanix, Proxmox VE + physical gear,
+  // generated from archlens/parsers/onprem_resources.py
+  ...(window.ONPREM_CATALOG || []),
   // Data stores & streaming (self-managed)
   {id:'d_postgres',    name:'PostgreSQL',    provider:'generic', cat:'data',      type:'DATABASE',   service:'postgresql',      icon:'PG'},
   {id:'d_mysql',       name:'MySQL',         provider:'generic', cat:'data',      type:'DATABASE',   service:'mysql',           icon:'MYS'},
@@ -150,4 +153,4 @@ function findService(id) {
       || SERVICES.find(s => (s.aliases || []).includes(id));
 }
 
-const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', oracle:'Oracle Cloud', kubernetes:'Kubernetes', docker:'Docker', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};
+const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', oracle:'Oracle Cloud', kubernetes:'Kubernetes', docker:'Docker', onprem:'On-Premises', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};

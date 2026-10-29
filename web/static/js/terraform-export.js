@@ -15,6 +15,11 @@ const TF_PROVIDER_META = {
   'azuread_': {key: 'azuread', source: 'hashicorp/azuread', version: '~> 2.47'},
   'google_':  {key: 'google',  source: 'hashicorp/google',  version: '~> 5.0'},
   'oci_':     {key: 'oci',     source: 'oracle/oci',        version: '~> 6.0'},
+  // On-prem providers: no version pin — pick the one your environment runs.
+  'vsphere_':   {key: 'vsphere',   source: 'vmware/vsphere',                          version: ''},
+  'openstack_': {key: 'openstack', source: 'terraform-provider-openstack/openstack', version: ''},
+  'nutanix_':   {key: 'nutanix',   source: 'nutanix/nutanix',                         version: ''},
+  'proxmox_':   {key: 'proxmox',   source: 'bpg/proxmox',                             version: ''},
 };
 
 // Docker products like Docker Hub or Scout also use a docker_ id but have no
@@ -112,8 +117,8 @@ function buildTerraformExport(diagramNodes, diagramEdges) {
     out.push('  required_providers {');
     [...providersUsed.values()].forEach(p => {
       out.push(`    ${p.key} = {`);
-      out.push(`      source  = "${p.source}"`);
-      out.push(`      version = "${p.version}"`);
+      out.push(p.version ? `      source  = "${p.source}"` : `      source = "${p.source}"`);
+      if (p.version) out.push(`      version = "${p.version}"`);
       out.push('    }');
     });
     out.push('  }');

@@ -13,7 +13,8 @@ from ..models.findings import Finding, FindingType, Severity
 # noise, not a finding.
 # Terraform type prefixes of the clouds whose resources the checks below know
 # individually; anything else is treated as a generic, self-managed component.
-_CLOUD_PREFIXES = ("aws_", "google_", "azurerm_", "oci_", "docker_")
+_CLOUD_PREFIXES = ("aws_", "google_", "azurerm_", "oci_", "docker_",
+                   "vsphere_", "openstack_", "nutanix_", "proxmox_")
 
 _HUMAN_IDENTITY_SERVICES = {
     "aws_iam_user", "aws_iam_group", "aws_iam_user_policy", "aws_iam_group_policy",
@@ -463,10 +464,32 @@ def _oci_normalized_rules(component: Component, direction: str) -> list[dict]:
     return out
 
 
+# An OpenStack security group rule is one rule per resource: direction is
+# "ingress"/"egress", the source is remote_ip_prefix, ports are
+# port_range_min/max (absent means every port).
+def _openstack_normalized_rules(component: Component, direction: str) -> list[dict]:
+    if component.service != "openstack_networking_secgroup_rule_v2":
+        return []
+    if str(component.properties.get("direction", "")).lower() != ("ingress" if direction == "inbound" else "egress"):
+        return []
+    prefix = str(component.properties.get("remote_ip_prefix", "")).strip()
+    if prefix not in ("0.0.0.0/0", "::/0"):
+        return []
+    try:
+        lo = int(component.properties.get("port_range_min", 0) or 0)
+        hi = int(component.properties.get("port_range_max", lo or 65535) or 65535)
+    except ValueError:
+        lo, hi = 0, 65535
+    return [{"cidr_blocks": prefix, "from_port": lo, "to_port": hi}]
+
+
 def _inbound_cidrs(component: Component) -> str:
     props = component.properties
     if _rule_direction(component) == "egress":
         return ""
+    os_open = _openstack_normalized_rules(component, "inbound")
+    if os_open:
+        return " ".join(r["cidr_blocks"] for r in os_open)
     oci_open = _oci_normalized_rules(component, "inbound")
     if oci_open:
         return " ".join(r["cidr_blocks"] for r in oci_open)
@@ -490,6 +513,9 @@ def _inbound_rules(component: Component) -> list:
     oci_open = _oci_normalized_rules(component, "inbound")
     if oci_open:
         return oci_open
+    os_open = _openstack_normalized_rules(component, "inbound")
+    if os_open:
+        return os_open
     props = component.properties
     if _rule_direction(component) == "egress":
         return []
@@ -515,6 +541,9 @@ def _outbound_rules(component: Component) -> list:
     oci_open = _oci_normalized_rules(component, "outbound")
     if oci_open:
         return [str(r) for r in oci_open]
+    os_open = _openstack_normalized_rules(component, "outbound")
+    if os_open:
+        return [str(r) for r in os_open]
     props = component.properties
     if _rule_direction(component) == "ingress":
         return []
@@ -541,6 +570,10 @@ _ARCHIVE_STORAGE = {
 # A local Docker volume is a directory on the host — encryption and backup
 # are the host disk's settings, not attributes of the volume.
 _HOST_LOCAL_STORAGE = {"docker_volume"}
+# Same for on-prem storage: encryption is the array's / vSAN's / Ceph's
+# setting and backup is a separate backup product, never an attribute of the
+# datastore, volume or storage pool resource itself.
+_ONPREM_STORAGE_PREFIXES = ("vsphere_", "openstack_", "nutanix_", "proxmox_")
 
 _ALWAYS_ENCRYPTED_STORAGE = {
     "azurerm_netapp_volume", "google_storage_bucket",
@@ -809,7 +842,8 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
             if (c.service in _ARCHIVE_STORAGE or c.service in _ALWAYS_ENCRYPTED_STORAGE
-                    or c.service in _HOST_LOCAL_STORAGE or c.service == "azurerm_storage_account"):
+                    or c.service in _HOST_LOCAL_STORAGE or c.service.startswith(_ONPREM_STORAGE_PREFIXES)
+                    or c.service == "azurerm_storage_account"):
                 continue
             sse = str(
                 c.properties.get("server_side_encryption",
@@ -902,7 +936,8 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         backup_types = {ComponentType.DATABASE, ComponentType.STORAGE}
         for c in model.components:
-            if c.type not in backup_types or c.service in _ARCHIVE_STORAGE or c.service in _HOST_LOCAL_STORAGE:
+            if (c.type not in backup_types or c.service in _ARCHIVE_STORAGE or c.service in _HOST_LOCAL_STORAGE
+                    or (c.type == ComponentType.STORAGE and c.service.startswith(_ONPREM_STORAGE_PREFIXES))):
                 continue
             if (c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS
                     or c.service == "azurerm_digital_twins_instance"
