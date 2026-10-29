@@ -36,6 +36,9 @@ _SELF_SCALING_SERVICES = {
     # Looker (Google Cloud core) is a managed SaaS-like instance with no
     # user-configurable scaling — there's nothing to put in an ASG.
     "google_looker_instance",
+    # OCI: a Data Science notebook is one dev environment; a dedicated AI
+    # cluster is a fixed count of reserved units with no autoscaling attribute.
+    "oci_datascience_notebook_session", "oci_generative_ai_dedicated_ai_cluster",
     # Azure: a dedicated autoscale-setting resource, or compute that scales
     # itself the same way Lambda/Fargate do.
     "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",

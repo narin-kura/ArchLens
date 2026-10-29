@@ -310,6 +310,58 @@ const ORACLE_PRODUCTS = [
     {id:'oci_datascience_job',       name:'Data Science Job',            type:'SERVERLESS', service:'oci_datascience_job',                       icon:'DSJ'},
     {id:'oci_datascience_pipeline',  name:'Data Science Pipeline',       type:'SERVERLESS', service:'oci_datascience_pipeline',                  icon:'DSPL'},
     {id:'oci_blockchain_platform',   name:'Blockchain Platform',         type:'OTHER',      service:'oci_blockchain_blockchain_platform',        icon:'BC'},
+    {id:'oci_dataflow_private_endpoint', name:'Data Flow Private Endpoint', type:'NETWORK', service:'oci_dataflow_private_endpoint',          icon:'DFPE'},
+    {id:'oci_ai_data_platform',      name:'AI Data Platform',            type:'OTHER',      service:'oci_ai_data_platform_ai_data_platform',     icon:'AIDP'},
+  ]},
+
+  {g: 'Generative AI', items: [
+    {id:'oci_genai_dedicated_cluster', name:'Generative AI Dedicated AI Cluster', type:'COMPUTE', service:'oci_generative_ai_dedicated_ai_cluster', icon:'GAIC'},
+    {id:'oci_genai_endpoint',        name:'Generative AI Endpoint',      type:'SERVERLESS', service:'oci_generative_ai_endpoint',                icon:'GAIE'},
+    {id:'oci_genai_model',           name:'Generative AI Custom Model',  type:'OTHER',      service:'oci_generative_ai_model',                   icon:'GAIM'},
+    {id:'oci_genai_imported_model',  name:'Generative AI Imported Model',type:'OTHER',      service:'oci_generative_ai_imported_model',          icon:'GAII'},
+    {id:'oci_genai_project',         name:'Generative AI Project',       type:'OTHER',      service:'oci_generative_ai_project',                 icon:'GAIP'},
+    {id:'oci_genai_private_endpoint',name:'Generative AI Private Endpoint', type:'NETWORK', service:'oci_generative_ai_generative_ai_private_endpoint', icon:'GAPE'},
+    {id:'oci_genai_semantic_store',  name:'Generative AI Semantic Store',type:'DATABASE',   service:'oci_generative_ai_semantic_store',          icon:'GAIS'},
+    {id:'oci_genai_routing_profile', name:'Generative AI Routing Profile', type:'OTHER',    service:'oci_generative_ai_routing_profile',         icon:'GAIR'},
+    {id:'oci_genai_hosted_app',      name:'Generative AI Hosted Application', type:'SERVERLESS', service:'oci_generative_ai_hosted_application', icon:'GAHA'},
+    {id:'oci_genai_hosted_deployment', name:'Generative AI Hosted Deployment', type:'OTHER', service:'oci_generative_ai_hosted_deployment',      icon:'GAHD'},
+    {id:'oci_genai_agent',           name:'Generative AI Agent',         type:'SERVERLESS', service:'oci_generative_ai_agent_agent',             icon:'AGT'},
+    {id:'oci_genai_agent_endpoint',  name:'Generative AI Agent Endpoint',type:'SERVERLESS',    service:'oci_generative_ai_agent_agent_endpoint',    icon:'AGTE'},
+    {id:'oci_genai_agent_kb',        name:'Agent Knowledge Base',        type:'DATABASE',   service:'oci_generative_ai_agent_knowledge_base',    icon:'AGKB'},
+    {id:'oci_genai_agent_data_source', name:'Agent Data Source',         type:'OTHER',      service:'oci_generative_ai_agent_data_source',       icon:'AGDS'},
+    {id:'oci_genai_agent_ingestion', name:'Agent Data Ingestion Job',    type:'OTHER',      service:'oci_generative_ai_agent_data_ingestion_job',icon:'AGIJ'},
+    {id:'oci_genai_agent_tool',      name:'Agent Tool',                  type:'OTHER',      service:'oci_generative_ai_agent_tool',              icon:'AGTL'},
+    {id:'oci_genai_agent_capacity',  name:'Agent Provisioned Capacity',  type:'OTHER',      service:'oci_generative_ai_agent_provisioned_capacity', icon:'AGPC'},
+  ]},
+
+  {g: 'AI Services', items: [
+    {id:'oci_ai_language_project',   name:'AI Language Project',         type:'OTHER',      service:'oci_ai_language_project',                   icon:'LANG'},
+    {id:'oci_ai_language_model',     name:'AI Language Model',           type:'OTHER',      service:'oci_ai_language_model',                     icon:'LNGM'},
+    {id:'oci_ai_language_endpoint',  name:'AI Language Endpoint',        type:'SERVERLESS', service:'oci_ai_language_endpoint',                  icon:'LNGE'},
+    {id:'oci_ai_vision_project',     name:'AI Vision Project',           type:'OTHER',      service:'oci_ai_vision_project',                     icon:'VIS'},
+    {id:'oci_ai_vision_model',       name:'AI Vision Model',             type:'OTHER',      service:'oci_ai_vision_model',                       icon:'VISM'},
+    {id:'oci_ai_vision_stream_job',  name:'AI Vision Stream Job',        type:'SERVERLESS', service:'oci_ai_vision_stream_job',                  icon:'VISJ'},
+    {id:'oci_ai_vision_private_endpoint', name:'AI Vision Private Endpoint', type:'NETWORK', service:'oci_ai_vision_vision_private_endpoint',    icon:'VISP'},
+    {id:'oci_ai_document_project',   name:'Document Understanding Project', type:'OTHER',   service:'oci_ai_document_project',                   icon:'DOC'},
+    {id:'oci_ai_document_model',     name:'Document Understanding Model',type:'OTHER',      service:'oci_ai_document_model',                     icon:'DOCM'},
+    {id:'oci_oda_instance',          name:'Digital Assistant',           type:'SERVERLESS', service:'oci_oda_oda_instance',                      icon:'ODA'},
+    {id:'oci_oda_private_endpoint',  name:'Digital Assistant Private Endpoint', type:'NETWORK', service:'oci_oda_oda_private_endpoint',          icon:'ODAP'},
+  ]},
+
+  {g: 'Media Services', items: [
+    {id:'oci_media_workflow',        name:'Media Flow Workflow',         type:'OTHER',      service:'oci_media_services_media_workflow',         icon:'MWF'},
+    {id:'oci_media_workflow_config', name:'Media Workflow Configuration',type:'OTHER',      service:'oci_media_services_media_workflow_configuration', icon:'MWC'},
+    {id:'oci_media_workflow_job',    name:'Media Workflow Job',          type:'COMPUTE',    service:'oci_media_services_media_workflow_job',     icon:'MWJ'},
+    {id:'oci_media_asset',           name:'Media Asset',                 type:'OTHER',      service:'oci_media_services_media_asset',            icon:'MAS'},
+    {id:'oci_media_stream_packaging',name:'Media Streams Packaging Config', type:'OTHER',    service:'oci_media_services_stream_packaging_config',icon:'MSP'},
+  ]},
+
+  {g: 'Application Security', items: [
+    {id:'oci_adm_knowledge_base',    name:'App Dependency Mgmt Knowledge Base', type:'MONITORING', service:'oci_adm_knowledge_base',            icon:'ADM'},
+    {id:'oci_adm_vulnerability_audit', name:'App Dependency Vulnerability Audit', type:'MONITORING', service:'oci_adm_vulnerability_audit',     icon:'ADMA'},
+    {id:'oci_adm_remediation_recipe',name:'ADM Remediation Recipe',      type:'OTHER',      service:'oci_adm_remediation_recipe',                icon:'ADMR'},
+    {id:'oci_vuln_scan_container_target', name:'Vulnerability Scanning — Container Target', type:'MONITORING', service:'oci_vulnerability_scanning_container_scan_target', icon:'VSCT'},
+    {id:'oci_vuln_scan_host_target', name:'Vulnerability Scanning — Host Target', type:'MONITORING', service:'oci_vulnerability_scanning_host_scan_target', icon:'VSHT'},
   ]},
 ];
 

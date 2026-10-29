@@ -136,6 +136,9 @@ _MANAGED_DATA_SERVICES = {
     # NoSQL replicates internally and exposes no backup attribute at all
     # (checked against the provider docs).
     "oci_nosql_table",
+    # GenAI Agents knowledge base / semantic store: managed indexes with no
+    # encryption, backup or deletion attribute (checked against the docs).
+    "oci_generative_ai_agent_knowledge_base", "oci_generative_ai_semantic_store",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
