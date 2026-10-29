@@ -1089,6 +1089,11 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
     # copied up as the gateway's posture; no fixed target is needed.
     "oci_apigateway_deployment":
         ("gateway_id", "oci_apigateway_gateway", []),
+    # Lustre has no backup attribute; exporting it to Object Storage through
+    # a link is how its data gets a durable copy.
+    "oci_lustre_file_storage_object_storage_link":
+        ("lustre_file_system_id", "oci_lustre_file_storage_lustre_file_system",
+         [("backup_configuration_enabled", "true", "")]),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
@@ -1099,6 +1104,8 @@ _FOLD_SKIP_KEYS = {
     "resource", "service", "category", "source_type", "configuration", "source",
     "log_group_id", "log_type", "display_name", "asset_id", "policy_id",
     "gateway_id", "path_prefix", "specification", "compartment_id",
+    "lustre_file_system_id", "file_system_path", "object_storage_prefix",
+    "is_overwrite", "availability_domain",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces

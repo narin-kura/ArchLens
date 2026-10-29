@@ -71,6 +71,7 @@ _EXAMPLE_DIRS = {
     "aws": _EXAMPLES_ROOT / "architectures",
     "azure": _EXAMPLES_ROOT / "architectures-azure",
     "gcp": _EXAMPLES_ROOT / "architectures-gcp",
+    "oracle": _EXAMPLES_ROOT / "architectures-oracle",
 }
 
 

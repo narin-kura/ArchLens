@@ -39,6 +39,13 @@ _SELF_SCALING_SERVICES = {
     # OCI: a Data Science notebook is one dev environment; a dedicated AI
     # cluster is a fixed count of reserved units with no autoscaling attribute.
     "oci_datascience_notebook_session", "oci_generative_ai_dedicated_ai_cluster",
+    # Secure Desktops sizes itself between standby_size and maximum_size, like
+    # an AppStream fleet.
+    "oci_desktops_desktop_pool",
+    # Batch's service-managed fleet exists only while tasks are queued; an
+    # RDMA cluster network is a fixed-size MPI job allocation with no
+    # autoscaling attribute (checked against the provider docs).
+    "oci_batch_batch_context", "oci_core_cluster_network",
     # Azure: a dedicated autoscale-setting resource, or compute that scales
     # itself the same way Lambda/Fargate do.
     "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",
