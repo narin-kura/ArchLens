@@ -286,6 +286,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_database_migration_service_migration_job": C.OTHER,
     "google_compute_router_interface":     C.NETWORK,
     "google_compute_region_network_endpoint_group": C.GATEWAY,
+    "google_filestore_backup":             C.OTHER,
     "google_cloudfunctions2_function":     C.SERVERLESS,
     "google_app_engine_application":       C.SERVERLESS,
     "google_app_engine_standard_app_version": C.SERVERLESS,
@@ -735,12 +736,19 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
         ("storage_account_id", "azurerm_storage_account", [("lifecycle_rules", "configured", "")]),
     "azurerm_backup_protected_file_share":
         ("source_storage_account_id", "azurerm_storage_account", [("backup_policy", "configured", "")]),
+    # Filestore backups name a specific instance directly (unlike Bigtable's
+    # per-table or Spanner's per-database backups, which name a sub-object
+    # one level below the instance) — a backup existing for it really does
+    # mean "this instance is backed up".
+    "google_filestore_backup":
+        ("source_instance", "google_filestore_instance", [("backup_configuration_enabled", "true", "")]),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
 _FOLD_SKIP_KEYS = {
     "bucket", "id", "name", "tags", "api_id", "rest_api_id", "file_system_id",
     "target_resource_id", "storage_account_id", "source_storage_account_id", "depends_on",
+    "source_instance", "source_file_share", "location",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces

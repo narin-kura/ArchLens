@@ -701,7 +701,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("encrypted",
                 c.properties.get("sse_algorithm",
                 c.properties.get("kms_key_arn",
-                c.properties.get("kms_key_id", ""))))))
+                c.properties.get("kms_key_id",
+                c.properties.get("kms_key_name", "")))))))
             ).lower()
             if sse in ("false", "no", "none", "disabled", ""):
                 findings.append(Finding(
