@@ -226,6 +226,8 @@ function renderCanvas() {
     `${nodes.length} service${nodes.length === 1 ? '' : 's'} · ${edges.length} connection${edges.length === 1 ? '' : 's'}`;
   const btn = document.getElementById('builderAnalyzeBtn');
   if (btn) btn.disabled = nodes.length === 0;
+  const tfBtn = document.getElementById('exportTfBtn');
+  if (tfBtn) tfBtn.disabled = nodes.length === 0;
 
   updateSuggestions();
   saveDraft();

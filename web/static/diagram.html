@@ -28,6 +28,7 @@
   <button class="canvas-btn" onclick="autoArrange()" title="Lay nodes out in tiers">Auto-arrange</button>
   <button class="canvas-btn" onclick="deleteSelection()" id="canvasDeleteBtn" disabled title="Delete the selected node or connection">Delete</button>
   <button class="canvas-btn danger" onclick="clearCanvas()" title="Remove everything">Clear</button>
+  <button class="canvas-btn" id="exportTfBtn" onclick="exportDiagramAsTerraform()" disabled title="Download a Terraform skeleton generated from this diagram">Export Terraform</button>
   <button class="app-analyze" id="builderAnalyzeBtn" onclick="runBuilderAnalysis()" disabled>Analyze Diagram &#8594;</button>
 </header>
 
@@ -144,11 +145,13 @@
   function closeReport() { document.getElementById('reportDrawer').classList.remove('open'); }
 </script>
 <script src="/static/js/catalog_aws.js"></script>
+<script src="/static/js/catalog_gcp.js"></script>
 <script src="/static/js/catalog_azure.js"></script>
 <script src="/static/js/services.js"></script>
 <script src="/static/js/report.js"></script>
 <script src="/static/js/suggestions.js"></script>
 <script src="/static/js/canvas.js"></script>
+<script src="/static/js/terraform-export.js"></script>
 <script>
   // The canvas is the whole page here, so set it up on load rather than on a
   // tab switch, and pick up a stack handed over by the recommender.
