@@ -1,0 +1,266 @@
+{
+  "architectures/01-three-tier-web-app": {
+    "total": 3,
+    "info": 1,
+    "medium": 2
+  },
+  "architectures/02-serverless-api": {
+    "total": 0
+  },
+  "architectures/03-static-site-cdn": {
+    "total": 0
+  },
+  "architectures/04-ecs-microservices": {
+    "total": 0
+  },
+  "architectures/05-eks-platform": {
+    "total": 1,
+    "medium": 1
+  },
+  "architectures/06-data-lake-analytics": {
+    "total": 0
+  },
+  "architectures/07-streaming-realtime": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures/08-ml-genai-platform": {
+    "total": 0
+  },
+  "architectures/09-multi-region-dr": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures/10-iot-edge-telemetry": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures/11-media-streaming": {
+    "total": 0
+  },
+  "architectures/12-security-governance-baseline": {
+    "total": 0
+  },
+  "architectures/13-cicd-pipeline": {
+    "total": 0
+  },
+  "architectures/14-migration-hybrid": {
+    "total": 0
+  },
+  "architectures/15-workforce-apps": {
+    "total": 0
+  },
+  "architectures/16-batch-hpc-gaming": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-azure/01-three-tier-web-app": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-azure/02-serverless-api": {
+    "total": 0
+  },
+  "architectures-azure/03-static-site-cdn": {
+    "total": 0
+  },
+  "architectures-azure/04-container-apps-microservices": {
+    "total": 0
+  },
+  "architectures-azure/05-aks-platform": {
+    "total": 0
+  },
+  "architectures-azure/06-data-lake-analytics": {
+    "total": 0
+  },
+  "architectures-azure/07-streaming-realtime": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-azure/08-ml-genai-platform": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-azure/09-multi-region-dr": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-azure/10-iot-edge-telemetry": {
+    "total": 0
+  },
+  "architectures-azure/11-communication-platform": {
+    "total": 0
+  },
+  "architectures-azure/12-security-governance-baseline": {
+    "total": 0
+  },
+  "architectures-azure/13-cicd-pipeline": {
+    "total": 0
+  },
+  "architectures-azure/14-migration-hybrid": {
+    "total": 0
+  },
+  "architectures-azure/15-workforce-apps": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-azure/16-batch-hpc": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-gcp/01-three-tier-web-app": {
+    "total": 3,
+    "info": 1,
+    "medium": 2
+  },
+  "architectures-gcp/02-serverless-api": {
+    "total": 0
+  },
+  "architectures-gcp/03-static-site-cdn": {
+    "total": 1,
+    "medium": 1
+  },
+  "architectures-gcp/04-gke-platform": {
+    "total": 0
+  },
+  "architectures-gcp/05-data-lake-analytics": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-gcp/06-streaming-realtime": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-gcp/07-ml-genai-platform": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-gcp/08-multi-region-dr": {
+    "total": 3,
+    "info": 1,
+    "medium": 2
+  },
+  "architectures-gcp/09-iot-edge-telemetry": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-gcp/10-media-streaming": {
+    "total": 1,
+    "medium": 1
+  },
+  "architectures-gcp/11-security-governance-baseline": {
+    "total": 0
+  },
+  "architectures-gcp/12-cicd-pipeline": {
+    "total": 0
+  },
+  "architectures-gcp/13-migration-hybrid": {
+    "total": 1,
+    "medium": 1
+  },
+  "architectures-gcp/14-workforce-apps": {
+    "total": 0
+  },
+  "architectures-gcp/15-batch-hpc": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-gcp/16-cloud-run-microservices": {
+    "total": 0
+  },
+  "architectures-oracle/01-three-tier-web-app": {
+    "total": 2,
+    "info": 1,
+    "medium": 1
+  },
+  "architectures-oracle/02-serverless-api": {
+    "total": 1,
+    "medium": 1
+  },
+  "architectures-oracle/03-static-site-edge": {
+    "total": 2,
+    "high": 1,
+    "medium": 1
+  },
+  "architectures-oracle/04-oke-platform": {
+    "total": 0
+  },
+  "architectures-oracle/05-data-lake-analytics": {
+    "total": 0
+  },
+  "architectures-oracle/06-streaming-realtime": {
+    "total": 0
+  },
+  "architectures-oracle/07-ml-genai-platform": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-oracle/08-multi-region-dr": {
+    "total": 0
+  },
+  "architectures-oracle/09-iot-edge-telemetry": {
+    "total": 0
+  },
+  "architectures-oracle/10-media-streaming": {
+    "total": 0
+  },
+  "architectures-oracle/11-security-governance-baseline": {
+    "total": 0
+  },
+  "architectures-oracle/12-cicd-pipeline": {
+    "total": 0
+  },
+  "architectures-oracle/13-migration-hybrid": {
+    "total": 0
+  },
+  "architectures-oracle/14-workforce-apps": {
+    "total": 0
+  },
+  "architectures-oracle/15-batch-hpc": {
+    "total": 1,
+    "info": 1
+  },
+  "architectures-oracle/16-base-database-rac": {
+    "total": 0
+  },
+  "terraform": {
+    "total": 19,
+    "critical": 1,
+    "high": 8,
+    "low": 1,
+    "medium": 9
+  },
+  "kubernetes/insecure-demo.yaml": {
+    "total": 43,
+    "critical": 3,
+    "high": 12,
+    "low": 11,
+    "medium": 17
+  },
+  "cloud_exports/aws_config_export.json": {
+    "total": 20,
+    "critical": 1,
+    "high": 9,
+    "low": 1,
+    "medium": 9
+  },
+  "cloud_exports/cloudformation_stack.yaml": {
+    "total": 23,
+    "high": 10,
+    "low": 1,
+    "medium": 12
+  },
+  "cloud_exports/gcp_asset_inventory.json": {
+    "total": 22,
+    "critical": 1,
+    "high": 9,
+    "low": 1,
+    "medium": 11
+  }
+}
