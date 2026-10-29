@@ -22,6 +22,7 @@ const GCP_PRODUCTS = [
     {id:'gcp_reservation',   name:'Compute Reservation',     type:'OTHER',      service:'google_compute_reservation',            icon:'RES'},
     {id:'gcp_sole_tenant',   name:'Sole-Tenant Node Group',  type:'COMPUTE',    service:'google_compute_node_group',             icon:'STN'},
     {id:'gcp_node_tmpl',     name:'Sole-Tenant Node Template',type:'OTHER',     service:'google_compute_node_template',          icon:'NT'},
+    {id:'gcp_batch_job',     name:'Batch Job',                type:'COMPUTE',  service:'google_batch_job',                      icon:'BAT2'},
     {id:'gcp_spot_vm',       name:'Spot VM',                  type:'COMPUTE',   service:'spot_vm',                               icon:'SPOT', legacy:true},
     {id:'gcp_bare_metal',    name:'Bare Metal Solution',     type:'COMPUTE',    service:'bare_metal_solution',                   icon:'BMS', legacy:true},
     {id:'gcp_vmware_engine', name:'VMware Engine',            type:'COMPUTE',   service:'google_vmwareengine_private_cloud',     icon:'GVE'},

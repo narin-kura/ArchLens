@@ -285,6 +285,53 @@ def _azure_normalized_rules(component: Component, direction: str) -> list[dict]:
     return out
 
 
+# A GCP firewall resource is one rule, not a group like a security group or
+# NSG — direction is "INGRESS"/"EGRESS" (defaulting to INGRESS when omitted,
+# unlike every other cloud's explicit direction), allow vs deny is which
+# nested block is present rather than an access attribute, and "any source"
+# is a real 0.0.0.0/0 in source_ranges — already the AWS shape, just gated
+# behind GCP-specific block/attribute names the generic reader doesn't know.
+_GCP_FIREWALL_SERVICE = "google_compute_firewall"
+
+
+def _gcp_port_bounds(port: str) -> tuple[int, int]:
+    port = str(port).strip()
+    if "-" in port:
+        lo, hi = port.split("-", 1)
+        try:
+            return int(lo), int(hi)
+        except ValueError:
+            return 0, 65535
+    try:
+        value = int(port)
+        return value, value
+    except ValueError:
+        return 0, 65535
+
+
+def _gcp_normalized_rules(component: Component, direction: str) -> list[dict]:
+    if component.service != _GCP_FIREWALL_SERVICE:
+        return []
+    declared = str(component.properties.get("direction", "INGRESS")).upper()
+    if declared != ("INGRESS" if direction == "inbound" else "EGRESS"):
+        return []
+    if "allow" not in component.properties:
+        return []  # a deny rule, or no rule block at all — nothing exposed
+    range_key = "source_ranges" if direction == "inbound" else "destination_ranges"
+    ranges = str(component.properties.get(range_key, "")).lower()
+    if "0.0.0.0/0" in ranges:
+        cidr = "0.0.0.0/0"
+    elif "::/0" in ranges:
+        cidr = "::/0"
+    else:
+        return []
+    port_tokens = re.findall(r'(\d+(?:-\d+)?)', str(component.properties.get("ports", "")))
+    if not port_tokens:
+        return [{"cidr_blocks": cidr, "from_port": 0, "to_port": 65535}]
+    return [{"cidr_blocks": cidr, "from_port": lo, "to_port": hi}
+            for lo, hi in (_gcp_port_bounds(t) for t in port_tokens)]
+
+
 def _inbound_cidrs(component: Component) -> str:
     props = component.properties
     if _rule_direction(component) == "egress":
@@ -292,6 +339,9 @@ def _inbound_cidrs(component: Component) -> str:
     azure_open = _azure_normalized_rules(component, "inbound")
     if azure_open:
         return " ".join(r["cidr_blocks"] for r in azure_open)
+    gcp_open = _gcp_normalized_rules(component, "inbound")
+    if gcp_open:
+        return " ".join(r["cidr_blocks"] for r in gcp_open)
     return str(props.get("ingress_cidr_blocks", props.get("cidr_blocks", props.get("cidr_ipv4", ""))))
 
 
@@ -300,6 +350,9 @@ def _inbound_rules(component: Component) -> list:
     azure_open = _azure_normalized_rules(component, "inbound")
     if azure_open:
         return azure_open
+    gcp_open = _gcp_normalized_rules(component, "inbound")
+    if gcp_open:
+        return gcp_open
     props = component.properties
     if _rule_direction(component) == "egress":
         return []
@@ -319,6 +372,9 @@ def _outbound_rules(component: Component) -> list:
     azure_open = _azure_normalized_rules(component, "outbound")
     if azure_open:
         return [str(r) for r in azure_open]
+    gcp_open = _gcp_normalized_rules(component, "outbound")
+    if gcp_open:
+        return [str(r) for r in gcp_open]
     props = component.properties
     if _rule_direction(component) == "ingress":
         return []
@@ -801,7 +857,9 @@ class SecurityAnalyzer(BaseAnalyzer):
         cdns = model.components_by_type(ComponentType.CDN)
         if not gateways and not cdns:
             return []
-        waf_markers = ("waf", "application_firewall", "frontdoor_firewall")
+        # Cloud Armor's resource is a "security policy", not anything
+        # spelled "waf" or "firewall" — it's GCP's only WAF-equivalent.
+        waf_markers = ("waf", "application_firewall", "frontdoor_firewall", "compute_security_policy")
         has_waf = any(
             any(marker in c.service.lower() for marker in waf_markers)
             for c in model.components

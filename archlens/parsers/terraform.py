@@ -270,6 +270,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_compute_reservation":          C.OTHER,
     "google_compute_node_group":           C.COMPUTE,
     "google_compute_node_template":        C.OTHER,
+    "google_batch_job":                    C.COMPUTE,
     "google_vmwareengine_private_cloud":   C.COMPUTE,
     "google_cloud_run_v2_service":         C.SERVERLESS,
     "google_cloud_run_v2_job":             C.SERVERLESS,
