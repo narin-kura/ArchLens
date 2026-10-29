@@ -73,6 +73,15 @@ _ALWAYS_ENCRYPTED_DATABASES = {
 # redundancy belong to the database resource it hosts, not the server.
 _LOGICAL_DB_SERVERS = {"azurerm_mssql_server", "azurerm_sql_server"}
 
+
+# A read replica's backup retention, Multi-AZ/zone and audit-log settings
+# are the primary's — AWS RDS (replicate_source_db) and Cloud SQL
+# (master_instance_name) both refuse to let you set them independently on
+# the replica, so asking it for its own is asking for a setting that can't
+# exist there.
+def _is_db_replica(component: Component) -> bool:
+    return bool(component.properties.get("replicate_source_db") or component.properties.get("master_instance_name"))
+
 # TLS enforcement and audit logging are configured once, at the server, and
 # apply to every database on it — checking the database too would double
 # the same missing-setting finding without adding information.
@@ -101,6 +110,9 @@ _MANAGED_DATA_SERVICES = {
     # attribute on any of them.
     "google_vertex_ai_featurestore", "google_vertex_ai_dataset",
     "google_vertex_ai_index", "google_vertex_ai_metadata_store",
+    # Both backup (google_spanner_backup) and deletion_protection name a
+    # specific database, never "the instance".
+    "google_spanner_instance",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
@@ -775,7 +787,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                     # A Bigtable backup names a specific table
                     # (google_bigtable_backup), never "the instance" —
                     # there is no instance-level backup setting to ask for.
-                    or c.service == "google_bigtable_instance"):
+                    or c.service == "google_bigtable_instance"
+                    or _is_db_replica(c)):
                 continue
             retention = str(c.properties.get("backup_retention_period",
                             c.properties.get("snapshot_retention_limit",
@@ -1029,7 +1042,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_no_multi_az(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if not _is_instance_database(c) or c.service in _LOGICAL_DB_SERVERS:
+            if not _is_instance_database(c) or c.service in _LOGICAL_DB_SERVERS or _is_db_replica(c):
                 continue
             multi_az = str(
                 c.properties.get("multi_az",
@@ -1058,7 +1071,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_no_audit_log(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if not _is_instance_database(c) or c.service in _DELEGATES_TO_SERVER:
+            if not _is_instance_database(c) or c.service in _DELEGATES_TO_SERVER or _is_db_replica(c):
                 continue
             audit = str(
                 c.properties.get("audit_log",
