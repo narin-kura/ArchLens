@@ -145,8 +145,11 @@ _FUNCTION_SERVICES = {
 # Dead-lettering is configured per-trigger in the function's code/bindings,
 # not as an attribute on the function resource itself the way AWS Lambda's
 # dead_letter_config is — there is nothing on these resources to check.
-_AZURE_FUNCTION_SERVICES = {
+# Cloud Functions' event-driven dead-lettering lives on the Eventarc
+# trigger's auto-created Pub/Sub subscription, not on the function either.
+_NO_FUNCTION_DLQ_CONCEPT = {
     "azurerm_function_app", "azurerm_linux_function_app", "azurerm_windows_function_app",
+    "google_cloudfunctions_function", "google_cloudfunctions2_function",
 }
 
 # MSK Serverless encrypts at rest with no attribute to set or unset.
@@ -1364,7 +1367,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_serverless_no_dead_letter(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.SERVERLESS):
-            if not _is_function(c) or c.service in _AZURE_FUNCTION_SERVICES:
+            if not _is_function(c) or c.service in _NO_FUNCTION_DLQ_CONCEPT:
                 continue
             dlq = str(c.properties.get("dead_letter_config", c.properties.get("dlq", ""))).lower()
             if dlq in ("", "none", "false", "{}"):
@@ -1388,7 +1391,10 @@ class SecurityAnalyzer(BaseAnalyzer):
             vpc = str(
                 c.properties.get("vpc_config",
                 c.properties.get("vpc_id",
-                c.properties.get("virtual_network_subnet_id", "")))
+                c.properties.get("virtual_network_subnet_id",
+                # Cloud Functions' Serverless VPC Access connector, read
+                # from the service_config block it has no name attribute.
+                c.properties.get("vpc_connector", ""))))
             ).strip()
             if vpc in ("", "none", "{}", "null"):
                 findings.append(Finding(

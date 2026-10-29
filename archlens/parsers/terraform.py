@@ -279,6 +279,8 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_binary_authorization_attestor": C.IAM,
     "google_container_analysis_note":      C.OTHER,
     "google_service_account_iam_member":   C.IAM,
+    "google_pubsub_topic_iam_member":      C.IAM,
+    "google_vpc_access_connector":         C.NETWORK,
     "google_cloudfunctions2_function":     C.SERVERLESS,
     "google_app_engine_application":       C.SERVERLESS,
     "google_app_engine_standard_app_version": C.SERVERLESS,
