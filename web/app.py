@@ -63,13 +63,14 @@ def examples_page():
 
 
 # The bundled reference architectures. Keyed by slug so a request can never
-# reach a path outside these directories. Both clouds reuse the same
+# reach a path outside these directories. Every cloud reuses the same
 # "01-three-tier-web-app"-style directory names, so the slug is prefixed with
 # the provider to stay unique and URL-safe.
 _EXAMPLES_ROOT = Path(__file__).resolve().parent.parent / "examples"
 _EXAMPLE_DIRS = {
     "aws": _EXAMPLES_ROOT / "architectures",
     "azure": _EXAMPLES_ROOT / "architectures-azure",
+    "gcp": _EXAMPLES_ROOT / "architectures-gcp",
 }
 
 

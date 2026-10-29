@@ -4,8 +4,8 @@
 // Non-commercial use only. See LICENSE.
 
 const GITHUB_EXAMPLES = 'https://github.com/narin-kura/ArchLens/blob/main/examples';
-const GITHUB_DIR = { aws: 'architectures', azure: 'architectures-azure' };
-const PROVIDER_LABEL = { aws: 'AWS', azure: 'Azure' };
+const GITHUB_DIR = { aws: 'architectures', azure: 'architectures-azure', gcp: 'architectures-gcp' };
+const PROVIDER_LABEL = { aws: 'AWS', azure: 'Azure', gcp: 'GCP' };
 
 let ALL_EXAMPLES = [];
 let ACTIVE_FILTER = 'all';
@@ -55,7 +55,7 @@ function renderExamples() {
         ex.services.length > 7 ? `<span class="ex-tag">+${ex.services.length - 7} more</span>` : ''}</div>
       <div class="ex-foot">
         <button class="ex-btn" onclick="analyzeExample('${ex.slug}', this)">Analyze</button>
-        <a class="ex-link" href="${GITHUB_EXAMPLES}/${GITHUB_DIR[ex.provider] || ex.provider}/${ex.slug.replace(/^(aws|azure)-/, '')}/main.tf" target="_blank" rel="noopener">View Terraform &#8599;</a>
+        <a class="ex-link" href="${GITHUB_EXAMPLES}/${GITHUB_DIR[ex.provider] || ex.provider}/${ex.slug.replace(/^(aws|azure|gcp)-/, '')}/main.tf" target="_blank" rel="noopener">View Terraform &#8599;</a>
       </div>
       ${ex.expected ? `<div class="ex-expect">${escapeText(ex.expected)}</div>` : ''}
     </div>`).join('');
