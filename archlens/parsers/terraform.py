@@ -1007,6 +1007,12 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
     # A block or boot volume's backups come from a policy assigned to it.
     "oci_core_volume_backup_policy_assignment":
         ("asset_id", None, [("backup_configuration_enabled", "true", "")]),
+    # An OCI API gateway carries no policy of its own — authentication, rate
+    # limiting and logging all live in a deployment's specification. Its
+    # nested blocks (authentication, rate_limiting, logging_policies) are
+    # copied up as the gateway's posture; no fixed target is needed.
+    "oci_apigateway_deployment":
+        ("gateway_id", "oci_apigateway_gateway", []),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
@@ -1016,6 +1022,7 @@ _FOLD_SKIP_KEYS = {
     "source_instance", "source_file_share", "location",
     "resource", "service", "category", "source_type", "configuration", "source",
     "log_group_id", "log_type", "display_name", "asset_id", "policy_id",
+    "gateway_id", "path_prefix", "specification", "compartment_id",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces

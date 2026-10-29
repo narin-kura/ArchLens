@@ -133,6 +133,9 @@ _MANAGED_DATA_SERVICES = {
     # backup_retention_period_in_days, default 60) and has no delete-lock
     # attribute; encryption (TDE) is always on.
     "oci_database_autonomous_database",
+    # NoSQL replicates internally and exposes no backup attribute at all
+    # (checked against the provider docs).
+    "oci_nosql_table",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
@@ -225,6 +228,9 @@ _HTTPS_ONLY_ORIGINS = {
 _CDN_NO_PROTOCOL_CONCEPT = {
     "azurerm_cdn_frontdoor_profile", "azurerm_cdn_frontdoor_endpoint",
     "azurerm_cdn_frontdoor_origin", "azurerm_cdn_frontdoor_origin_group",
+    # Web App Acceleration rides on a load balancer — HTTPS is the LB
+    # listener's ssl_configuration, not an attribute of the WAA resource.
+    "oci_waa_web_app_acceleration",
 }
 
 # A WAF sits in front of HTTP. An SFTP server, a contact-center instance or a
@@ -993,6 +999,9 @@ class SecurityAnalyzer(BaseAnalyzer):
             # An internal load balancer has no internet exposure to filter;
             # neither does an Azure resource with public access turned off.
             if str(c.properties.get("internal", "false")).lower() not in ("true", "yes", "1")
+            # OCI: a private load balancer, or a private API gateway endpoint.
+            and str(c.properties.get("is_private", "false")).lower() not in ("true", "yes", "1")
+            and str(c.properties.get("endpoint_type", "")).upper() != "PRIVATE"
             and str(c.properties.get("public_network_access_enabled", "true")).lower() not in ("false", "no", "0")
             and c.service not in _NON_HTTP_GATEWAYS
         ]
@@ -1709,7 +1718,9 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.GATEWAY):
             if not _is_api_gateway(c):
                 continue
-            throttle = str(c.properties.get("throttling_rate_limit", c.properties.get("rate_limit", ""))).strip()
+            throttle = str(c.properties.get("throttling_rate_limit", c.properties.get("rate_limit",
+                           # OCI: a deployment's request_policies.rate_limiting block.
+                           c.properties.get("rate_limiting", "")))).strip()
             if throttle in ("", "0", "none", "-1"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1731,7 +1742,9 @@ class SecurityAnalyzer(BaseAnalyzer):
             logging_val = str(
                 c.properties.get("access_log_settings",
                 c.properties.get("access_logs",
-                c.properties.get("logging", "")))
+                c.properties.get("logging",
+                # OCI: a deployment's specification.logging_policies block.
+                c.properties.get("logging_policies", ""))))
             ).lower()
             if logging_val in ("", "none", "false", "disabled", "{}"):
                 findings.append(Finding(
