@@ -11,6 +11,10 @@ from ..models.findings import Finding, FindingType, Severity
 # MFA applies to identities a person signs in as. A service role assumed by
 # Lambda or EC2 has no password and no MFA device, so demanding MFA of it is
 # noise, not a finding.
+# Terraform type prefixes of the clouds whose resources the checks below know
+# individually; anything else is treated as a generic, self-managed component.
+_CLOUD_PREFIXES = ("aws_", "google_", "azurerm_", "oci_")
+
 _HUMAN_IDENTITY_SERVICES = {
     "aws_iam_user", "aws_iam_group", "aws_iam_user_policy", "aws_iam_group_policy",
     "iam_user", "iam_group",
@@ -35,7 +39,7 @@ def _is_api_gateway(component: Component) -> bool:
         return True
     # A Kubernetes Ingress, or a gateway from prose or a diagram, carries no
     # cloud resource type but is still an HTTP front door.
-    return not service.startswith(("aws_", "google_", "azurerm_"))
+    return not service.startswith(_CLOUD_PREFIXES)
 
 
 # These engines have no deletion-protection flag at all; you guard them with
@@ -131,7 +135,7 @@ _INSTANCE_DATABASES = {
 def _is_instance_database(component: Component) -> bool:
     # A model built from prose or a diagram carries no resource type, so fall
     # back to checking it anyway rather than skipping silently.
-    return component.service in _INSTANCE_DATABASES or not component.service.startswith(("aws_", "google_", "azurerm_"))
+    return component.service in _INSTANCE_DATABASES or not component.service.startswith(_CLOUD_PREFIXES)
 
 
 # A dead-letter queue and a VPC attachment belong to a function. Step Functions
@@ -450,7 +454,7 @@ def _is_object_store(component: Component) -> bool:
     if component.service in _OBJECT_STORES:
         return True
     # Prose- and diagram-derived models carry no resource type; keep checking them.
-    return not component.service.startswith(("aws_", "google_", "azurerm_"))
+    return not component.service.startswith(_CLOUD_PREFIXES)
 
 
 # Serverless cache engines are encrypted in both directions and authenticated
@@ -481,12 +485,12 @@ def _scans_images(component: Component) -> bool:
     service = component.service.lower()
     if any(marker in service for marker in _REGISTRY_MARKERS):
         return True
-    return not service.startswith(("aws_", "google_", "azurerm_"))
+    return not service.startswith(_CLOUD_PREFIXES)
 
 
 def _is_function(component: Component) -> bool:
     return (component.service in _FUNCTION_SERVICES
-            or not component.service.startswith(("aws_", "google_", "azurerm_")))
+            or not component.service.startswith(_CLOUD_PREFIXES))
 
 
 # Disk encryption and IMDS are properties of a virtual machine you own. An
@@ -513,7 +517,7 @@ def _owns_host_disks(component: Component) -> bool:
     if component.service in _HOST_RESOURCES:
         return True
     # Prose- and diagram-derived components have no resource type; still check.
-    return not component.service.startswith(("aws_", "google_", "azurerm_"))
+    return not component.service.startswith(_CLOUD_PREFIXES)
 
 
 def _is_human_principal(component: Component) -> bool:
@@ -1515,7 +1519,7 @@ class SecurityAnalyzer(BaseAnalyzer):
             # Redrive is a queue setting. An SNS topic, EventBridge bus or
             # Kafka/Kinesis stream has no DLQ of its own — its targets do.
             if (c.service not in _REDRIVE_CAPABLE
-                    and c.service.startswith(("aws_", "google_", "azurerm_"))):
+                    and c.service.startswith(_CLOUD_PREFIXES)):
                 continue
             # Service Bus dead-letters automatically once a message exceeds
             # max_delivery_count — there is no separate DLQ resource to wire up.
@@ -1664,7 +1668,7 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components:
             if c.type not in check_types:
                 continue
-            if c.type == ComponentType.QUEUE and c.service.startswith(("aws_", "google_", "azurerm_")):
+            if c.type == ComponentType.QUEUE and c.service.startswith(_CLOUD_PREFIXES):
                 continue
             if c.type == ComponentType.DATABASE and not _is_instance_database(c):
                 continue

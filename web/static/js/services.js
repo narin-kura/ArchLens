@@ -9,6 +9,8 @@ const SERVICES = [
   ...(window.GCP_CATALOG || []),
   // Azure — full product catalog (every Azure service, grouped) lives in /static/js/catalog_azure.js
   ...(window.AZURE_CATALOG || []),
+  // Oracle Cloud — full product catalog lives in /static/js/catalog_oracle.js
+  ...(window.ORACLE_CATALOG || []),
   // Data stores & streaming (self-managed)
   {id:'d_postgres',    name:'PostgreSQL',    provider:'generic', cat:'data',      type:'DATABASE',   service:'postgresql',      icon:'PG'},
   {id:'d_mysql',       name:'MySQL',         provider:'generic', cat:'data',      type:'DATABASE',   service:'mysql',           icon:'MYS'},
@@ -143,4 +145,4 @@ function findService(id) {
       || SERVICES.find(s => (s.aliases || []).includes(id));
 }
 
-const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};
+const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', oracle:'Oracle Cloud', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};

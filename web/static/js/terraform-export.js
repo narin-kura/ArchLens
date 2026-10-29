@@ -1,7 +1,7 @@
 // Diagram -> Terraform: turns the canvas's nodes/edges into a starting .tf
-// skeleton. Only services whose catalog `service` id is a real azurerm_/
-// aws_/azuread_ resource type get a resource block — everything else (GCP,
-// third-party tools, data stores) is listed as a TODO comment instead of a
+// skeleton. Only services whose catalog `service` id is a real aws_/azurerm_/
+// azuread_/google_/oci_ resource type get a resource block — everything else
+// (third-party tools, data stores) is listed as a TODO comment instead of a
 // fabricated resource type. Diagram arrows become `depends_on` (an ordering
 // hint only, not a real attribute reference) plus a plain-English summary,
 // since guessing the correct linking attribute per resource-type pair would
@@ -13,6 +13,8 @@ const TF_PROVIDER_META = {
   'aws_':     {key: 'aws',     source: 'hashicorp/aws',     version: '~> 5.0'},
   'azurerm_': {key: 'azurerm', source: 'hashicorp/azurerm', version: '~> 3.90'},
   'azuread_': {key: 'azuread', source: 'hashicorp/azuread', version: '~> 2.47'},
+  'google_':  {key: 'google',  source: 'hashicorp/google',  version: '~> 5.0'},
+  'oci_':     {key: 'oci',     source: 'oracle/oci',        version: '~> 6.0'},
 };
 
 function tfProviderFor(service) {
