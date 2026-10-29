@@ -98,7 +98,7 @@ const ORACLE_PRODUCTS = [
     {id:'oci_waa_policy',            name:'Web App Acceleration Policy', type:'OTHER',      service:'oci_waa_web_app_acceleration_policy',       icon:'WAAP'},
     {id:'oci_waas_policy',           name:'WAAS Policy (legacy)',        type:'NETWORK',    service:'oci_waas_waas_policy',                      icon:'WAAS', legacy:true},
     {id:'oci_media_stream_cdn',      name:'Media Streams CDN Config',    type:'CDN',        service:'oci_media_services_stream_cdn_config',      icon:'MCDN'},
-    {id:'oci_media_stream_dist',     name:'Media Streams Distribution Channel', type:'CDN', service:'oci_media_services_stream_distribution_channel', icon:'MSD'},
+    {id:'oci_media_stream_dist',     name:'Media Streams Distribution Channel', type:'OTHER', service:'oci_media_services_stream_distribution_channel', icon:'MSD'},
   ]},
 
   {g: 'Storage', items: [
@@ -292,6 +292,9 @@ const ORACLE_PRODUCTS = [
     {id:'oci_devops_deploy_env',     name:'Deploy Environment',          type:'OTHER',      service:'oci_devops_deploy_environment',             icon:'DEPE'},
     {id:'oci_devops_trigger',        name:'DevOps Trigger',              type:'OTHER',      service:'oci_devops_trigger',                        icon:'TRG'},
     {id:'oci_devops_connection',     name:'DevOps External Connection',  type:'OTHER',      service:'oci_devops_connection',                     icon:'CONN'},
+    {id:'oci_devops_protected_branch', name:'DevOps Protected Branch',   type:'OTHER',      service:'oci_devops_repository_protected_branch_management', icon:'PBR'},
+    {id:'oci_devops_repo_mirror',    name:'DevOps Repository Mirror',    type:'OTHER',      service:'oci_devops_repository_mirror',              icon:'MIR'},
+    {id:'oci_os_mgmt_hub_group',     name:'OS Management Hub Instance Group', type:'OTHER', service:'oci_os_management_hub_managed_instance_group', icon:'OSMG'},
   ]},
 
   {g: 'Analytics & AI', items: [
@@ -354,6 +357,41 @@ const ORACLE_PRODUCTS = [
     {id:'oci_media_workflow_job',    name:'Media Workflow Job',          type:'COMPUTE',    service:'oci_media_services_media_workflow_job',     icon:'MWJ'},
     {id:'oci_media_asset',           name:'Media Asset',                 type:'OTHER',      service:'oci_media_services_media_asset',            icon:'MAS'},
     {id:'oci_media_stream_packaging',name:'Media Streams Packaging Config', type:'OTHER',    service:'oci_media_services_stream_packaging_config',icon:'MSP'},
+  ]},
+
+  {g: 'Internet of Things', items: [
+    {id:'oci_iot_domain_group',      name:'IoT Domain Group',            type:'OTHER',      service:'oci_iot_iot_domain_group',                  icon:'IOTG'},
+    {id:'oci_iot_domain',            name:'IoT Domain',                  type:'QUEUE',      service:'oci_iot_iot_domain',                        icon:'IOT'},
+    {id:'oci_iot_twin_model',        name:'IoT Digital Twin Model',      type:'OTHER',      service:'oci_iot_digital_twin_model',                icon:'DTM'},
+    {id:'oci_iot_twin_adapter',      name:'IoT Digital Twin Adapter',    type:'OTHER',      service:'oci_iot_digital_twin_adapter',              icon:'DTA'},
+    {id:'oci_iot_twin_instance',     name:'IoT Digital Twin Instance',   type:'OTHER',      service:'oci_iot_digital_twin_instance',             icon:'DTI'},
+    {id:'oci_iot_twin_relationship', name:'IoT Digital Twin Relationship', type:'OTHER',    service:'oci_iot_digital_twin_relationship',         icon:'DTR'},
+    {id:'oci_iot_flow_runtime',      name:'IoT Flow Runtime',            type:'SERVERLESS', service:'oci_iot_iot_flow_runtime',                  icon:'IOTF'},
+  ]},
+
+  {g: 'Batch & HPC', items: [
+    {id:'oci_batch_context',         name:'Batch Context',               type:'OTHER',      service:'oci_batch_batch_context',                   icon:'BCTX'},
+    {id:'oci_batch_job_pool',        name:'Batch Job Pool',              type:'COMPUTE',    service:'oci_batch_batch_job_pool',                  icon:'BJP'},
+    {id:'oci_batch_task_environment',name:'Batch Task Environment',      type:'OTHER',      service:'oci_batch_batch_task_environment',          icon:'BTE'},
+    {id:'oci_batch_task_profile',    name:'Batch Task Profile',          type:'OTHER',      service:'oci_batch_batch_task_profile',              icon:'BTP'},
+    {id:'oci_lustre_fs',             name:'File Storage with Lustre',    type:'STORAGE',    service:'oci_lustre_file_storage_lustre_file_system',icon:'LUS'},
+    {id:'oci_lustre_os_link',        name:'Lustre ↔ Object Storage Link',type:'OTHER',      service:'oci_lustre_file_storage_object_storage_link', icon:'LUSL'},
+  ]},
+
+  {g: 'Migration', items: [
+    {id:'oci_cloud_migration',       name:'Cloud Migrations — Migration',type:'OTHER',      service:'oci_cloud_migrations_migration',            icon:'CMG'},
+    {id:'oci_cloud_migration_plan',  name:'Cloud Migrations — Plan',     type:'OTHER',      service:'oci_cloud_migrations_migration_plan',       icon:'CMP2'},
+    {id:'oci_cloud_migration_asset', name:'Cloud Migrations — Asset',    type:'OTHER',      service:'oci_cloud_migrations_migration_asset',      icon:'CMA'},
+    {id:'oci_cloud_migration_target',name:'Cloud Migrations — Target Asset', type:'OTHER',  service:'oci_cloud_migrations_target_asset',         icon:'CMT'},
+    {id:'oci_cloud_migration_sched', name:'Cloud Migrations — Replication Schedule', type:'OTHER', service:'oci_cloud_migrations_replication_schedule', icon:'CMS'},
+    {id:'oci_cloud_bridge_env',      name:'Cloud Bridge Environment',    type:'OTHER',      service:'oci_cloud_bridge_environment',              icon:'CBE'},
+    {id:'oci_cloud_bridge_agent',    name:'Cloud Bridge Agent',          type:'OTHER',      service:'oci_cloud_bridge_agent',                    icon:'CBA'},
+    {id:'oci_cloud_bridge_inventory',name:'Cloud Bridge Inventory',      type:'OTHER',      service:'oci_cloud_bridge_inventory',                icon:'CBI'},
+    {id:'oci_cloud_bridge_source',   name:'Cloud Bridge Asset Source',   type:'OTHER',      service:'oci_cloud_bridge_asset_source',             icon:'CBS'},
+    {id:'oci_db_migration_connection', name:'Database Migration Connection', type:'OTHER',  service:'oci_database_migration_connection',         icon:'DMC'},
+    {id:'oci_db_migration',          name:'Database Migration',          type:'OTHER',      service:'oci_database_migration_migration',          icon:'DMG'},
+    {id:'oci_db_migration_job',      name:'Database Migration Job',      type:'OTHER',      service:'oci_database_migration_job',                icon:'DMJ'},
+    {id:'oci_ocvp_datastore',        name:'VMware Solution Datastore',   type:'STORAGE',    service:'oci_ocvp_datastore',                        icon:'OCDS'},
   ]},
 
   {g: 'Application Security', items: [

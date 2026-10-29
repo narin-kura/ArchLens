@@ -197,6 +197,8 @@ _ALWAYS_ENCRYPTED_QUEUES = {
     "google_cloud_tasks_queue",
     # No encryption-key attribute exists on either (Oracle-managed only).
     "oci_ons_notification_topic", "oci_streaming_stream",
+    # IoT Platform domain: no encryption attribute (checked against the docs).
+    "oci_iot_iot_domain",
 }
 
 # Rules, subscriptions and event-source mappings route messages; they do not
@@ -234,7 +236,13 @@ _CDN_NO_PROTOCOL_CONCEPT = {
     # Web App Acceleration rides on a load balancer — HTTPS is the LB
     # listener's ssl_configuration, not an attribute of the WAA resource.
     "oci_waa_web_app_acceleration",
+    # Media Streams edge delivery: no protocol attribute on the CDN config.
+    "oci_media_services_stream_cdn_config",
 }
+
+# CDNs a WAF can't be attached to at all — OCI WAF attaches only to load
+# balancers, and Media Streams' Oracle-managed edge isn't one.
+_NO_WAF_ATTACHMENT = {"oci_media_services_stream_cdn_config"}
 
 # A WAF sits in front of HTTP. An SFTP server, a contact-center instance or a
 # database proxy is a GATEWAY component that no web ACL can protect.
@@ -1008,7 +1016,7 @@ class SecurityAnalyzer(BaseAnalyzer):
             and str(c.properties.get("public_network_access_enabled", "true")).lower() not in ("false", "no", "0")
             and c.service not in _NON_HTTP_GATEWAYS
         ]
-        cdns = model.components_by_type(ComponentType.CDN)
+        cdns = [c for c in model.components_by_type(ComponentType.CDN) if c.service not in _NO_WAF_ATTACHMENT]
         if not gateways and not cdns:
             return []
         # Cloud Armor's resource is a "security policy", not anything
