@@ -97,6 +97,10 @@ _MANAGED_DATA_SERVICES = {
     # durability is Google's job, and encryption is always on (Google-
     # managed by default, CMEK via default_encryption_configuration).
     "google_bigquery_dataset",
+    # Vertex AI's managed data resources: no backup/deletion-protection
+    # attribute on any of them.
+    "google_vertex_ai_featurestore", "google_vertex_ai_dataset",
+    "google_vertex_ai_index", "google_vertex_ai_metadata_store",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
@@ -611,7 +615,10 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("at_rest_encryption_enabled",
                 c.properties.get("encrypted",
                 c.properties.get("kms_key_id",
-                c.properties.get("kms_key_arn", ""))))))
+                # Vertex AI's/BigQuery's encryption_spec/encryption block has
+                # no name attribute, so it flattens to this key directly.
+                c.properties.get("kms_key_name",
+                c.properties.get("kms_key_arn", "")))))))
             ).lower()
             if encrypted in ("false", "no", "") and encryption in ("false", "no", "none", ""):
                 findings.append(Finding(

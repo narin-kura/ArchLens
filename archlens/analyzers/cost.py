@@ -28,6 +28,9 @@ _SELF_SCALING_SERVICES = {
     "aws_batch_compute_environment", "aws_gamelift_fleet", "aws_appstream_fleet",
     "aws_ecs_service", "aws_eks_node_group", "aws_emrserverless_application",
     "aws_apprunner_service", "aws_workspaces_workspace",
+    # A Workbench notebook is a single provisioned dev environment, same
+    # shape as a WorkSpaces desktop — there is nothing to put in an ASG.
+    "google_notebooks_instance",
     # Azure: a dedicated autoscale-setting resource, or compute that scales
     # itself the same way Lambda/Fargate do.
     "azurerm_monitor_autoscale_setting", "azurerm_linux_function_app",
