@@ -729,6 +729,19 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "oci_identity_domains_password_policy": C.IAM,
     "oci_optimizer_profile":               C.MONITORING,
     "oci_announcements_service_announcement_subscription": C.OTHER,
+    # ---- Docker (kreuzwerker/docker provider)
+    "docker_container":                   C.CONTAINER,
+    "docker_service":                     C.CONTAINER,
+    "docker_image":                       C.OTHER,
+    "docker_registry_image":              C.CONTAINER,
+    "docker_tag":                         C.OTHER,
+    "docker_network":                     C.NETWORK,
+    "docker_volume":                      C.STORAGE,
+    "docker_secret":                      C.IAM,
+    "docker_config":                      C.OTHER,
+    "docker_plugin":                      C.OTHER,
+    "docker_buildx_builder":              C.COMPUTE,
+    "docker_compose":                     C.CONTAINER,
     # ---- Azure compute
     "azurerm_virtual_machine":            C.COMPUTE,
     "azurerm_linux_virtual_machine":      C.COMPUTE,
@@ -1168,6 +1181,8 @@ def _detect_provider(resource_type: str) -> str:
         return "azure"
     if resource_type.startswith("oci_"):
         return "oracle"
+    if resource_type.startswith("docker_"):
+        return "docker"
     return "generic"
 
 

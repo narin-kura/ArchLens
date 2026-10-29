@@ -14,6 +14,8 @@ const SERVICES = [
   // Kubernetes — every built-in kind + Gateway API + common CRDs, generated
   // from archlens/parsers/k8s_kinds.py into /static/js/catalog_kubernetes.js
   ...(window.K8S_CATALOG || []),
+  // Docker — Compose, Engine/Swarm, registries, tools: /static/js/catalog_docker.js
+  ...(window.DOCKER_CATALOG || []),
   // Data stores & streaming (self-managed)
   {id:'d_postgres',    name:'PostgreSQL',    provider:'generic', cat:'data',      type:'DATABASE',   service:'postgresql',      icon:'PG'},
   {id:'d_mysql',       name:'MySQL',         provider:'generic', cat:'data',      type:'DATABASE',   service:'mysql',           icon:'MYS'},
@@ -148,4 +150,4 @@ function findService(id) {
       || SERVICES.find(s => (s.aliases || []).includes(id));
 }
 
-const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', oracle:'Oracle Cloud', kubernetes:'Kubernetes', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};
+const CAT_LABELS = {aws:'AWS', gcp:'GCP', azure:'Azure', oracle:'Oracle Cloud', kubernetes:'Kubernetes', docker:'Docker', data:'Data Stores', gpu:'GPU / NVIDIA', cicd:'CI/CD', monitoring:'Monitoring', security:'Security', ai:'AI / ML', embedded:'Hardware / IoT'};

@@ -17,8 +17,18 @@ const TF_PROVIDER_META = {
   'oci_':     {key: 'oci',     source: 'oracle/oci',        version: '~> 6.0'},
 };
 
+// Docker products like Docker Hub or Scout also use a docker_ id but have no
+// Terraform resource, so Docker is matched by exact type, not by prefix.
+const TF_DOCKER_TYPES = new Set([
+  'docker_container', 'docker_image', 'docker_tag', 'docker_registry_image', 'docker_service',
+  'docker_secret', 'docker_config', 'docker_plugin', 'docker_buildx_builder', 'docker_compose',
+  'docker_network', 'docker_volume',
+]);
+const TF_DOCKER_PROVIDER = {key: 'docker', source: 'kreuzwerker/docker', version: '~> 3.0'};
+
 function tfProviderFor(service) {
   if (!service) return null;
+  if (TF_DOCKER_TYPES.has(service)) return TF_DOCKER_PROVIDER;
   for (const prefix of Object.keys(TF_PROVIDER_META)) {
     if (service.startsWith(prefix)) return TF_PROVIDER_META[prefix];
   }

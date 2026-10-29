@@ -13,7 +13,7 @@ from ..models.findings import Finding, FindingType, Severity
 # noise, not a finding.
 # Terraform type prefixes of the clouds whose resources the checks below know
 # individually; anything else is treated as a generic, self-managed component.
-_CLOUD_PREFIXES = ("aws_", "google_", "azurerm_", "oci_")
+_CLOUD_PREFIXES = ("aws_", "google_", "azurerm_", "oci_", "docker_")
 
 _HUMAN_IDENTITY_SERVICES = {
     "aws_iam_user", "aws_iam_group", "aws_iam_user_policy", "aws_iam_group_policy",
@@ -538,6 +538,10 @@ _ARCHIVE_STORAGE = {
 # all times, and GCS objects are always encrypted server-side (Google-managed
 # key, or a customer-managed key set via a separate `encryption` block) — in
 # both cases there is no Terraform attribute that disables it outright.
+# A local Docker volume is a directory on the host — encryption and backup
+# are the host disk's settings, not attributes of the volume.
+_HOST_LOCAL_STORAGE = {"docker_volume"}
+
 _ALWAYS_ENCRYPTED_STORAGE = {
     "azurerm_netapp_volume", "google_storage_bucket",
     # OCI encrypts every bucket, block/boot volume and file system with an
@@ -676,6 +680,8 @@ class SecurityAnalyzer(BaseAnalyzer):
             self._check_compute_no_ebs_encryption,
             # Container
             self._check_container_privileged,
+            self._check_secret_in_container_env,
+            self._check_sensitive_host_mounts,
             self._check_container_root_user,
             self._check_container_no_resource_limits,
             self._check_container_no_image_scanning,
@@ -803,7 +809,7 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
             if (c.service in _ARCHIVE_STORAGE or c.service in _ALWAYS_ENCRYPTED_STORAGE
-                    or c.service == "azurerm_storage_account"):
+                    or c.service in _HOST_LOCAL_STORAGE or c.service == "azurerm_storage_account"):
                 continue
             sse = str(
                 c.properties.get("server_side_encryption",
@@ -896,7 +902,7 @@ class SecurityAnalyzer(BaseAnalyzer):
         findings = []
         backup_types = {ComponentType.DATABASE, ComponentType.STORAGE}
         for c in model.components:
-            if c.type not in backup_types or c.service in _ARCHIVE_STORAGE:
+            if c.type not in backup_types or c.service in _ARCHIVE_STORAGE or c.service in _HOST_LOCAL_STORAGE:
                 continue
             if (c.service in _MANAGED_DATA_SERVICES or c.service in _LOGICAL_DB_SERVERS
                     or c.service == "azurerm_digital_twins_instance"
@@ -1410,6 +1416,72 @@ class SecurityAnalyzer(BaseAnalyzer):
 
     # --------------------------------------------------------------- Container
 
+    def _check_secret_in_container_env(self, model: ArchitectureModel) -> list[Finding]:
+        """A literal password/token in a container's environment ends up in
+        `docker inspect`, in every child process and often in crash dumps."""
+        findings = []
+        sensitive = ("password", "passwd", "secret", "token", "apikey", "api_key", "private_key", "credentials")
+        for c in model.components_by_type(ComponentType.CONTAINER):
+            env = c.properties.get("environment")
+            pairs: list[tuple[str, str]] = []
+            if isinstance(env, dict):
+                pairs = [(str(k), str(v)) for k, v in env.items()]
+            raw = c.properties.get("env")
+            if isinstance(raw, str) and "=" in raw:
+                # docker_container: env = ["KEY=value", ...]
+                pairs += [(k.strip(' "[]'), v.strip(' "[]'))
+                          for k, _, v in (item.partition("=") for item in raw.split(",")) if v]
+            leaked = [k for k, v in pairs
+                      if any(s in k.lower() for s in sensitive) and v
+                      # FOO_FILE=/run/secrets/foo is the fix, not the problem.
+                      and not k.lower().endswith("_file") and not v.startswith("/run/secrets/")
+                      and not v.startswith(("${", "$(", "var.", "data.")) and not _is_expression(v)]
+            if leaked:
+                findings.append(Finding(
+                    type=FindingType.SECURITY,
+                    severity=Severity.HIGH,
+                    title=f"Container '{c.name}' has a literal secret in its environment ({', '.join(sorted(set(leaked)))})",
+                    description="Environment variables are readable through `docker inspect`, /proc and child processes, and end up committed with the file.",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Mount the value as a Docker/Compose secret (or read it from a secrets manager) instead of putting it in the environment.",
+                    references=["https://docs.docker.com/compose/how-tos/use-secrets/"],
+                ))
+        return findings
+
+    def _check_sensitive_host_mounts(self, model: ArchitectureModel) -> list[Finding]:
+        findings = []
+        for c in model.components_by_type(ComponentType.CONTAINER):
+            mounts = c.properties.get("host_mounts") or []
+            if isinstance(mounts, str):
+                mounts = [mounts]
+            sources = [str(m).split(":", 1)[0] for m in mounts]
+            # docker_container: volumes { host_path = "..." } / mounts { source = ... type = "bind" }
+            sources += [v.strip() for v in str(c.properties.get("host_path", "")).split(",") if v.strip()]
+            if any("docker.sock" in s for s in sources):
+                findings.append(Finding(
+                    type=FindingType.SECURITY,
+                    severity=Severity.CRITICAL,
+                    title=f"Container '{c.name}' mounts the Docker socket",
+                    description="Access to /var/run/docker.sock lets the container start a privileged container on the host — it is root on the host.",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Remove the socket mount. If the container must build or manage containers, use a rootless builder or a socket proxy that allows only the API calls it needs.",
+                    references=["https://docs.docker.com/engine/security/#docker-daemon-attack-surface"],
+                ))
+            elif any(s.rstrip("/") in ("", "/etc", "/root", "/proc", "/sys", "/var/run", "/boot", "/dev") for s in sources):
+                findings.append(Finding(
+                    type=FindingType.SECURITY,
+                    severity=Severity.HIGH,
+                    title=f"Container '{c.name}' mounts a sensitive host path",
+                    description="Mounting host system directories lets a compromised container read credentials or modify the host.",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Mount only the specific application directory the container needs, read-only where possible.",
+                    references=["https://docs.docker.com/engine/storage/bind-mounts/"],
+                ))
+        return findings
+
     def _check_container_privileged(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.CONTAINER):
@@ -1458,7 +1530,9 @@ class SecurityAnalyzer(BaseAnalyzer):
                 cpu = containers[0].get("cpu_limit", containers[0].get("cpu", ""))
                 memory = containers[0].get("memory_limit", containers[0].get("memory", ""))
             else:
-                cpu = c.properties.get("cpu_limit", c.properties.get("cpu", ""))
+                # docker_container: cpu_shares/cpu_set; Compose: cpus.
+                cpu = c.properties.get("cpu_limit", c.properties.get("cpu",
+                      c.properties.get("cpu_shares", c.properties.get("cpus", ""))))
                 memory = c.properties.get("memory_limit", c.properties.get("memory", ""))
             if not cpu or not memory:
                 findings.append(Finding(

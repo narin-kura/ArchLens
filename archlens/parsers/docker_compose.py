@@ -72,6 +72,22 @@ class DockerComposeParser(BaseParser):
                 properties={"compose_network": True},
             ))
 
+        # Top-level secrets/configs (Compose spec): mounted into containers as
+        # files rather than passed through the environment.
+        for kind, ctype in (("secrets", ComponentType.IAM), ("configs", ComponentType.OTHER)):
+            for item_name, item in (data.get(kind) or {}).items():
+                item = item or {}
+                model.components.append(Component(
+                    id=f"compose.{kind[:-1]}.{item_name}",
+                    name=item_name,
+                    type=ctype,
+                    provider="docker",
+                    service=f"docker_compose_{kind[:-1]}",
+                    properties={"external": bool(item.get("external")),
+                                "source": "file" if item.get("file") else
+                                          "environment" if item.get("environment") else ""},
+                ))
+
         return model
 
     def _extract_service_props(self, name: str, svc: dict) -> dict[str, Any]:
@@ -115,6 +131,13 @@ class DockerComposeParser(BaseParser):
         props["possible_secret_env"] = [
             k for k in env if any(s in k.lower() for s in _sensitive) and env.get(k, "")
         ]
+
+        # Compose spells limits three ways: deploy.resources.limits (spec),
+        # or the legacy service-level mem_limit / cpus.
+        limits = (((svc.get("deploy") or {}).get("resources") or {}).get("limits") or {})
+        props["cpu"] = str(limits.get("cpus") or svc.get("cpus") or "")
+        props["memory"] = str(limits.get("memory") or svc.get("mem_limit") or "")
+        props["uses_secrets"] = bool(svc.get("secrets"))
 
         caps = svc.get("cap_add") or []
         props["cap_add"] = caps
