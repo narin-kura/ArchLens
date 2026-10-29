@@ -287,6 +287,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "google_compute_router_interface":     C.NETWORK,
     "google_compute_region_network_endpoint_group": C.GATEWAY,
     "google_filestore_backup":             C.OTHER,
+    "oci_core_volume_backup_policy_assignment": C.OTHER,
     "google_cloudfunctions2_function":     C.SERVERLESS,
     "google_app_engine_application":       C.SERVERLESS,
     "google_app_engine_standard_app_version": C.SERVERLESS,
@@ -998,6 +999,14 @@ _FOLD_RULES: dict[str, tuple[str, "str | None", list]] = {
     # mean "this instance is backed up".
     "google_filestore_backup":
         ("source_instance", "google_filestore_instance", [("backup_configuration_enabled", "true", "")]),
+    # An OCI service log whose configuration.source.resource names a bucket is
+    # that bucket's access logging. A log pointing at anything else (a
+    # subnet's flow logs, a function) doesn't match and is left alone.
+    "oci_logging_log":
+        ("resource", "oci_objectstorage_bucket", [("logging", "enabled", "")]),
+    # A block or boot volume's backups come from a policy assigned to it.
+    "oci_core_volume_backup_policy_assignment":
+        ("asset_id", None, [("backup_configuration_enabled", "true", "")]),
 }
 
 # Child keys that describe the child block itself, not the parent's posture.
@@ -1005,11 +1014,20 @@ _FOLD_SKIP_KEYS = {
     "bucket", "id", "name", "tags", "api_id", "rest_api_id", "file_system_id",
     "target_resource_id", "storage_account_id", "source_storage_account_id", "depends_on",
     "source_instance", "source_file_share", "location",
+    "resource", "service", "category", "source_type", "configuration", "source",
+    "log_group_id", "log_type", "display_name", "asset_id", "policy_id",
 }
 
 # Parameters that mean "reject unencrypted client connections". RDS enforces
 # TLS through a parameter group, not an attribute on the instance.
 _TLS_PARAMETERS = {"rds.force_ssl", "require_secure_transport"}
+
+
+# Repeated rule blocks that carry no `name` of their own (OCI security lists),
+# so the named-block mechanism can't keep one rule's attributes apart from the
+# next. Each occurrence is tagged by position instead: ingress_security_rules__0__.
+_INDEXED_RULE_BLOCKS = ("ingress_security_rules", "egress_security_rules")
+_INDEXED_RULE_PREFIXES = tuple(f"{b}__" for b in _INDEXED_RULE_BLOCKS)
 
 
 _RESOURCE_HEADER = re.compile(r'resource\s+"([^"]+)"\s+"([^"]+)"\s*\{')
@@ -1109,6 +1127,7 @@ class TerraformParser(BaseParser):
         # `security_rule { name = "AllowSSH" ... }` with every other rule in
         # the same security group — both read as "whatever the last rule set".
         scope: list = []  # each entry: [block_name, rule_prefix_or_None]
+        rule_counts: dict = {}
         for raw in block.splitlines():
             line = raw.strip()
             if line in ("}", "},") and scope:
@@ -1154,8 +1173,19 @@ class TerraformParser(BaseParser):
             # block's presence — several checks only need to know it is there.
             nested = re.match(r'(\w+)\s*\{\s*$', line)
             if nested:
-                scope.append([nested.group(1), None])
-                props.setdefault(nested.group(1), "configured")
+                block = nested.group(1)
+                prefix = None
+                if block in _INDEXED_RULE_BLOCKS:
+                    # Unnamed and repeated: tag each occurrence by position.
+                    index = rule_counts.get(block, 0)
+                    rule_counts[block] = index + 1
+                    prefix = f"{block}__{index}__"
+                elif scope and scope[-1][1] is not None and scope[-1][1].startswith(_INDEXED_RULE_PREFIXES):
+                    # tcp_options { min max } inside a rule belongs to that
+                    # rule, not to whichever rule happens to be parsed last.
+                    prefix = f"{scope[-1][1]}{block}_"
+                scope.append([block, prefix])
+                props.setdefault(block, "configured")
         return props
 
     def _fold_configuration_resources(self, model: ArchitectureModel) -> None:

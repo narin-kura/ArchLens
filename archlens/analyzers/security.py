@@ -47,6 +47,10 @@ def _is_api_gateway(component: Component) -> bool:
 _NO_DELETION_PROTECTION = {
     "aws_opensearch_domain", "aws_elasticsearch_domain", "aws_memorydb_cluster",
     "aws_redshift_cluster", "aws_docdb_cluster",
+    # Checked against the oracle/oci provider docs: none of these exposes a
+    # delete-lock or deletion-protection attribute (OCI's equivalent is an
+    # IAM policy denying delete).
+    "oci_database_db_system", "oci_nosql_table", "oci_opensearch_opensearch_cluster",
     # Azure SQL protects via RBAC/locks, not a resource-level flag — neither
     # the server nor the database has a deletion-protection attribute at all.
     "azurerm_mssql_server", "azurerm_sql_server",
@@ -70,6 +74,9 @@ _ALWAYS_ENCRYPTED_DATABASES = {
     # plain on/off toggle like storage_encrypted.
     "google_sql_database_instance", "google_spanner_instance", "google_alloydb_cluster",
     "google_firestore_database", "google_bigtable_instance",
+    # Oracle Database on OCI always runs TDE; MySQL HeatWave always
+    # encrypts at rest. kms_key_id only selects whose key.
+    "oci_database_db_system", "oci_mysql_mysql_db_system", "oci_nosql_table",
 }
 
 # The logical server resource (connection endpoint, TLS policy, firewall
@@ -90,6 +97,11 @@ def _is_db_replica(component: Component) -> bool:
 # apply to every database on it — checking the database too would double
 # the same missing-setting finding without adding information.
 _DELEGATES_TO_SERVER = {"azurerm_mssql_database", "azurerm_sql_database"}
+
+# An OCI DB System's network encryption (sqlnet.ora) and audit policy are
+# configured inside the database, not on the resource — the Terraform
+# schema has no attribute for either, so there is nothing to assert.
+_NO_TF_TLS_OR_AUDIT_SETTING = {"oci_database_db_system"}
 
 # Snapshots, failover and deletion windows on a serverless data service are
 # AWS's job — there is no retention or deletion-protection setting to assert.
@@ -117,6 +129,10 @@ _MANAGED_DATA_SERVICES = {
     # Both backup (google_spanner_backup) and deletion_protection name a
     # specific database, never "the instance".
     "google_spanner_instance",
+    # Autonomous Database backs itself up automatically (retention is
+    # backup_retention_period_in_days, default 60) and has no delete-lock
+    # attribute; encryption (TDE) is always on.
+    "oci_database_autonomous_database",
 }
 
 # Multi-AZ, audit logs, TLS enforcement and minor-version patching are settings
@@ -129,6 +145,7 @@ _INSTANCE_DATABASES = {
     "aws_redshift_cluster", "aws_opensearch_domain", "aws_elasticsearch_domain",
     "azurerm_mssql_server", "azurerm_mssql_database", "azurerm_postgresql_flexible_server",
     "azurerm_mysql_flexible_server", "google_sql_database_instance",
+    "oci_database_db_system", "oci_mysql_mysql_db_system",
 }
 
 
@@ -144,6 +161,7 @@ def _is_instance_database(component: Component) -> bool:
 _FUNCTION_SERVICES = {
     "aws_lambda_function", "azurerm_function_app", "azurerm_linux_function_app",
     "google_cloudfunctions_function", "google_cloudfunctions2_function", "lambda",
+    "oci_functions_function",
 }
 
 # Dead-lettering is configured per-trigger in the function's code/bindings,
@@ -154,6 +172,9 @@ _FUNCTION_SERVICES = {
 _NO_FUNCTION_DLQ_CONCEPT = {
     "azurerm_function_app", "azurerm_linux_function_app", "azurerm_windows_function_app",
     "google_cloudfunctions_function", "google_cloudfunctions2_function",
+    # OCI Functions has no dead-letter attribute; failed async invocations
+    # are handled by whatever invoked it (Events, Connector Hub, a queue).
+    "oci_functions_function",
 }
 
 # MSK Serverless encrypts at rest with no attribute to set or unset.
@@ -168,6 +189,8 @@ _ALWAYS_ENCRYPTED_QUEUES = {
     # Cloud Tasks queues are always encrypted with a Google-managed key —
     # there is no CMEK or encryption attribute exposed on this resource.
     "google_cloud_tasks_queue",
+    # No encryption-key attribute exists on either (Oracle-managed only).
+    "oci_ons_notification_topic", "oci_streaming_stream",
 }
 
 # Rules, subscriptions and event-source mappings route messages; they do not
@@ -184,6 +207,9 @@ _MESSAGE_ROUTERS = {
     # A Pub/Sub subscription has its own backlog, but no encryption key of
     # its own to check — CMEK is set once, on the topic it reads from.
     "google_pubsub_subscription",
+    # OCI: route or send messages; none stores a payload of its own.
+    "oci_ons_subscription", "oci_events_rule", "oci_sch_service_connector",
+    "oci_email_email_domain", "oci_email_sender",
 }
 
 # These origins only ever serve over HTTPS — there is no plaintext option to
@@ -219,6 +245,7 @@ _NON_HTTP_GATEWAYS = {
 # Only a real queue has a redrive policy.
 _REDRIVE_CAPABLE = {
     "aws_sqs_queue", "sqs", "azurerm_servicebus_queue", "google_pubsub_subscription",
+    "oci_queue_queue",
 }
 
 
@@ -234,6 +261,8 @@ _CONTAINER_PLATFORMS = {
     "azurerm_container_registry", "azurerm_container_app_environment",
     "google_container_cluster", "google_container_node_pool",
     "google_artifact_registry_repository",
+    "oci_containerengine_cluster", "oci_containerengine_node_pool",
+    "oci_containerengine_virtual_node_pool", "oci_artifacts_container_repository",
 }
 
 # Container Apps exposes no security-context attribute via Terraform at all —
@@ -372,10 +401,56 @@ def _gcp_normalized_rules(component: Component, direction: str) -> list[dict]:
             for lo, hi in (_gcp_port_bounds(t) for t in port_tokens)]
 
 
+# OCI has two rule shapes. A security list holds many unnamed
+# ingress_security_rules/egress_security_rules blocks (the parser tags each by
+# position), with ports in tcp_options/udp_options { min max }. A standalone
+# NSG security rule is one rule whose direction is "INGRESS"/"EGRESS" and
+# whose ports sit in tcp_options { destination_port_range { min max } }.
+# Either way "any source" is a real 0.0.0.0/0; no options means every port.
+_OCI_SECURITY_LIST = "oci_core_security_list"
+_OCI_NSG_RULE = "oci_core_network_security_group_security_rule"
+
+
+def _oci_normalized_rules(component: Component, direction: str) -> list[dict]:
+    inbound = direction == "inbound"
+    if component.service == _OCI_SECURITY_LIST:
+        rules = grouped_properties(
+            component.properties, "ingress_security_rules" if inbound else "egress_security_rules")
+        lo_keys, hi_keys = ("tcp_options_min", "udp_options_min"), ("tcp_options_max", "udp_options_max")
+    elif component.service == _OCI_NSG_RULE:
+        declared = str(component.properties.get("direction", "")).upper()
+        if declared != ("INGRESS" if inbound else "EGRESS"):
+            return []
+        rules = [component.properties]
+        lo_keys, hi_keys = ("min",), ("max",)
+    else:
+        return []
+    out = []
+    for rule in rules:
+        address = str(rule.get("source" if inbound else "destination", "")).strip()
+        if address == "0.0.0.0/0":
+            cidr = "0.0.0.0/0"
+        elif address == "::/0":
+            cidr = "::/0"
+        else:
+            continue
+        lo = next((rule[k] for k in lo_keys if rule.get(k)), None)
+        hi = next((rule[k] for k in hi_keys if rule.get(k)), None)
+        try:
+            bounds = (int(lo), int(hi if hi is not None else lo)) if lo is not None else (0, 65535)
+        except ValueError:
+            bounds = (0, 65535)
+        out.append({"cidr_blocks": cidr, "from_port": bounds[0], "to_port": bounds[1]})
+    return out
+
+
 def _inbound_cidrs(component: Component) -> str:
     props = component.properties
     if _rule_direction(component) == "egress":
         return ""
+    oci_open = _oci_normalized_rules(component, "inbound")
+    if oci_open:
+        return " ".join(r["cidr_blocks"] for r in oci_open)
     azure_open = _azure_normalized_rules(component, "inbound")
     if azure_open:
         return " ".join(r["cidr_blocks"] for r in azure_open)
@@ -393,6 +468,9 @@ def _inbound_rules(component: Component) -> list:
     gcp_open = _gcp_normalized_rules(component, "inbound")
     if gcp_open:
         return gcp_open
+    oci_open = _oci_normalized_rules(component, "inbound")
+    if oci_open:
+        return oci_open
     props = component.properties
     if _rule_direction(component) == "egress":
         return []
@@ -415,6 +493,9 @@ def _outbound_rules(component: Component) -> list:
     gcp_open = _gcp_normalized_rules(component, "outbound")
     if gcp_open:
         return [str(r) for r in gcp_open]
+    oci_open = _oci_normalized_rules(component, "outbound")
+    if oci_open:
+        return [str(r) for r in oci_open]
     props = component.properties
     if _rule_direction(component) == "ingress":
         return []
@@ -438,7 +519,13 @@ _ARCHIVE_STORAGE = {
 # all times, and GCS objects are always encrypted server-side (Google-managed
 # key, or a customer-managed key set via a separate `encryption` block) — in
 # both cases there is no Terraform attribute that disables it outright.
-_ALWAYS_ENCRYPTED_STORAGE = {"azurerm_netapp_volume", "google_storage_bucket"}
+_ALWAYS_ENCRYPTED_STORAGE = {
+    "azurerm_netapp_volume", "google_storage_bucket",
+    # OCI encrypts every bucket, block/boot volume and file system with an
+    # Oracle-managed key; kms_key_id only swaps in a customer-managed one.
+    "oci_objectstorage_bucket", "oci_core_volume", "oci_core_boot_volume",
+    "oci_core_volume_group", "oci_file_storage_file_system",
+}
 
 # Versioning, bucket ACLs, Block Public Access and server access logging are
 # object-store features. A file system or block volume has none of them, so the
@@ -446,7 +533,7 @@ _ALWAYS_ENCRYPTED_STORAGE = {"azurerm_netapp_volume", "google_storage_bucket"}
 _OBJECT_STORES = {
     "aws_s3_bucket", "aws_s3_directory_bucket", "aws_s3_access_point",
     "aws_s3tables_table_bucket", "s3", "google_storage_bucket", "gcs_bucket",
-    "azurerm_storage_account", "blob_storage",
+    "azurerm_storage_account", "blob_storage", "oci_objectstorage_bucket",
 }
 
 
@@ -769,7 +856,9 @@ class SecurityAnalyzer(BaseAnalyzer):
                 continue
             deletion_protection = str(
                 c.properties.get("deletion_protection",
-                c.properties.get("deletion_protection_enabled", "false"))
+                c.properties.get("deletion_protection_enabled",
+                # OCI MySQL: deletion_policy { is_delete_protected }.
+                c.properties.get("is_delete_protected", "false")))
             ).lower()
             if deletion_protection in ("false", "no", "0", ""):
                 findings.append(Finding(
@@ -813,7 +902,11 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("policy_enabled",
                 # Cloud SQL's settings.backup_configuration.enabled.
                 c.properties.get("backup_configuration_enabled",
-                c.properties.get("geo_backup_policy_enabled", ""))))))))
+                c.properties.get("geo_backup_policy_enabled",
+                # OCI DB System: db_home.database.db_backup_config.auto_backup_enabled;
+                # OCI File Storage: a referenced snapshot policy.
+                c.properties.get("auto_backup_enabled",
+                c.properties.get("filesystem_snapshot_policy_id", ""))))))))))
             ).lower()
             # Object stores have no retention window — versioning plus lifecycle
             # rules are how a bucket survives deletion and corruption.
@@ -1015,6 +1108,13 @@ class SecurityAnalyzer(BaseAnalyzer):
                 description = "Without allow_nested_items_to_be_public = false (or a network_rules default_action of Deny), a container or blob can be made public by a future ACL or policy change."
                 recommendation = "Set allow_nested_items_to_be_public = false and add a network_rules block with default_action = \"Deny\"."
                 reference = "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent"
+            elif c.service == "oci_objectstorage_bucket":
+                # access_type is the whole story: NoPublicAccess (the default)
+                # or ObjectRead / ObjectReadWithoutList.
+                blocked = str(c.properties.get("access_type", "NoPublicAccess")).lower() == "nopublicaccess"
+                description = "access_type = ObjectRead lets anyone on the internet read every object in the bucket."
+                recommendation = "Set access_type = \"NoPublicAccess\" and share individual objects with pre-authenticated requests."
+                reference = "https://docs.oracle.com/iaas/Content/Object/Tasks/managingbuckets.htm"
             elif c.service == "google_storage_bucket":
                 # GCS has no ACL-level block switch either — uniform bucket-
                 # level access turns legacy ACLs off entirely, and public
@@ -1061,8 +1161,14 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("multi_az_enabled",
                 c.properties.get("zone_redundant",
                 # Cloud SQL calls this availability_type = "REGIONAL"/"ZONAL".
-                c.properties.get("availability_type", "false"))))))
+                c.properties.get("availability_type",
+                # OCI MySQL HeatWave HA; Autonomous Data Guard.
+                c.properties.get("is_highly_available",
+                c.properties.get("is_local_data_guard_enabled", "false"))))))))
             ).lower()
+            # An OCI DB System with node_count >= 2 is a RAC cluster.
+            if str(c.properties.get("node_count", "")).strip().isdigit() and int(c.properties["node_count"]) >= 2:
+                continue
             if multi_az not in ("true", "yes", "1", "enabled", "regional"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1079,7 +1185,8 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_database_no_audit_log(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.DATABASE):
-            if not _is_instance_database(c) or c.service in _DELEGATES_TO_SERVER or _is_db_replica(c):
+            if (not _is_instance_database(c) or c.service in _DELEGATES_TO_SERVER or _is_db_replica(c)
+                    or c.service in _NO_TF_TLS_OR_AUDIT_SETTING):
                 continue
             audit = str(
                 c.properties.get("audit_log",
@@ -1399,6 +1506,10 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.SERVERLESS):
             if not _is_function(c):
                 continue
+            if c.service == "oci_functions_function":
+                # subnet_ids is mandatory on the Functions application — an
+                # OCI function cannot run outside a VCN at all.
+                continue
             vpc = str(
                 c.properties.get("vpc_config",
                 c.properties.get("vpc_id",
@@ -1497,8 +1608,9 @@ class SecurityAnalyzer(BaseAnalyzer):
                 # encryption, which is a real (if weaker) baseline — but the
                 # same bar AWS SQS and Azure Service Bus are held to here.
                 c.properties.get("kms_key_name",
+                c.properties.get("custom_encryption_key_id",
                 c.properties.get("encryption_type",
-                c.properties.get("encryption", "")))))))
+                c.properties.get("encryption", ""))))))))
             ).strip()
             if kms in ("", "none", "false"):
                 findings.append(Finding(
@@ -1529,7 +1641,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                 # Pub/Sub's dead_letter_policy block carries no name, so it
                 # flattens to this key directly.
                 c.properties.get("max_delivery_attempts",
-                c.properties.get("max_delivery_count", ""))))
+                c.properties.get("dead_letter_queue_delivery_count",
+                c.properties.get("max_delivery_count", "")))))
             ).strip()
             if dlq in ("", "none", "false", "{}", "0"):
                 findings.append(Finding(
@@ -1672,7 +1785,8 @@ class SecurityAnalyzer(BaseAnalyzer):
                 continue
             if c.type == ComponentType.DATABASE and not _is_instance_database(c):
                 continue
-            if c.type == ComponentType.DATABASE and c.service in _DELEGATES_TO_SERVER:
+            if c.type == ComponentType.DATABASE and (c.service in _DELEGATES_TO_SERVER
+                                                     or c.service in _NO_TF_TLS_OR_AUDIT_SETTING):
                 continue
             if c.service in _ALWAYS_ENCRYPTED_CACHES or c.service in _ALWAYS_AUTHENTICATED_CACHES:
                 continue
