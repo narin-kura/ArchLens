@@ -844,7 +844,11 @@ class TerraformParser(BaseParser):
                 if len(value) > 1 and value[0] == '"' and value[-1] == '"':
                     value = value[1:-1]
 
-                if scope and scope[-1][0] in ("ingress", "egress"):
+                # backup_configuration's and versioning's `enabled` are each
+                # a generic word that also appears in unrelated nested
+                # blocks elsewhere — flattening it bare would let any of
+                # those falsely satisfy (or fail) the backup/versioning check.
+                if scope and scope[-1][0] in ("ingress", "egress", "backup_configuration", "versioning"):
                     key = f"{scope[-1][0]}_{key}"
                 elif scope and scope[-1][1] is not None:
                     key = f"{scope[-1][1]}{key}"

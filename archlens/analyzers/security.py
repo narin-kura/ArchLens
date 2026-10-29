@@ -14,8 +14,13 @@ from ..models.findings import Finding, FindingType, Severity
 _HUMAN_IDENTITY_SERVICES = {
     "aws_iam_user", "aws_iam_group", "aws_iam_user_policy", "aws_iam_group_policy",
     "iam_user", "iam_group",
-    "azuread_user", "google_project_iam_member",
+    "azuread_user",
 }
+
+# google_project_iam_member/_binding attach a role to whatever `member` names
+# — a service account, a user, a group, or a domain — so the resource type
+# alone says nothing about whether a human is on the other end.
+_GCP_IAM_BINDINGS = {"google_project_iam_member", "google_project_iam_binding"}
 
 
 # Authorizers, usage plans and stage access logs are API-gateway concepts. A
@@ -56,6 +61,10 @@ _ALWAYS_ENCRYPTED_DATABASES = {
     "azurerm_mssql_database", "azurerm_sql_database", "azurerm_cosmosdb_account",
     "azurerm_postgresql_flexible_server", "azurerm_mysql_flexible_server",
     "azurerm_synapse_sql_pool", "azurerm_digital_twins_instance",
+    # Google-managed encryption at rest is the default and only baseline;
+    # a CMEK key is an optional settings.encryption_key_name, never a
+    # plain on/off toggle like storage_encrypted.
+    "google_sql_database_instance", "google_spanner_instance", "google_alloydb_cluster",
 }
 
 # The logical server resource (connection endpoint, TLS policy, firewall
@@ -137,6 +146,9 @@ _MESSAGE_ROUTERS = {
     # Analytics input is a job's binding to an existing Event Hub.
     "azurerm_eventhub_consumer_group", "azurerm_stream_analytics_stream_input_eventhub",
     "azurerm_eventgrid_event_subscription",
+    # A Pub/Sub subscription has its own backlog, but no encryption key of
+    # its own to check — CMEK is set once, on the topic it reads from.
+    "google_pubsub_subscription",
 }
 
 # These origins only ever serve over HTTPS — there is no plaintext option to
@@ -327,8 +339,10 @@ _ARCHIVE_STORAGE = {
 }
 
 # Azure NetApp Files volumes are encrypted with platform-managed AES-256 at
-# all times — there is no Terraform attribute to disable it.
-_ALWAYS_ENCRYPTED_STORAGE = {"azurerm_netapp_volume"}
+# all times, and GCS objects are always encrypted server-side (Google-managed
+# key, or a customer-managed key set via a separate `encryption` block) — in
+# both cases there is no Terraform attribute that disables it outright.
+_ALWAYS_ENCRYPTED_STORAGE = {"azurerm_netapp_volume", "google_storage_bucket"}
 
 # Versioning, bucket ACLs, Block Public Access and server access logging are
 # object-store features. A file system or block volume has none of them, so the
@@ -353,6 +367,12 @@ def _is_object_store(component: Component) -> bool:
 _ALWAYS_ENCRYPTED_CACHES = {
     "aws_elasticache_serverless_cache", "aws_file_cache", "aws_memorydb_cluster",
 }
+
+# Memorystore encrypts at rest unconditionally, but — unlike the services
+# above — in-transit encryption and AUTH are each a real, independent toggle
+# (transit_encryption_mode, auth_enabled), so only the at-rest half is a
+# non-question here.
+_ALWAYS_ENCRYPTED_AT_REST_CACHES = {"google_redis_instance", "google_redis_cluster"}
 
 # These require an access key or Entra ID to connect (there is no "no auth"
 # mode) and encrypt at rest unconditionally. enable_non_ssl_port is the one
@@ -409,6 +429,11 @@ def _is_human_principal(component: Component) -> bool:
         return True
     if "assume_role_policy" in component.properties:
         return False
+    if component.service in _GCP_IAM_BINDINGS:
+        member = str(
+            component.properties.get("member", component.properties.get("members", ""))
+        ).lower()
+        return member.startswith("user:") or member.startswith("group:")
     principal = str(
         component.properties.get("principal_type", component.properties.get("attached_to", ""))
     ).lower()
@@ -620,7 +645,9 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.DATABASE):
             publicly_accessible = str(
                 c.properties.get("publicly_accessible",
-                c.properties.get("public_network_access_enabled", "false"))
+                c.properties.get("public_network_access_enabled",
+                # Cloud SQL's settings.ip_configuration.ipv4_enabled.
+                c.properties.get("ipv4_enabled", "false")))
             ).lower()
             if publicly_accessible in ("true", "yes", "1"):
                 findings.append(Finding(
@@ -679,12 +706,17 @@ class SecurityAnalyzer(BaseAnalyzer):
                 # Azure NetApp Files attaches backup via a referenced policy —
                 # `policy_enabled` inside the volume's data_protection_backup_policy block.
                 c.properties.get("policy_enabled",
-                c.properties.get("geo_backup_policy_enabled", "")))))))
+                # Cloud SQL's settings.backup_configuration.enabled.
+                c.properties.get("backup_configuration_enabled",
+                c.properties.get("geo_backup_policy_enabled", ""))))))))
             ).lower()
             # Object stores have no retention window — versioning plus lifecycle
             # rules are how a bucket survives deletion and corruption.
             if c.type == ComponentType.STORAGE:
-                versioning = str(c.properties.get("versioning", c.properties.get("versioning_enabled", ""))).lower()
+                # versioning_enabled first: a bare nested `versioning {}`
+                # block's presence flattens to "versioning": "configured",
+                # which would otherwise mask the real flattened value below.
+                versioning = str(c.properties.get("versioning_enabled", c.properties.get("versioning", ""))).lower()
                 if versioning in ("enabled", "true", "yes", "1"):
                     continue
             enabled_marker = any(
@@ -847,7 +879,7 @@ class SecurityAnalyzer(BaseAnalyzer):
                 continue
             if c.properties.get("account_kind", "").lower() == "filestorage":
                 continue
-            versioning = str(c.properties.get("versioning", c.properties.get("versioning_enabled", ""))).lower()
+            versioning = str(c.properties.get("versioning_enabled", c.properties.get("versioning", ""))).lower()
             if versioning not in ("enabled", "true", "yes", "1"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -876,6 +908,16 @@ class SecurityAnalyzer(BaseAnalyzer):
                 description = "Without allow_nested_items_to_be_public = false (or a network_rules default_action of Deny), a container or blob can be made public by a future ACL or policy change."
                 recommendation = "Set allow_nested_items_to_be_public = false and add a network_rules block with default_action = \"Deny\"."
                 reference = "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-prevent"
+            elif c.service == "google_storage_bucket":
+                # GCS has no ACL-level block switch either — uniform bucket-
+                # level access turns legacy ACLs off entirely, and public
+                # access prevention is the newer, stricter org-level lock.
+                uniform = str(c.properties.get("uniform_bucket_level_access", "false")).lower()
+                prevention = str(c.properties.get("public_access_prevention", "")).lower()
+                blocked = uniform in ("true", "yes", "1") or prevention == "enforced"
+                description = "Without uniform_bucket_level_access, legacy per-object ACLs can still grant allUsers/allAuthenticatedUsers access regardless of IAM policy."
+                recommendation = "Set uniform_bucket_level_access = true (or public_access_prevention = \"enforced\") so ACLs can't grant public access."
+                reference = "https://cloud.google.com/storage/docs/public-access-prevention"
             else:
                 block = str(c.properties.get("block_public_acls", c.properties.get("public_access_block", "false"))).lower()
                 blocked = block in ("true", "yes", "1", "enabled")
@@ -910,9 +952,11 @@ class SecurityAnalyzer(BaseAnalyzer):
                 # and Postgres/MySQL Flexible Server call it zone redundancy.
                 c.properties.get("zone_awareness_enabled",
                 c.properties.get("multi_az_enabled",
-                c.properties.get("zone_redundant", "false")))))
+                c.properties.get("zone_redundant",
+                # Cloud SQL calls this availability_type = "REGIONAL"/"ZONAL".
+                c.properties.get("availability_type", "false"))))))
             ).lower()
-            if multi_az not in ("true", "yes", "1", "enabled"):
+            if multi_az not in ("true", "yes", "1", "enabled", "regional"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.MEDIUM,
@@ -944,6 +988,13 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("enabled_cluster_log_types", ""))))
             ).lower()
             if any(kind in exports for kind in ("audit", "postgresql", "pgaudit", "general", "slowquery", "error")):
+                continue
+            # Cloud SQL enables query/audit logging through a repeated
+            # database_flags { name = "..." value = "..." } block rather than
+            # a single toggle — e.g. cloudsql.enable_pgaudit, log_statement.
+            flags = grouped_properties(c.properties, "database_flags")
+            if any("audit" in str(f.get("name", "")).lower() or "log" in str(f.get("name", "")).lower()
+                   for f in flags):
                 continue
             if audit not in ("true", "yes", "1", "enabled", "configured"):
                 findings.append(Finding(
@@ -1260,7 +1311,8 @@ class SecurityAnalyzer(BaseAnalyzer):
         for c in model.components_by_type(ComponentType.CACHE):
             if c.service in _ALWAYS_ENCRYPTED_CACHES or c.service in _ALWAYS_AUTHENTICATED_CACHES:
                 continue
-            auth = str(c.properties.get("auth_token", c.properties.get("authentication", ""))).strip()
+            auth = str(c.properties.get("auth_token", c.properties.get("authentication",
+                       c.properties.get("auth_enabled", "")))).strip()
             if auth in ("", "none", "false"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -1277,7 +1329,7 @@ class SecurityAnalyzer(BaseAnalyzer):
     def _check_cache_not_encrypted(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.CACHE):
-            if c.service in _ALWAYS_ENCRYPTED_CACHES:
+            if c.service in _ALWAYS_ENCRYPTED_CACHES or c.service in _ALWAYS_ENCRYPTED_AT_REST_CACHES:
                 continue
             if c.service in _ALWAYS_AUTHENTICATED_CACHES:
                 non_ssl = str(c.properties.get("enable_non_ssl_port", "false")).lower()
@@ -1325,8 +1377,12 @@ class SecurityAnalyzer(BaseAnalyzer):
                 c.properties.get("kms_key_identifier",
                 c.properties.get("kms_key_arn",
                 c.properties.get("kms_key_id",
+                # Pub/Sub's CMEK attribute. Absent means Google-managed
+                # encryption, which is a real (if weaker) baseline — but the
+                # same bar AWS SQS and Azure Service Bus are held to here.
+                c.properties.get("kms_key_name",
                 c.properties.get("encryption_type",
-                c.properties.get("encryption", ""))))))
+                c.properties.get("encryption", "")))))))
             ).strip()
             if kms in ("", "none", "false"):
                 findings.append(Finding(
@@ -1511,8 +1567,14 @@ class SecurityAnalyzer(BaseAnalyzer):
                       c.properties.get("ssl_enabled",
                       c.properties.get("require_ssl",
                       c.properties.get("node_to_node_encryption",
-                      c.properties.get("enforce_https", "false")))))).lower()
-            if tls not in ("true", "yes", "1", "enabled", "required", "configured"):
+                      # Cloud SQL's modern replacement for require_ssl.
+                      c.properties.get("ssl_mode",
+                      # Memorystore's in-transit toggle.
+                      c.properties.get("transit_encryption_mode",
+                      c.properties.get("enforce_https", "false")))))))).lower()
+            if tls not in ("true", "yes", "1", "enabled", "required", "configured",
+                           "encrypted_only", "trusted_client_certificate_required",
+                           "server_authentication"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.HIGH,
