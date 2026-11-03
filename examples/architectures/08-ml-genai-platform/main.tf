@@ -370,6 +370,7 @@ resource "aws_lambda_function" "extract" {
   role          = aws_iam_role.lambda.arn
   handler       = "extract.handler"
   runtime       = "python3.12"
+  filename      = "build/extract.zip"
   timeout       = 120
   memory_size   = 2048
   kms_key_arn   = aws_kms_key.ml.arn

@@ -172,6 +172,7 @@ resource "aws_lambda_function" "enrich" {
   role          = aws_iam_role.lambda.arn
   handler       = "enrich.handler"
   runtime       = "python3.12"
+  filename      = "build/enrich.zip"
   timeout       = 30
   memory_size   = 512
   kms_key_arn   = aws_kms_key.stream.arn

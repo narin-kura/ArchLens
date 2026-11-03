@@ -1,0 +1,48 @@
+# Catalog types the Terraform export must not emit: `terraform validate` against the
+# current provider majors (aws 6, azurerm 5, google 8, oci 9, nutanix 2, vsphere 2,
+# openstack 3; checked 2026-11-03) reports "does not support resource type".
+# Retired in a newer major, or a catalog slug that only looks like a resource type.
+aws_batch
+aws_iq
+aws_transform
+azurerm_cost_management_export
+azurerm_iothub_endpoint
+azurerm_mariadb_server
+azurerm_media_services_account
+azurerm_mobile_network
+azurerm_mysql_server
+azurerm_peering_service
+azurerm_postgresql_server
+azurerm_quantum_workspace
+azurerm_redis_enterprise_cluster
+azurerm_sphere_catalog
+azurerm_spot_virtual_machine
+azurerm_workloads_sap_virtual_instance
+google_batch_job
+google_firebase_database_instance
+google_firebase_hosting_site
+google_firebase_project
+google_firebase_web_app
+google_notebooks_instance
+google_vertex_ai_metadata_store
+nutanix_address_group_v2
+nutanix_karbon_cluster_worker_nodepool
+nutanix_ndb_dbservervm_register
+nutanix_ndb_profiles
+nutanix_ndb_software_profile_version
+nutanix_ndb_time_machine_cluster
+nutanix_pbrs_v2
+nutanix_saml_idps_v2
+nutanix_templates_v2
+nutanix_virtual_machine_clone_v2
+nutanix_virtual_machine_gc_update_v2
+nutanix_virtual_machine_network_device_assign_ip_v2
+nutanix_virtual_machine_network_device_migrate_v2
+oci_recovery_long_term_backup
+openstack_sharedfilesystem_sharetype_access_v2
+openstack_sharedfilesystem_sharetype_v2
+openstack_workflow_cron_trigger_v2
+vsphere_vsphere_entity_permissions
+vsphere_vsphere_role
+vsphere_vsphere_sso_group
+vsphere_vsphere_sso_user

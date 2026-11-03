@@ -359,6 +359,7 @@ resource "aws_lambda_function" "matchmaker" {
   role          = aws_iam_role.lambda.arn
   handler       = "match.handler"
   runtime       = "python3.12"
+  filename      = "build/matchmaker.zip"
   timeout       = 10
   memory_size   = 512
   kms_key_arn   = aws_kms_key.compute.arn

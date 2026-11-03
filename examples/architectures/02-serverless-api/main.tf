@@ -202,6 +202,7 @@ resource "aws_lambda_function" "orders_api" {
   role          = aws_iam_role.orders_api.arn
   handler       = "index.handler"
   runtime       = "python3.12"
+  filename      = "build/orders_api.zip"
   timeout       = 15
   memory_size   = 512
 
@@ -235,6 +236,7 @@ resource "aws_lambda_function" "fulfilment_worker" {
   role          = aws_iam_role.fulfilment_worker.arn
   handler       = "worker.handler"
   runtime       = "python3.12"
+  filename      = "build/fulfilment_worker.zip"
   timeout       = 60
   memory_size   = 1024
 

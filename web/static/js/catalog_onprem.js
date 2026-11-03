@@ -161,10 +161,10 @@ window.ONPREM_CATALOG = [
  {
   "provider": "onprem",
   "cat": "onprem",
-  "id": "onprem_nutanix_deploy_template_v2",
+  "id": "onprem_nutanix_deploy_templates_v2",
   "name": "Deploy Template (v2)",
   "type": "OTHER",
-  "service": "nutanix_deploy_template_v2",
+  "service": "nutanix_deploy_templates_v2",
   "icon": "DTV",
   "group": "Nutanix"
  },
@@ -221,10 +221,10 @@ window.ONPREM_CATALOG = [
  {
   "provider": "onprem",
   "cat": "onprem",
-  "id": "onprem_nutanix_foundation_central_api_key",
+  "id": "onprem_nutanix_foundation_central_api_keys",
   "name": "Foundation Central API Key",
   "type": "OTHER",
-  "service": "nutanix_foundation_central_api_key",
+  "service": "nutanix_foundation_central_api_keys",
   "icon": "FCAK",
   "group": "Nutanix"
  },
@@ -481,10 +481,10 @@ window.ONPREM_CATALOG = [
  {
   "provider": "onprem",
   "cat": "onprem",
-  "id": "onprem_nutanix_ndb_dbservervm",
+  "id": "onprem_nutanix_ndb_dbserver_vm",
   "name": "NDB Dbservervm",
   "type": "COMPUTE",
-  "service": "nutanix_ndb_dbservervm",
+  "service": "nutanix_ndb_dbserver_vm",
   "icon": "ND",
   "group": "Nutanix"
  },
@@ -581,10 +581,10 @@ window.ONPREM_CATALOG = [
  {
   "provider": "onprem",
   "cat": "onprem",
-  "id": "onprem_nutanix_ndb_stretched_vlans",
+  "id": "onprem_nutanix_ndb_stretched_vlan",
   "name": "NDB Stretched Vlans",
   "type": "NETWORK",
-  "service": "nutanix_ndb_stretched_vlans",
+  "service": "nutanix_ndb_stretched_vlan",
   "icon": "NSV",
   "group": "Nutanix"
  },
@@ -1321,10 +1321,10 @@ window.ONPREM_CATALOG = [
  {
   "provider": "onprem",
   "cat": "onprem",
-  "id": "onprem_nutanix_vm_cdroms_insert_eject_v2",
+  "id": "onprem_nutanix_vm_cdrom_insert_eject_v2",
   "name": "VM Cdroms Insert Eject (v2)",
   "type": "OTHER",
-  "service": "nutanix_vm_cdroms_insert_eject_v2",
+  "service": "nutanix_vm_cdrom_insert_eject_v2",
   "icon": "VCIE",
   "group": "Nutanix"
  },

@@ -289,6 +289,7 @@ resource "aws_lambda_function" "submit_job" {
   role          = aws_iam_role.lambda.arn
   handler       = "submit.handler"
   runtime       = "python3.12"
+  filename      = "build/submit_job.zip"
   timeout       = 60
   memory_size   = 512
   kms_key_arn   = aws_kms_key.media.arn

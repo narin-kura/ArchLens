@@ -337,6 +337,7 @@ resource "aws_lambda_function" "anomaly" {
   role          = aws_iam_role.lambda.arn
   handler       = "anomaly.handler"
   runtime       = "python3.12"
+  filename      = "build/anomaly.zip"
   timeout       = 30
   memory_size   = 512
   kms_key_arn   = aws_kms_key.iot.arn

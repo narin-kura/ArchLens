@@ -277,6 +277,7 @@ resource "aws_lambda_function" "ivr" {
   role          = aws_iam_role.lambda.arn
   handler       = "ivr.handler"
   runtime       = "python3.12"
+  filename      = "build/ivr.zip"
   timeout       = 15
   memory_size   = 512
   kms_key_arn   = aws_kms_key.workforce.arn
