@@ -64,10 +64,15 @@ function renderGroupTabs(inCat) {
   const counts = new Map();
   inCat.forEach(s => { if (s.group) counts.set(s.group, (counts.get(s.group) || 0) + 1); });
   if (counts.size < 2) { el.innerHTML = ''; return; }
-  const chip = (g, text, n) =>
-    `<button class="group-tab ${currentGroup === g ? 'active' : ''}" onclick="setGroup('${g.replace(/'/g, "\\'")}')">${text}<span class="group-count">${n}</span></button>`;
-  el.innerHTML = chip('all', 'All', inCat.length)
-    + [...counts.entries()].map(([g, n]) => chip(g, g, n)).join('');
+  // A dropdown, not a row of pills: AWS alone has ~25 categories, and wrapped
+  // pills filled the whole palette and pushed the service list off-screen.
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const opt = (g, text, n) =>
+    `<option value="${esc(g)}"${currentGroup === g ? ' selected' : ''}>${esc(text)} (${n})</option>`;
+  el.innerHTML = `<select class="palette-cat" aria-label="Category" onchange="setGroup(this.value)">`
+    + opt('all', 'All categories', inCat.length)
+    + [...counts.entries()].map(([g, n]) => opt(g, g, n)).join('')
+    + `</select>`;
 }
 
 function setCat(el) {

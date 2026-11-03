@@ -508,7 +508,7 @@ textarea::placeholder { color: #3d5080; }
 .cat-tab.active { background:#1e1b4b; color:#c4b5fd; border-color:#3730a3; }
 .cat-tab:hover:not(.active) { border-color:#4c1d95; color:#a5b4fc; }
 
-.group-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px; }
+.group-tabs { flex-shrink:0; }
 .group-tabs:empty { display:none; }
 .group-tab { padding:5px 12px; border-radius:99px; font-size:11.5px; font-weight:700; cursor:pointer; border:1px solid #16243c; background:transparent; color:#55708f; transition:all 0.15s; }
 .group-tab.active { background:#0f1f3d; color:#93c5fd; border-color:#1d4ed8; }
