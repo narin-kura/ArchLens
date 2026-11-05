@@ -165,7 +165,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "aws_iot_topic_rule":                 C.QUEUE,
     "aws_transfer_server":                C.GATEWAY,
     "aws_connect_instance":               C.GATEWAY,
-    "aws_lexv2models_bot":                C.GATEWAY,
+    "aws_lexv2models_bot":                C.OTHER,
     "aws_bedrockagent_knowledge_base":    C.DATABASE,
     # ---- AWS messaging / streaming
     "aws_sqs_queue":                      C.QUEUE,
@@ -930,7 +930,7 @@ _RESOURCE_TYPE_MAP: dict[str, ComponentType] = {
     "azurerm_machine_learning_compute_cluster": C.COMPUTE,
     "azurerm_machine_learning_compute_instance": C.COMPUTE,
     "azurerm_machine_learning_inference_cluster": C.COMPUTE,
-    "azurerm_search_service":             C.GATEWAY,
+    "azurerm_search_service":             C.OTHER,
     "azurerm_bot_service_azure_bot":      C.SERVERLESS,
     "azurerm_video_indexer_account":      C.SERVERLESS,
     # ---- Azure IoT

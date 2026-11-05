@@ -105,9 +105,9 @@ const SERVICES = [
   {id:'gcp_nlp',       name:'Natural Language',provider:'gcp',   cat:'ai',        type:'SERVERLESS', service:'cloud_nlp',       icon:'NLP'},
   // AI / ML — Azure
   // LLM APIs (generic)
-  {id:'ai_openai',     name:'OpenAI API',    provider:'generic', cat:'ai',        type:'GATEWAY',    service:'openai_api',      icon:'OAI'},
+  {id:'ai_openai',     name:'OpenAI API',    provider:'generic', cat:'ai',        type:'OTHER',      service:'openai_api',      icon:'OAI'},
   {id:'ai_anthropic',  name:'Anthropic API', provider:'generic', cat:'ai',        type:'GATEWAY',    service:'anthropic_api',   icon:'ANT'},
-  {id:'ai_gemini',     name:'Gemini API',    provider:'generic', cat:'ai',        type:'GATEWAY',    service:'gemini_api',      icon:'GEM'},
+  {id:'ai_gemini',     name:'Gemini API',    provider:'generic', cat:'ai',        type:'OTHER',      service:'gemini_api',      icon:'GEM'},
   {id:'ai_ollama',     name:'Ollama',        provider:'generic', cat:'ai',        type:'COMPUTE',    service:'ollama',          icon:'OLL'},
   {id:'ai_hf',         name:'Hugging Face',  provider:'generic', cat:'ai',        type:'GATEWAY',    service:'huggingface',     icon:'HF'},
   // Vector Databases

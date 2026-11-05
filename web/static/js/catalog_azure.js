@@ -137,12 +137,12 @@ const AZURE_PRODUCTS = [
   ]},
 
   {g: 'AI + Machine Learning', items: [
-    {id:'az_openai',         name:'Azure OpenAI Service',   type:'GATEWAY',    service:'azurerm_cognitive_account',       icon:'AOAI', extraCats:['ai']},
+    {id:'az_openai',         name:'Azure OpenAI Service',   type:'OTHER',      service:'azurerm_cognitive_account',       icon:'AOAI', extraCats:['ai']},
     {id:'az_aifoundry',      name:'Azure AI Foundry',       type:'OTHER',      service:'azurerm_ai_foundry',              icon:'AIF',  extraCats:['ai']},
     {id:'az_ml',             name:'Azure Machine Learning', type:'COMPUTE',    service:'azurerm_machine_learning_workspace', icon:'AML', extraCats:['ai']},
     {id:'az_ml_compute',     name:'ML Compute Instance',    type:'COMPUTE',    service:'azurerm_machine_learning_compute_instance', icon:'MLC', extraCats:['ai']},
     {id:'az_cognitive',      name:'Azure AI Services',      type:'SERVERLESS', service:'azurerm_cognitive_account',       icon:'COG',  extraCats:['ai']},
-    {id:'az_aisearch',       name:'Azure AI Search',        type:'GATEWAY',    service:'azurerm_search_service',          icon:'AIS',  extraCats:['ai']},
+    {id:'az_aisearch',       name:'Azure AI Search',        type:'OTHER',      service:'azurerm_search_service',          icon:'AIS',  extraCats:['ai']},
     {id:'az_botservice',     name:'Azure Bot Service',      type:'SERVERLESS', service:'azurerm_bot_service_azure_bot',   icon:'BOT',  extraCats:['ai']},
     {id:'az_videoindexer',   name:'AI Video Indexer',       type:'SERVERLESS', service:'azurerm_video_indexer_account',   icon:'AVI',  extraCats:['ai']},
     {id:'az_docintel',       name:'AI Document Intelligence',type:'SERVERLESS',service:'form_recognizer',                 icon:'DOCI', extraCats:['ai']},
