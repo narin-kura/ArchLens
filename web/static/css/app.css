@@ -694,3 +694,14 @@ a.nav-logo { text-decoration:none; }
   .nav-link { padding:6px 9px; font-size:12.5px; }
   .page-section { padding:30px 16px 44px; }
 }
+
+/* Vigyatri endorsement: small "by vigyatri" in the header and "A Vigyatri app" badge in the footer */
+.by-vigyatri { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; letter-spacing:.2px; text-decoration:none; color:#a5b4fc; opacity:.9; white-space:nowrap; }
+.by-vigyatri img { width:14px; height:14px; display:block; }
+.by-vigyatri:hover { opacity:1; text-decoration:underline; }
+.vg-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 11px 4px 6px; border-radius:999px; font-size:12px; font-weight:600; text-decoration:none; background:rgba(99,102,241,.12); border:1px solid rgba(99,102,241,.35); color:#c7d2fe; margin-bottom:10px; }
+.vg-badge img { width:18px; height:18px; display:block; }
+.vg-badge:hover { background:rgba(99,102,241,.2); }
+.nav-logo + .by-vigyatri { margin-left:10px; }
+.app-logo + .by-vigyatri { margin-left:8px; }
+@media (max-width:600px) { .by-vigyatri { display:none; } }
