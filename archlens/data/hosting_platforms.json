@@ -1,0 +1,111 @@
+{
+ "_about": [
+  "Hosting platforms shown as alternatives in the cost section of a report.",
+  "ArchLens does not price these: each entry links to the provider's own pricing or home page.",
+  "link_checked=false means the site could not be opened from the build machine (some sites block automated checks or visitors outside India); the address is the provider's known official one.",
+  "buy: online = sign up and pay online; website = buying route not confirmed, see the site; sales = priced by quote; government = for government bodies or approved programmes.",
+  "Indian provider names and cities were supplied by the project owner on 2026-11-11."
+ ],
+ "checked": "2026-11-11",
+ "groups": [
+  {
+   "title": "App platforms (deploy code, no servers to manage)",
+   "blurb": "Push code and the platform runs it. Usually the cheapest way to start; cost grows with traffic.",
+   "items": [
+    {"name": "Vercel", "url": "https://vercel.com/pricing", "where": "Global", "fits": "Web frontends and serverless functions", "buy": "online", "link_checked": true, "note": "The free Hobby plan is for personal, non-commercial projects only."},
+    {"name": "Netlify", "url": "https://www.netlify.com/pricing/", "where": "Global", "fits": "Static sites and serverless functions", "buy": "online", "link_checked": true},
+    {"name": "Cloudflare Pages / Workers", "url": "https://www.cloudflare.com/plans/developer-platform/", "where": "Global", "fits": "Static sites, edge functions, small APIs", "buy": "online", "link_checked": true},
+    {"name": "Render", "url": "https://render.com/pricing", "where": "Global", "fits": "Web services, background workers, managed PostgreSQL", "buy": "online", "link_checked": true},
+    {"name": "Railway", "url": "https://railway.com/pricing", "where": "Global", "fits": "Containers and databases, billed by usage", "buy": "online", "link_checked": true},
+    {"name": "Fly.io", "url": "https://fly.io/pricing/", "where": "Global", "fits": "Containers run close to users in many regions", "buy": "online", "link_checked": true},
+    {"name": "Heroku", "url": "https://www.heroku.com/pricing/", "where": "Global", "fits": "Web apps with add-on databases", "buy": "online", "link_checked": true},
+    {"name": "Hugging Face Spaces", "url": "https://huggingface.co/pricing", "where": "Global", "fits": "Demos, ML apps, Docker apps", "buy": "online", "link_checked": true},
+    {"name": "Supabase", "url": "https://supabase.com/pricing", "where": "Global", "fits": "PostgreSQL, sign-in and file storage as a backend", "buy": "online", "link_checked": true},
+    {"name": "Firebase", "url": "https://firebase.google.com/pricing", "where": "Global", "fits": "Mobile and web backend: database, sign-in, hosting", "buy": "online", "link_checked": true},
+    {"name": "Zoho Catalyst", "url": "https://catalyst.zoho.com/pricing.html", "where": "India (Chennai)", "fits": "Serverless functions and app hosting on Zoho's own cloud", "buy": "online", "link_checked": true}
+   ]
+  },
+  {
+   "title": "Simple cloud servers (one or a few virtual machines)",
+   "blurb": "Rent a server and run everything on it. Cheaper and simpler than a full AWS, Azure or Google Cloud setup, but you look after the server yourself.",
+   "items": [
+    {"name": "Oracle Cloud Always Free", "url": "https://www.oracle.com/cloud/free/", "where": "Global, incl. Mumbai and Hyderabad", "fits": "Small always-on servers at no charge within the free allowance", "buy": "online", "link_checked": true},
+    {"name": "AWS Lightsail", "url": "https://aws.amazon.com/lightsail/pricing/", "where": "Global, incl. Mumbai", "fits": "Fixed-price servers and databases on AWS", "buy": "online", "link_checked": true},
+    {"name": "DigitalOcean", "url": "https://www.digitalocean.com/pricing", "where": "Global, incl. Bengaluru", "fits": "Servers, managed databases, Kubernetes", "buy": "online", "link_checked": true},
+    {"name": "Hetzner Cloud", "url": "https://www.hetzner.com/cloud/", "where": "Europe, US, Singapore", "fits": "Low-cost servers", "buy": "online", "link_checked": true},
+    {"name": "Akamai Cloud (Linode)", "url": "https://www.linode.com/pricing/", "where": "Global, incl. Mumbai and Chennai", "fits": "Servers, managed databases, Kubernetes", "buy": "online", "link_checked": false},
+    {"name": "Vultr", "url": "https://www.vultr.com/pricing/", "where": "Global, incl. Mumbai, Delhi and Bengaluru", "fits": "Servers, GPUs, Kubernetes", "buy": "online", "link_checked": false},
+    {"name": "OVHcloud", "url": "https://www.ovhcloud.com/en-in/public-cloud/prices/", "where": "Global, incl. Mumbai", "fits": "Servers and managed services", "buy": "online", "link_checked": true},
+    {"name": "Scaleway", "url": "https://www.scaleway.com/en/pricing/", "where": "Europe", "fits": "Servers, serverless, managed databases", "buy": "online", "link_checked": false}
+   ]
+  },
+  {
+   "title": "Indian cloud and VPS providers",
+   "blurb": "Data stays in India and billing is in rupees. Useful where data-residency rules apply.",
+   "items": [
+    {"name": "Utho Cloud (formerly Microhost)", "url": "https://utho.com/pricing", "where": "New Delhi / Noida", "fits": "Cloud servers, Kubernetes, databases", "buy": "online", "link_checked": false},
+    {"name": "E2E Networks", "url": "https://www.e2enetworks.com/pricing", "where": "New Delhi / Noida", "fits": "Cloud servers and GPUs", "buy": "online", "link_checked": true},
+    {"name": "BharathCloud", "url": "https://bharathcloud.com/", "where": "Hyderabad", "fits": "Cloud servers", "buy": "website", "link_checked": true},
+    {"name": "CloudPe (Leapswitch Networks)", "url": "https://www.cloudpe.com/", "where": "Pune", "fits": "Cloud servers", "buy": "website", "link_checked": true},
+    {"name": "AceCloud (Real Time Data Services)", "url": "https://acecloud.ai/pricing/", "where": "Gurugram", "fits": "Cloud servers and GPUs", "buy": "online", "link_checked": true},
+    {"name": "Civo India (Sovereign Cloud)", "url": "https://www.civo.com/pricing", "where": "Mumbai", "fits": "Managed Kubernetes and servers", "buy": "online", "link_checked": true},
+    {"name": "MilesWeb", "url": "https://www.milesweb.in/hosting/cloud-hosting/", "where": "Nashik", "fits": "Web hosting, VPS, cloud hosting", "buy": "online", "link_checked": true},
+    {"name": "Hostinger India", "url": "https://www.hostinger.com/in/vps-hosting", "where": "Mumbai", "fits": "Web hosting and VPS", "buy": "online", "link_checked": true},
+    {"name": "BigRock", "url": "https://www.bigrock.in/", "where": "Mumbai", "fits": "Domains, web hosting, VPS", "buy": "online", "link_checked": false},
+    {"name": "ResellerClub", "url": "https://india.resellerclub.com/", "where": "Mumbai", "fits": "Reseller hosting and VPS", "buy": "online", "link_checked": false},
+    {"name": "ZNetLive (ZNet Technologies)", "url": "https://www.znetlive.com/", "where": "Jaipur", "fits": "Web hosting, VPS, managed cloud", "buy": "online", "link_checked": true},
+    {"name": "Net4 India", "url": "https://net4.in/", "where": "Mumbai", "fits": "Domains and web hosting", "buy": "website", "link_checked": true},
+    {"name": "Netmagic (NTT Global Data Centers India)", "url": "https://www.nttdata.com/en-us/services/global-data-centers", "where": "Mumbai", "fits": "Data centres and managed cloud", "buy": "sales", "link_checked": true},
+    {"name": "Cyfuture Cloud", "url": "https://cyfuture.cloud/", "where": "Noida", "fits": "Cloud servers, GPUs, hosting", "buy": "online", "link_checked": true}
+   ]
+  },
+  {
+   "title": "Indian AI and GPU clouds",
+   "blurb": "For training and running AI models on GPUs hosted in India.",
+   "items": [
+    {"name": "Yotta Data Services (Shakti Cloud, Yntraa Cloud)", "url": "https://shakticloud.ai/", "where": "Navi Mumbai / Greater Noida", "fits": "GPU cloud and sovereign cloud", "buy": "website", "link_checked": true},
+    {"name": "Neysa (Velocis AI Cloud)", "url": "https://neysa.ai/", "where": "Mumbai", "fits": "GPU cloud for AI workloads", "buy": "website", "link_checked": true},
+    {"name": "Sarvam AI", "url": "https://www.sarvam.ai/", "where": "Bengaluru", "fits": "Indian-language AI models and compute", "buy": "website", "link_checked": true},
+    {"name": "Krutrim (Ola Krutrim Cloud)", "url": "https://www.olakrutrim.com/", "where": "Bengaluru", "fits": "GPU cloud and AI services", "buy": "website", "link_checked": true},
+    {"name": "Tata Communications (AI Cloud, IZO Cloud)", "url": "https://www.tatacommunications.com/cloud", "where": "Mumbai", "fits": "Enterprise cloud and GPU cloud", "buy": "sales", "link_checked": true},
+    {"name": "Jio Cloud / Jio Platforms", "url": "https://www.jio.com/", "where": "Mumbai / Jamnagar", "fits": "AI cloud infrastructure", "buy": "sales", "link_checked": false}
+   ]
+  },
+  {
+   "title": "Indian enterprise, data-centre and managed cloud operators",
+   "blurb": "For large or regulated workloads. These are priced by quote rather than a public price list.",
+   "items": [
+    {"name": "CtrlS Datacenters", "url": "https://www.ctrls.com/", "where": "Hyderabad", "fits": "Tier-4 data centres", "buy": "sales", "link_checked": true},
+    {"name": "Cloud4C", "url": "https://www.cloud4c.com/", "where": "Hyderabad", "fits": "Managed cloud services", "buy": "sales", "link_checked": true},
+    {"name": "ESDS (Swaraj Cloud, eNlight Cloud)", "url": "https://www.esds.co.in/", "where": "Nashik", "fits": "Managed and community cloud", "buy": "sales", "link_checked": true},
+    {"name": "NxtGen (SpeedCloud)", "url": "https://nxtgen.com/", "where": "Bengaluru", "fits": "Enterprise and sovereign cloud", "buy": "sales", "link_checked": true},
+    {"name": "Pi Datacenters (Harbour1)", "url": "https://pidatacenters.com/", "where": "Vijayawada / Hyderabad", "fits": "Enterprise cloud and colocation", "buy": "sales", "link_checked": true},
+    {"name": "Sify Technologies (CloudInfinit)", "url": "https://www.sifytechnologies.com/cloud-services/", "where": "Chennai", "fits": "Enterprise cloud and data centres", "buy": "sales", "link_checked": true},
+    {"name": "TCS (Enterprise Cloud, Sovereign Secure Cloud)", "url": "https://www.tcs.com/", "where": "Mumbai", "fits": "Managed enterprise cloud", "buy": "sales", "link_checked": false},
+    {"name": "Wipro (FullStride Cloud)", "url": "https://www.wipro.com/cloud/", "where": "Bengaluru", "fits": "Cloud consulting and managed services", "buy": "sales", "link_checked": true},
+    {"name": "Infosys (Cobalt)", "url": "https://www.infosys.com/services/cloud-cobalt.html", "where": "Bengaluru", "fits": "Cloud consulting and managed services", "buy": "sales", "link_checked": false},
+    {"name": "HCLTech (CloudSMART)", "url": "https://www.hcltech.com/cloud-services", "where": "Noida", "fits": "Cloud consulting and managed services", "buy": "sales", "link_checked": true},
+    {"name": "Tech Mahindra (Cloud BlazeTech)", "url": "https://www.techmahindra.com/", "where": "Pune", "fits": "Cloud consulting and managed services", "buy": "sales", "link_checked": true},
+    {"name": "Web Werks (Iron Mountain India)", "url": "https://webwerks.in/", "where": "Mumbai", "fits": "Data centres and colocation", "buy": "sales", "link_checked": false},
+    {"name": "STT GDC India", "url": "https://www.sttgdc.com/in-en", "where": "Mumbai", "fits": "Data centres and colocation", "buy": "sales", "link_checked": true},
+    {"name": "Nxtra by Airtel", "url": "https://www.nxtra.in/", "where": "Gurugram", "fits": "Data centres and colocation", "buy": "sales", "link_checked": true},
+    {"name": "AdaniConneX", "url": "https://www.adaniconnex.com/", "where": "Ahmedabad / Chennai", "fits": "Hyperscale data centres", "buy": "sales", "link_checked": true},
+    {"name": "L&T-Cloudfinity (Larsen & Toubro)", "url": "https://www.larsentoubro.com/", "where": "Mumbai / Chennai", "fits": "Data centres and cloud", "buy": "sales", "link_checked": true},
+    {"name": "RackBank", "url": "https://www.rackbank.com/", "where": "Indore", "fits": "Data centres and GPU hosting", "buy": "sales", "link_checked": true},
+    {"name": "Anant Raj Cloud", "url": null, "where": "New Delhi / Gurugram", "fits": "Data centres and cloud", "buy": "sales", "link_checked": false},
+    {"name": "CapitaLand Data Centres India", "url": "https://www.capitaland.com/en.html", "where": "Mumbai / Navi Mumbai", "fits": "Data centres and colocation", "buy": "sales", "link_checked": true},
+    {"name": "Equinix India", "url": "https://www.equinix.com/", "where": "Mumbai / Chennai", "fits": "Data centres and interconnection", "buy": "sales", "link_checked": true},
+    {"name": "Digital Connexion", "url": "https://digitalconnexion.com/", "where": "Chennai", "fits": "Data centres and colocation", "buy": "sales", "link_checked": true}
+   ]
+  },
+  {
+   "title": "Indian government and indigenous clouds",
+   "blurb": "Mostly for government departments and approved research or startup programmes.",
+   "items": [
+    {"name": "MeghRaj (GI Cloud), run by NIC", "url": "https://cloud.gov.in/", "where": "India", "fits": "Cloud for government ministries and departments", "buy": "government", "link_checked": false},
+    {"name": "IndiaAI Compute Portal (MeitY)", "url": "https://indiaai.gov.in/", "where": "India", "fits": "GPU access for eligible researchers and startups", "buy": "government", "link_checked": false},
+    {"name": "C-DAC Cloud (Meghdoot, PARAM)", "url": "https://www.cdac.in/", "where": "Pune", "fits": "Research and supercomputing cloud", "buy": "government", "link_checked": true}
+   ]
+  }
+ ]
+}

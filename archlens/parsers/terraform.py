@@ -1192,6 +1192,10 @@ def _detect_provider(resource_type: str) -> str:
     return "generic"
 
 
+_VARIABLE_DEFAULT_RE = re.compile(
+    r'variable\s+"([^"]+)"\s*\{[^{}]*?\bdefault\s*=\s*(?:"([^"]*)"|(\d+(?:\.\d+)?))', re.S)
+
+
 class TerraformParser(BaseParser):
     def can_parse(self, source: str | Path) -> bool:
         p = Path(source)
@@ -1211,6 +1215,12 @@ class TerraformParser(BaseParser):
 
     def _parse_file(self, path: Path, model: ArchitectureModel) -> None:
         content = path.read_text(encoding="utf-8")
+
+        # Simple string/number variable defaults, so the cost estimate can price
+        # `instance_type = var.app_instance_type` from the default the file gives.
+        defaults = model.metadata.setdefault("variable_defaults", {})
+        for m in _VARIABLE_DEFAULT_RE.finditer(content):
+            defaults[m.group(1)] = m.group(2) if m.group(2) is not None else m.group(3)
 
         for resource_type, resource_name, block in _iter_resource_blocks(content):
             component_type = _RESOURCE_TYPE_MAP.get(resource_type, ComponentType.OTHER)

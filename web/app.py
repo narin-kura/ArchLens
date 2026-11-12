@@ -29,6 +29,8 @@ from archlens.analyzers.cicd_security import CicdSecurityAnalyzer
 from archlens.models.findings import AnalysisReport
 from archlens.models.architecture import ArchitectureModel, Component, Connection, ComponentType
 from archlens.recommender import recommend as build_recommendation
+from archlens.pricing import estimate as estimate_cost, load_prices
+from archlens.hosting import hosting_options
 
 app = FastAPI(title="ArchLens", description="Architecture security & cost analyzer")
 
@@ -145,7 +147,7 @@ async def analyze_example(slug: str):
                     + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
                     + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
         report = AnalysisReport(architecture_name=slug, findings=findings)
-        return _report_to_dict(report, len(model.components))
+        return _report_to_dict(report, len(model.components), model)
     except Exception:
         logger.exception("Failed to analyze bundled example %s", slug)
         raise HTTPException(status_code=500, detail="Could not analyze that example.")
@@ -239,7 +241,7 @@ async def analyze(
                     + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
                     + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
         report = AnalysisReport(architecture_name=model.name, findings=findings)
-        return _report_to_dict(report, len(model.components))
+        return _report_to_dict(report, len(model.components), model)
 
     except HTTPException:
         raise
@@ -298,7 +300,7 @@ async def analyze_interactive(request: Request):
                     + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
                     + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
         report = AnalysisReport(architecture_name=model.name, findings=findings)
-        return _report_to_dict(report, len(model.components))
+        return _report_to_dict(report, len(model.components), model)
 
     except HTTPException:
         raise
@@ -350,8 +352,22 @@ def _parse_text(text: str, format_hint: Optional[str]) -> ArchitectureModel:
     return parser.parse(text)
 
 
-def _report_to_dict(report: AnalysisReport, components_found: int = 0) -> dict:
+def _cost_estimates(model: Optional[ArchitectureModel]) -> dict:
+    """Monthly cost estimate per price region, so the page can switch region without re-analysing."""
+    if model is None:
+        return {}
+    try:
+        return {region: estimate_cost(model, region) for region in load_prices()["regions"]}
+    except Exception:
+        logger.exception("Cost estimate failed")   # the security report must still come back
+        return {}
+
+
+def _report_to_dict(report: AnalysisReport, components_found: int = 0,
+                    model: Optional[ArchitectureModel] = None) -> dict:
     return {
+        "cost_estimates": _cost_estimates(model),
+        "hosting_options": hosting_options(),
         "architecture": report.architecture_name,
         "components_found": components_found,
         "summary": {

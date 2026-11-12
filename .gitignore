@@ -22,3 +22,6 @@ Thumbs.db
 # Secrets
 .env
 *.key
+
+# Downloaded provider price lists (scripts/update_prices.py)
+.price-cache/

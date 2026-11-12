@@ -705,3 +705,52 @@ a.nav-logo { text-decoration:none; }
 .nav-logo + .by-vigyatri { margin-left:10px; }
 .app-logo + .by-vigyatri { margin-left:8px; }
 @media (max-width:600px) { .by-vigyatri { display:none; } }
+
+/* ---------- Estimated monthly cost (web/static/js/cost-estimate.js) ---------- */
+.cost-estimate { min-width: 0; }
+.ce-hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ce-usd { font-size: 11px; font-weight: 700; color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: middle; }
+.ce-regions { display: inline-flex; background: #0f172a; border: 1px solid #1e293b; border-radius: 9px; padding: 3px; }
+.ce-regions button { background: none; border: 0; color: #94a3b8; font: inherit; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 6px; cursor: pointer; }
+.ce-regions button.on { background: #1e293b; color: #e2e8f0; }
+.ce-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.ce-tier { background: #111a30; border: 1px solid #1e293b; border-radius: 14px; padding: 16px 18px; }
+.ce-tier.balanced { border-color: #0f766e; background: linear-gradient(135deg, #0b2530, #0d1f33); }
+.ce-tier.as_written { border-color: #4c1d95; background: linear-gradient(135deg, #1b1740, #151a33); }
+.ce-tier-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; }
+.ce-tier-total { font-size: 28px; font-weight: 900; color: #e2e8f0; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+.ce-tier-total span { font-size: 13px; font-weight: 600; color: #94a3b8; margin-left: 2px; }
+.ce-tier-blurb { font-size: 12.5px; line-height: 1.5; color: #a8b3c7; }
+.ce-details { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 10px; }
+.ce-details > summary { cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 700; color: #cbd5e1; }
+.ce-details > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.ce-details > :last-child { margin-bottom: 14px; }
+.ce-scroll { overflow-x: auto; }
+.ce-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ce-table th { text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: #94a3b8; padding: 8px 10px; border-bottom: 1px solid #1e293b; white-space: nowrap; }
+.ce-table th:first-child, .ce-table td:first-child { text-align: left; }
+.ce-table td { padding: 9px 10px; border-bottom: 1px solid #172033; vertical-align: top; text-align: right; min-width: 128px; }
+.ce-table tr:last-child td { border-bottom: 0; }
+.ce-table tr.ce-current td { background: rgba(15, 118, 110, .12); }
+.ce-res { font-weight: 600; color: #e2e8f0; overflow-wrap: anywhere; }
+.ce-amt { font-weight: 700; color: #6ee7b7; font-variant-numeric: tabular-nums; }
+.ce-sub { font-size: 11.5px; color: #8492a6; line-height: 1.4; margin-top: 2px; }
+.ce-pill { font-size: 10px; font-weight: 700; text-transform: uppercase; background: #0f766e; color: #ecfeff; border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+.ce-note { font-size: 12.5px; line-height: 1.55; color: #a8b3c7; margin-bottom: 10px; }
+.ce-list { font-size: 12.5px; line-height: 1.6; color: #a8b3c7; padding-left: 18px; }
+.ce-list b { color: #e2e8f0; }
+.ce-h4 { font-size: 13px; font-weight: 700; color: #e2e8f0; margin: 16px 16px 4px; }
+.ce-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ce-chip { text-decoration: none; background: #111a30; border: 1px solid #1e293b; border-radius: 10px; padding: 8px 12px; font-size: 13px; color: #6ee7b7; }
+.ce-chip b { color: #e2e8f0; margin-right: 4px; }
+.ce-chip span { display: block; font-size: 11.5px; color: #8492a6; }
+.ce-chip:hover, a.ce-platform:hover { border-color: #2d4a73; background: #142338; }
+.ce-platforms { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-bottom: 6px; }
+.ce-platform { display: block; text-decoration: none; background: #111a30; border: 1px solid #1e293b; border-radius: 10px; padding: 10px 12px; font-size: 12.5px; line-height: 1.45; color: #a8b3c7; }
+.ce-platform b { display: block; color: #e2e8f0; font-size: 13px; }
+.ce-platform span { display: block; }
+.ce-platform .ce-meta { font-size: 11.5px; color: #8492a6; margin-top: 3px; }
+.ce-foot { font-size: 12px; line-height: 1.6; color: #8492a6; margin-top: 12px; }
+.ce-foot b { color: #a8b3c7; }
+.ce-foot a { color: #93c5fd; }
+@media (max-width: 560px) { .ce-tier-total { font-size: 24px; } .ce-table td { min-width: 112px; } }

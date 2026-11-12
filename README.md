@@ -24,6 +24,11 @@ Architecture security & cost analyzer. Upload a Terraform file or describe your 
 - Draw your architecture on a canvas — palette on the left, nodes and connections on the right — and the
   connections are analysed too: an internet-facing entry point wired straight into a database, a CDN
   origin that can be read directly, a function reaching a data store from outside its VPC
+- Estimates the monthly cost of the architecture at three budget levels (Starter, Balanced, Production),
+  plus an "As written" total when a Terraform file states real sizes. Prices are the providers' own list
+  prices (AWS, Azure, Google Cloud, Oracle Cloud) for the US and India, and every amount shows what it
+  assumes. The report also re-prices the same setup on each of the four clouds and lists cheaper ways to
+  host: one small server per cloud, app platforms such as Vercel and Render, and Indian cloud providers.
 
 ## Run locally
 
@@ -90,3 +95,26 @@ fixture and requires the finding counts in `tests/baseline.json`; after an
 intended analyzer change, run `python tests/test_reference_architectures.py
 --update` and review the diff. `tests/test_generated_catalogs.py` fails if a
 generated catalog drifts from its source module.
+`tests/test_pricing.py` covers the cost estimate and the hosting directory.
+
+## Prices
+
+The cost estimate reads `archlens/data/prices.json`, a snapshot of official price lists, so the app
+never calls a pricing API while serving a request. Refresh it with:
+
+```bash
+python scripts/update_prices.py            # all four providers
+python scripts/update_prices.py --only azure oci
+```
+
+| Provider | Source | Needs a credential |
+|---|---|---|
+| AWS | AWS Price List files (`pricing.us-east-1.amazonaws.com`) | No |
+| Azure | Azure Retail Prices API (`prices.azure.com`) | No |
+| Google Cloud | Cloud Billing Catalog API | Yes: `GCP_PRICING_API_KEY`, or a signed-in `gcloud` CLI |
+| Oracle Cloud | Oracle price list API (`apexapps.oracle.com/pls/apex/cetools`) | No |
+
+The AWS EC2 files are about 300 MB per region and are cached in `.price-cache/` (git-ignored). The
+budget-level assumptions (sizes, copies, usage) are the constants at the top of `archlens/pricing.py`.
+Other hosting platforms shown in the report are listed, not priced, in
+`archlens/data/hosting_platforms.json`.
