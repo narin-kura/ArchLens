@@ -1,0 +1,10 @@
+<section class="seo-examples" aria-label="All reference architectures">
+  <h2>All reference architectures</h2>
+  <p>Each one is a complete Terraform setup with its ArchLens security and cost review.</p>
+  {% for g in groups %}
+  <div class="seo-examples-group" id="{{ g.key }}">
+    <h3>{{ g.provider.name }}</h3>
+    <ul>{% for e in g.entries %}<li><a href="{{ e.href }}">{{ e.title }}</a></li>{% endfor %}</ul>
+  </div>
+  {% endfor %}
+</section>

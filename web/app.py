@@ -32,36 +32,17 @@ from archlens.recommender import recommend as build_recommendation
 from archlens.pricing import estimate as estimate_cost, load_prices
 from archlens.hosting import hosting_options
 
+try:
+    from web import seo
+except ImportError:
+    import seo
+
 app = FastAPI(title="ArchLens", description="Architecture security & cost analyzer")
 
 _STATIC = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=str(_STATIC)), name="static")
 
 MAX_FILE_BYTES = 5 * 1024 * 1024  # 5 MB
-
-
-def _page(name: str) -> HTMLResponse:
-    return HTMLResponse((_STATIC / name).read_text(encoding="utf-8"))
-
-
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return _page("index.html")
-
-
-@app.get("/analyze", response_class=HTMLResponse)
-def analyze_page():
-    return _page("analyze.html")
-
-
-@app.get("/diagram", response_class=HTMLResponse)
-def diagram_page():
-    return _page("diagram.html")
-
-
-@app.get("/examples", response_class=HTMLResponse)
-def examples_page():
-    return _page("examples.html")
 
 
 # The bundled reference architectures. Keyed by slug so a request can never
@@ -134,6 +115,16 @@ def list_examples():
     }
 
 
+def _analyze_example_path(path: Path):
+    """Parse one bundled example and run every analyzer (all rule-based, no AI calls)."""
+    parser = detect_parser(str(path.parent), "terraform")
+    model = parser.parse(str(path.parent))
+    findings = (SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model)
+                + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
+                + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
+    return model, findings
+
+
 @app.post("/api/examples/{slug}/analyze")
 async def analyze_example(slug: str):
     entry = _example_slugs().get(slug)
@@ -141,16 +132,17 @@ async def analyze_example(slug: str):
         raise HTTPException(status_code=404, detail="No such example architecture.")
     _, path = entry
     try:
-        parser = detect_parser(str(path.parent), "terraform")
-        model = await run_in_threadpool(parser.parse, str(path.parent))
-        findings = (SecurityAnalyzer().analyze(model) + KubernetesSecurityAnalyzer().analyze(model)
-                    + CicdSecurityAnalyzer().analyze(model) + TopologyAnalyzer().analyze(model)
-                    + CostAnalyzer().analyze(model) + AIAnalyzer().analyze(model))
+        model, findings = await run_in_threadpool(_analyze_example_path, path)
         report = AnalysisReport(architecture_name=slug, findings=findings)
         return _report_to_dict(report, len(model.components), model)
     except Exception:
         logger.exception("Failed to analyze bundled example %s", slug)
         raise HTTPException(status_code=500, detail="Could not analyze that example.")
+
+
+# Home, analyze, diagram and examples pages with full search-engine <head> tags, one
+# crawlable page per reference architecture, robots.txt, sitemap.xml and llms.txt.
+app.include_router(seo.build_router(_STATIC, seo.Examples(_example_slugs, _example_summary, _analyze_example_path)))
 
 
 @app.get("/health")

@@ -28,3 +28,12 @@
 .ex-link { font-size:11.5px; color:#6b85a8; text-decoration:none; }
 .ex-link:hover { color:#a5b4fc; }
 .ex-expect { font-size:11px; color:#4a6080; }
+
+/* Crawlable list of every reference architecture, injected by web/seo.py */
+.seo-examples { max-width: 1100px; margin: 40px auto 0; padding: 0 20px; }
+.seo-examples h2 { font-size: 1.15rem; color: #fff; margin: 0 0 4px; }
+.seo-examples > p { color: #9aa3c0; font-size: .9rem; margin: 0 0 12px; }
+.seo-examples h3 { font-size: .95rem; color: #a78bfa; margin: 16px 0 6px; }
+.seo-examples ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 16px; }
+.seo-examples a { color: #c7d2fe; font-size: .88rem; text-decoration: none; }
+.seo-examples a:hover { color: #fff; text-decoration: underline; }

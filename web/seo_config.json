@@ -1,0 +1,62 @@
+{
+  "_note": "Search-engine and AI-assistant wording for archlens.vigyatri.com, used by web/seo.py with web/templates/seo/. Titles near 60 characters, descriptions under 160. {{placeholders}} are filled per page. Set the SITE_ORIGIN env var to change the canonical domain; any other host is told not to index.",
+
+  "site": {
+    "name": "ArchLens",
+    "origin": "https://archlens.vigyatri.com",
+    "alternateNames": ["Arch Lens", "ArchLens by Vigyatri"],
+    "makerName": "Vigyatri Solutions",
+    "makerUrl": "https://vigyatri.com",
+    "github": "https://github.com/narin-kura/ArchLens",
+    "tagline": "Free cloud architecture security and cost analyzer",
+    "summary": "ArchLens is a free web tool that reviews cloud architecture for security risks and cost savings. You upload an infrastructure file (Terraform, Kubernetes YAML, Helm, Docker Compose, Dockerfile, CloudFormation, Azure ARM, Serverless, OpenAPI, GitHub Actions, Jenkins, Azure Pipelines, Ansible, AWS Config or GCP asset exports, draw.io diagrams), draw the architecture on a canvas, or describe it in plain English, and it lists security findings, cost-saving findings and a monthly cost estimate across AWS, Azure, Google Cloud and Oracle Cloud."
+  },
+
+  "keywords": [
+    "terraform security scanner",
+    "cloud architecture review",
+    "infrastructure as code security",
+    "kubernetes yaml security check",
+    "cloud cost optimization",
+    "aws architecture review",
+    "azure architecture review",
+    "gcp architecture review",
+    "draw.io architecture analysis",
+    "cloud cost estimate"
+  ],
+
+  "providers": {
+    "aws": { "name": "AWS", "long": "Amazon Web Services (AWS)" },
+    "azure": { "name": "Azure", "long": "Microsoft Azure" },
+    "gcp": { "name": "Google Cloud", "long": "Google Cloud (GCP)" },
+    "oracle": { "name": "Oracle Cloud", "long": "Oracle Cloud Infrastructure (OCI)" }
+  },
+
+  "pages": {
+    "index.html": {
+      "path": "/",
+      "title": "ArchLens: Free Cloud Architecture Security & Cost Analyzer",
+      "description": "Free cloud architecture review: find security risks and cost savings in Terraform, Kubernetes, CloudFormation, Docker Compose or draw.io diagrams, or plain English."
+    },
+    "analyze.html": {
+      "path": "/analyze",
+      "title": "Scan Terraform, Kubernetes & CloudFormation for Risks | ArchLens",
+      "description": "Upload Terraform, Kubernetes YAML, Helm, CloudFormation, ARM, Docker Compose, GitHub Actions or a draw.io file and get security findings, cost savings and a monthly estimate. Free."
+    },
+    "diagram.html": {
+      "path": "/diagram",
+      "title": "Draw a Cloud Architecture Diagram and Check It | ArchLens",
+      "description": "Draw your AWS, Azure, Google Cloud or Oracle architecture on a canvas, connect the services, and get security risks, cost savings and a monthly cost estimate. Free."
+    },
+    "examples.html": {
+      "path": "/examples",
+      "title": "{{count}} AWS, Azure, GCP & Oracle Reference Architectures | ArchLens",
+      "description": "{{count}} complete Terraform reference architectures for AWS, Azure, Google Cloud and Oracle Cloud, each reviewed for security risks and cost savings."
+    },
+    "example": {
+      "path": "/examples/{{slug}}",
+      "title": "{{title}} on {{provider}}: Terraform Security & Cost Review",
+      "description": "{{blurb}} ArchLens finds {{security}} security and {{cost}} cost issues in this {{provider}} Terraform reference architecture."
+    }
+  }
+}

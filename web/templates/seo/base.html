@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="{{ canonical }}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="{{ site.name }}">
+<meta property="og:title" content="{{ title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="/static/css/seo.css?v=20261113a">
+<script type="application/ld+json">{{ jsonld | safe }}</script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="/"><span class="arch">Arch</span><span class="lens">Lens</span></a>
+  <nav aria-label="Site">
+    <a href="/analyze">Analyze a file</a>
+    <a href="/diagram">Draw a diagram</a>
+    <a href="/examples">Examples</a>
+  </nav>
+</header>
+<main>
+<nav class="crumbs" aria-label="Breadcrumb"><ol>
+{% for label, href in trail %}
+  {% if loop.last %}<li aria-current="page">{{ label }}</li>{% else %}<li><a href="{{ href }}">{{ label }}</a></li>{% endif %}
+{% endfor %}
+</ol></nav>
+{% block content %}{% endblock %}
+<aside class="cta">
+  <p class="cta-head">Review your own architecture</p>
+  <p>Upload Terraform, Kubernetes YAML, CloudFormation, Docker Compose or a draw.io diagram, draw it on the canvas, or describe it in plain English. ArchLens lists security risks, cost savings and a monthly estimate. Free.</p>
+  <p class="cta-links"><a class="btn" href="/analyze">Analyze a file</a> <a class="btn btn-ghost" href="/diagram">Draw a diagram</a></p>
+</aside>
+</main>
+<footer>
+  <p><a href="/">{{ site.name }}</a>: {{ site.tagline }}. Made by <a href="{{ site.makerUrl }}">{{ site.makerName }}</a> · <a href="{{ site.github }}">Source on GitHub</a></p>
+  <p>For information only; not a substitute for a professional security audit.</p>
+</footer>
+</body>
+</html>

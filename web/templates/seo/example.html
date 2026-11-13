@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<article>
+  <p class="kicker">{{ provider.long }} · reference architecture {{ ex.number }}</p>
+  <h1>{{ ex.title }} on {{ provider.name }}</h1>
+  <p class="lead">{{ ex.description }}</p>
+
+  <dl class="facts">
+    <dt>Cloud</dt><dd>{{ provider.long }}</dd>
+    <dt>Components ArchLens found</dt><dd>{{ rep.components }}</dd>
+    <dt>Security findings</dt><dd>{{ rep.security | length }}</dd>
+    <dt>Cost findings</dt><dd>{{ rep.cost | length }}</dd>
+    <dt>Terraform</dt><dd>{{ ex.lines }} lines</dd>
+  </dl>
+
+  {% if ex.services %}
+  <h2>{{ provider.name }} services used</h2>
+  <ul class="chips">{% for s in ex.services %}<li>{{ s }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  {% if ex.expected and ex.expected | length > 12 %}
+  <p class="note"><b>Author's note on the expected result:</b> {{ ex.expected }}</p>
+  {% endif %}
+
+  <h2>Security review: {{ rep.security | length }} finding{{ "" if rep.security | length == 1 else "s" }}</h2>
+  {% if rep.security %}
+  <ol class="findings">
+  {% for f in rep.security %}
+    <li><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span> <strong>{{ f.title }}</strong>
+      <p>{{ f.description }}</p>
+      {% if f.recommendation %}<p class="fix"><b>Fix:</b> {{ f.recommendation }}</p>{% endif %}
+    </li>
+  {% endfor %}
+  </ol>
+  {% else %}<p>ArchLens found no security issues in this architecture.</p>{% endif %}
+
+  <h2>Cost review: {{ rep.cost | length }} finding{{ "" if rep.cost | length == 1 else "s" }}</h2>
+  {% if rep.cost %}
+  <ol class="findings">
+  {% for f in rep.cost %}
+    <li><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span> <strong>{{ f.title }}</strong>{% if f.savings %} <span class="save">saves about ${{ "{:,.0f}".format(f.savings) }}/month</span>{% endif %}
+      <p>{{ f.description }}</p>
+      {% if f.recommendation %}<p class="fix"><b>Fix:</b> {{ f.recommendation }}</p>{% endif %}
+    </li>
+  {% endfor %}
+  </ol>
+  {% else %}<p>ArchLens found no cost issues in this architecture.</p>{% endif %}
+
+  <h2>The Terraform</h2>
+  <details>
+    <summary>Show the {{ ex.lines }}-line Terraform for {{ ex.title }} on {{ provider.name }}</summary>
+    <pre><code>{{ rep.source }}</code></pre>
+  </details>
+
+  {% if other_clouds %}
+  <h2>The same architecture on other clouds</h2>
+  <ul class="cards">{% for e in other_clouds %}<li><a href="/examples/{{ e.slug }}">{{ e.title }}</a><span class="sub">{{ provider_names[e.provider] }}</span></li>{% endfor %}</ul>
+  {% endif %}
+
+  <h2>More {{ provider.name }} reference architectures</h2>
+  <ul class="cards">{% for e in same_provider %}<li><a href="/examples/{{ e.slug }}">{{ e.title }}</a></li>{% endfor %}</ul>
+
+  {% if references %}
+  <h2>References</h2>
+  <ul class="refs">{% for r in references %}<li><a href="{{ r }}" rel="noopener">{{ r }}</a></li>{% endfor %}</ul>
+  {% endif %}
+</article>
+{% endblock %}

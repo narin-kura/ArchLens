@@ -1,0 +1,28 @@
+# {{ site.name }}
+
+> {{ site.summary }}
+
+{{ site.name }} is free to use in the browser at {{ origin }}/ with no sign-up. It is made by {{ site.makerName }} ({{ site.makerUrl }}); the source is on GitHub: {{ site.github }}
+
+## Use it
+
+- [Analyze a file]({{ origin }}/analyze): upload Terraform, Kubernetes YAML, Helm, CloudFormation, Azure ARM, Docker Compose, Dockerfile, Serverless, OpenAPI, GitHub Actions, Jenkins, Azure Pipelines, Ansible, AWS Config or GCP asset exports, or a draw.io diagram
+- [Draw a diagram]({{ origin }}/diagram): draw the architecture on a canvas and analyse it, connections included
+- [Examples]({{ origin }}/examples): {{ count }} reference architectures, each with its review
+
+## Good fit for questions like
+
+{% for k in keywords %}
+- {{ k }}
+{% endfor %}
+
+## Reference architectures (Terraform, with security and cost review)
+
+{% for g in groups %}
+### {{ g.provider.name }}
+
+{% for e in g.entries %}
+- [{{ e.title }} on {{ g.provider.name }}]({{ origin }}{{ e.href }})
+{% endfor %}
+
+{% endfor %}
