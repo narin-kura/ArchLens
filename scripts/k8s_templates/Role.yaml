@@ -1,0 +1,15 @@
+# Least privilege: starts with read access to ConfigMaps only. Add exactly what the workload needs and avoid "*".
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch

@@ -1,0 +1,10 @@
+# Default deny: pods in the namespace accept only traffic that another NetworkPolicy allows.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress

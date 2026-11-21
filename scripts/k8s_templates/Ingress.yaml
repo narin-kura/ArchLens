@@ -1,0 +1,23 @@
+# Set the host, the TLS certificate Secret (for example from cert-manager) and your ingress class.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - __NAME__.example.com
+      secretName: __NAME__-tls
+  rules:
+    - host: __NAME__.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: __NAME__
+                port:
+                  name: http

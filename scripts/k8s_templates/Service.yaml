@@ -1,0 +1,16 @@
+# ClusterIP: reachable inside the cluster only. Expose it through an Ingress or Gateway, not a LoadBalancer per Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: __NAME__
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: __NAME__
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

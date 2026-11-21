@@ -1,0 +1,12 @@
+# Caps the namespace's total requests and limits. Size it to your cluster.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi

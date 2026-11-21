@@ -1,0 +1,12 @@
+# Set the size, and a storageClassName if you do not want the cluster default.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

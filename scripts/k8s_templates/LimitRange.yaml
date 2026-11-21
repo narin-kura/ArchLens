@@ -1,0 +1,15 @@
+# Default requests and limits for containers that set none.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      default:
+        cpu: 500m
+        memory: 256Mi

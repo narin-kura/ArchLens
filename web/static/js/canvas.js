@@ -233,6 +233,8 @@ function renderCanvas() {
   if (btn) btn.disabled = nodes.length === 0;
   const tfBtn = document.getElementById('exportTfBtn');
   if (tfBtn) tfBtn.disabled = nodes.length === 0;
+  const k8sBtn = document.getElementById('exportK8sBtn');
+  if (k8sBtn) k8sBtn.disabled = nodes.length === 0;
 
   updateSuggestions();
   saveDraft();

@@ -1,0 +1,17 @@
+# Gateway API entry point, HTTPS only. Set gatewayClassName to your controller's class and the certificate Secret.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  gatewayClassName: example
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: __NAME__.example.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: __NAME__-tls

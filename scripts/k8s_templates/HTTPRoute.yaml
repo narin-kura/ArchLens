@@ -1,0 +1,15 @@
+# Routes HTTPS traffic from a Gateway to a Service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+spec:
+  parentRefs:
+    - name: __NAME__
+  hostnames:
+    - __NAME__.example.com
+  rules:
+    - backendRefs:
+        - name: __NAME__
+          port: 80

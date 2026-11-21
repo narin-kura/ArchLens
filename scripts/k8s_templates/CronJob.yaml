@@ -1,0 +1,55 @@
+# Set the schedule (cron syntax, UTC by default). concurrencyPolicy Forbid stops runs from overlapping.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: __NAME__
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: __NAME__
+        spec:
+          restartPolicy: Never
+          serviceAccountName: __NAME__
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: __NAME__
+              image: registry.example.com/__NAME__:1.0.0
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

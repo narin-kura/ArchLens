@@ -27,6 +27,9 @@ _CLUSTER_SCOPED_KINDS = {
     "VolumeSnapshotClass", "ClusterIssuer", "GatewayClass",
 }
 
+# Run-to-completion pods: liveness and readiness probes do not apply.
+_BATCH_SERVICES = {"job", "cronjob"}
+
 # Plain manifests, and Helm charts rendered into the same Kubernetes objects.
 K8S_SOURCES = {"kubernetes", "helm"}
 
@@ -289,6 +292,8 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_no_liveness_probe(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in self._workloads(model):
+            if c.service in _BATCH_SERVICES:
+                continue
             if not c.properties.get("k8s_has_liveness_probe", True):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -305,6 +310,8 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_no_readiness_probe(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in self._workloads(model):
+            if c.service in _BATCH_SERVICES:
+                continue
             if not c.properties.get("k8s_has_readiness_probe", True):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
@@ -436,7 +443,8 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_pv_host_path(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
-            if c.provider == "kubernetes" and c.properties.get("k8s_pv_host_path", False):
+            if (c.provider == "kubernetes" and c.properties.get("k8s_kind") == "PersistentVolume"
+                    and c.properties.get("k8s_pv_host_path", False)):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.HIGH,
@@ -452,7 +460,8 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_pv_delete_reclaim_policy(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.STORAGE):
-            if c.provider == "kubernetes" and c.properties.get("k8s_pv_reclaim_policy", "Delete") == "Delete":
+            if (c.provider == "kubernetes" and c.properties.get("k8s_kind") == "PersistentVolume"
+                    and c.properties.get("k8s_pv_reclaim_policy", "Delete") == "Delete"):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.MEDIUM,
@@ -639,7 +648,7 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_ingress_no_tls(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.GATEWAY):
-            if c.provider == "kubernetes" and not c.properties.get("k8s_has_tls", True):
+            if c.provider == "kubernetes" and c.properties.get("k8s_kind") == "Ingress"                     and not c.properties.get("k8s_has_tls", True):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.HIGH,
@@ -655,7 +664,7 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def _check_ingress_no_class(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components_by_type(ComponentType.GATEWAY):
-            if c.provider == "kubernetes" and not c.properties.get("k8s_ingress_class", ""):
+            if c.provider == "kubernetes" and c.properties.get("k8s_kind") == "Ingress"                     and not c.properties.get("k8s_ingress_class", ""):
                 findings.append(Finding(
                     type=FindingType.SECURITY,
                     severity=Severity.LOW,

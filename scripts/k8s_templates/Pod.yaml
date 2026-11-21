@@ -1,0 +1,53 @@
+# A bare Pod is not replaced if its node fails; prefer a Deployment for long-running work.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: __NAME__
+spec:
+  serviceAccountName: __NAME__
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: __NAME__
+      image: registry.example.com/__NAME__:1.0.0
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 8080
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: http
+        initialDelaySeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: http
+      volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+  volumes:
+    - name: tmp
+      emptyDir: {}

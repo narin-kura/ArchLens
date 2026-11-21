@@ -74,6 +74,23 @@ by that platform's own categories (retired ones are kept and flagged
 resource type, so a drawn node and a parsed `.tf` file go through the same
 checks — and the diagram's **Export Terraform** can emit a real resource block.
 
+**Export Kubernetes** turns the Kubernetes nodes on a diagram into manifests.
+Each kind comes from a template in [`scripts/k8s_templates/`](scripts/k8s_templates/)
+(non-root, read-only filesystem, no capabilities, seccomp, requests and limits,
+probes, TLS, a ServiceAccount per workload, a default-deny NetworkPolicy), and
+the diagram's arrows wire them: Service selectors, Ingress and HTTPRoute
+backends, ConfigMap/Secret `envFrom`, volume mounts, autoscaler targets and
+NetworkPolicy allow rules. Generic containers become Deployments and generic
+databases become StatefulSets; managed cloud services are listed as TODOs.
+After editing a template, run `python scripts/gen_k8s_templates.py`.
+`tests/test_k8s_export.py` exports a diagram using every template and requires
+ArchLens to find nothing in the result.
+
+Helm charts are rendered with their default `values.yaml` by an in-process
+renderer (`archlens/parsers/helm_render.py`, no `helm` binary) and then get
+every Kubernetes check. Upload a chart, or several manifests or `.tf` files,
+as a `.zip` / `.tgz`.
+
 | Platform | File | Notes |
 |---|---|---|
 | AWS | `catalog_aws.js` | `aws_*` types |
