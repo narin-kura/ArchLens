@@ -18,6 +18,18 @@ _DANGEROUS_CAPS = {
     "KILL", "MKNOD", "NET_BIND_SERVICE",
 }
 
+# Cluster-scoped kinds have no namespace at all, so a namespace on them is
+# ignored by the API server and never worth a finding.
+_CLUSTER_SCOPED_KINDS = {
+    "Namespace", "Node", "PersistentVolume", "StorageClass", "ClusterRole", "ClusterRoleBinding",
+    "CustomResourceDefinition", "PriorityClass", "IngressClass", "RuntimeClass", "CSIDriver",
+    "MutatingWebhookConfiguration", "ValidatingWebhookConfiguration", "APIService",
+    "VolumeSnapshotClass", "ClusterIssuer", "GatewayClass",
+}
+
+# Plain manifests, and Helm charts rendered into the same Kubernetes objects.
+K8S_SOURCES = {"kubernetes", "helm"}
+
 _SENSITIVE_KEY_FRAGMENTS = {
     "password", "secret", "token", "api_key", "apikey",
     "private_key", "credentials", "passwd", "auth",
@@ -26,7 +38,7 @@ _SENSITIVE_KEY_FRAGMENTS = {
 
 class KubernetesSecurityAnalyzer(BaseAnalyzer):
     def analyze(self, model: ArchitectureModel) -> list[Finding]:
-        if model.source != "kubernetes":
+        if model.source not in K8S_SOURCES:
             return []
         findings: list[Finding] = []
         for check in [
@@ -69,6 +81,8 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
             self._check_ingress_no_tls,
             self._check_ingress_no_class,
             # Secrets / config
+            self._check_literal_secret_env,
+            self._check_secret_values_in_manifest,
             self._check_configmap_sensitive_keys,
             self._check_default_namespace,
         ]:
@@ -656,6 +670,49 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
 
     # ------------------------------------------------- Secrets / ConfigMap
 
+    def _check_literal_secret_env(self, model: ArchitectureModel) -> list[Finding]:
+        findings = []
+        for c in self._workloads(model):
+            names = c.properties.get("k8s_literal_secret_env") or []
+            if names:
+                findings.append(Finding(
+                    type=FindingType.SECURITY,
+                    severity=Severity.HIGH,
+                    title=f"Workload '{c.name}' sets credentials as plain env values: {', '.join(names)}",
+                    description="These environment variables carry a literal value in the manifest, so the secret "
+                                "is stored in git and visible to anyone who can read the Deployment "
+                                "(`kubectl get -o yaml`, `kubectl describe`).",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Store the value in a Secret and reference it with `valueFrom.secretKeyRef`, "
+                                   "or inject it from an external store (External Secrets Operator, the Secrets "
+                                   "Store CSI driver, Vault).",
+                    references=["https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables"],
+                ))
+        return findings
+
+    def _check_secret_values_in_manifest(self, model: ArchitectureModel) -> list[Finding]:
+        findings = []
+        for c in model.components:
+            if c.provider != "kubernetes" or c.properties.get("k8s_kind") != "Secret":
+                continue
+            keys = c.properties.get("k8s_secret_literal_keys") or []
+            if keys:
+                findings.append(Finding(
+                    type=FindingType.SECURITY,
+                    severity=Severity.MEDIUM,
+                    title=f"Secret '{c.name}' has its values written in the manifest",
+                    description=f"Keys {', '.join(keys)} hold real values in the YAML. Base64 in `data` is "
+                                "encoding, not encryption, so anyone with the file or repository can read them.",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Keep secret values out of manifests: use Sealed Secrets or SOPS for encrypted "
+                                   "files in git, or the External Secrets Operator to pull them from a cloud "
+                                   "secret manager at deploy time.",
+                    references=["https://kubernetes.io/docs/concepts/security/secrets-good-practices/"],
+                ))
+        return findings
+
     def _check_configmap_sensitive_keys(self, model: ArchitectureModel) -> list[Finding]:
         findings = []
         for c in model.components:
@@ -685,7 +742,14 @@ class KubernetesSecurityAnalyzer(BaseAnalyzer):
             if c.provider != "kubernetes":
                 continue
             ns = c.properties.get("k8s_namespace", "")
-            if ns == "default" and ns not in seen:
+            # A manifest with no namespace gets one at deploy time
+            # (`kubectl apply -n`, `helm install -n`); only an explicit
+            # `namespace: default` is a decision worth flagging.
+            if not c.properties.get("k8s_namespace_explicit", True):
+                continue
+            if c.properties.get("k8s_kind") in _CLUSTER_SCOPED_KINDS:
+                continue
+            if ns == "default" and c.name not in seen:
                 seen.add(c.name)
                 findings.append(Finding(
                     type=FindingType.SECURITY,

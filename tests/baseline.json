@@ -237,11 +237,18 @@
     "medium": 9
   },
   "kubernetes/insecure-demo.yaml": {
-    "total": 43,
+    "total": 29,
     "critical": 3,
-    "high": 12,
-    "low": 11,
-    "medium": 17
+    "high": 7,
+    "low": 10,
+    "medium": 9
+  },
+  "helm/web-app": {
+    "total": 25,
+    "critical": 1,
+    "high": 6,
+    "low": 7,
+    "medium": 11
   },
   "cloud_exports/aws_config_export.json": {
     "total": 20,

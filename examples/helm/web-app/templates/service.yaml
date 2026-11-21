@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "web-app.fullname" . }}
+  labels:
+    {{- include "web-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+  selector:
+    {{- include "web-app.selectorLabels" . | nindent 4 }}
+{{- if .Values.admin.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "web-app.fullname" . }}-admin
+spec:
+  type: {{ .Values.admin.serviceType }}
+  ports:
+    - port: 8080
+  selector:
+    {{- include "web-app.selectorLabels" . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,1 @@
+Visit http://{{ (index .Values.ingress.hosts 0).host }}

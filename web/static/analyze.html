@@ -42,10 +42,11 @@
 
     <div id="tab-file" class="tab-content active">
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md,.dockerfile" onchange="onFileSelect(this)" />
+        <input type="file" id="fileInput" accept=".tf,.json,.yaml,.yml,.xml,.drawio,.txt,.md,.dockerfile,.zip,.tgz,.gz,.tar" onchange="onFileSelect(this)" />
         <div class="icon">&#128194;</div>
         <p><strong>Click to upload</strong> or drag &amp; drop</p>
-        <p>Terraform &nbsp;&#183;&nbsp; Kubernetes YAML &nbsp;&#183;&nbsp; Helm &nbsp;&#183;&nbsp; Docker Compose &nbsp;&#183;&nbsp; Dockerfile &nbsp;&#183;&nbsp; Azure ARM &nbsp;&#183;&nbsp; CloudFormation &nbsp;&#183;&nbsp; Serverless Framework &nbsp;&#183;&nbsp; OpenAPI/Swagger &nbsp;&#183;&nbsp; GitHub Actions &nbsp;&#183;&nbsp; Ansible &nbsp;&#183;&nbsp; draw.io &nbsp;&#183;&nbsp; Text</p>
+        <p>Terraform &nbsp;&#183;&nbsp; Kubernetes YAML &nbsp;&#183;&nbsp; Helm chart (.tgz/.zip) &nbsp;&#183;&nbsp; Docker Compose &nbsp;&#183;&nbsp; Dockerfile &nbsp;&#183;&nbsp; Azure ARM &nbsp;&#183;&nbsp; CloudFormation &nbsp;&#183;&nbsp; Serverless Framework &nbsp;&#183;&nbsp; OpenAPI/Swagger &nbsp;&#183;&nbsp; GitHub Actions &nbsp;&#183;&nbsp; Ansible &nbsp;&#183;&nbsp; draw.io &nbsp;&#183;&nbsp; Text</p>
+        <p>Several files? Upload the folder as a .zip.</p>
         <div class="file-name" id="fileName"></div>
       </div>
     </div>

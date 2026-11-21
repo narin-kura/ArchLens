@@ -20,6 +20,17 @@ _POD_TEMPLATE_CRDS = {"knative_service", "argo_rollout"}
 
 _WORKLOAD_KINDS = {"Pod", "Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Job", "CronJob"}
 
+# Kinds whose spec.replicas sets a fixed pod count.
+_REPLICATED_KINDS = {"Deployment", "StatefulSet", "ReplicaSet", "ReplicationController"}
+
+# Env var names that suggest a credential. A literal `value:` for one of these
+# puts the secret in the manifest, in git and in `kubectl describe`.
+_SECRET_ENV_FRAGMENTS = ("password", "passwd", "secret", "token", "apikey", "api_key",
+                         "private_key", "credentials", "access_key")
+
+# Autoscalers that point at a workload through spec.scaleTargetRef.
+_AUTOSCALER_KINDS = {"HorizontalPodAutoscaler", "ScaledObject"}
+
 
 class KubernetesParser(BaseParser):
     def can_parse(self, source: str | Path) -> bool:
@@ -63,10 +74,16 @@ class KubernetesParser(BaseParser):
         service, component_type, is_builtin = classify(kind, api_version)
         metadata = doc.get("metadata", {}) or {}
         name = metadata.get("name", "unknown")
-        namespace = metadata.get("namespace", "default")
+        namespace = metadata.get("namespace") or "default"
 
         props: dict[str, Any] = {"k8s_kind": kind, "k8s_namespace": namespace,
+                                 # Without a namespace, `kubectl apply -n` or
+                                 # `helm install -n` decides it at deploy time.
+                                 "k8s_namespace_explicit": bool(metadata.get("namespace")),
                                  "k8s_api_version": api_version}
+
+        if kind in _AUTOSCALER_KINDS:
+            self._extract_autoscaler_props(doc, props)
 
         if not is_builtin:
             # A CRD that reuses a built-in kind name (Knative Service, Istio
@@ -114,6 +131,9 @@ class KubernetesParser(BaseParser):
             spec = (doc.get("spec") or {}).get("template", {}).get("spec", {})
 
         spec = spec or {}
+        if kind in _REPLICATED_KINDS:
+            replicas = (doc.get("spec") or {}).get("replicas", 1)
+            props["k8s_replicas"] = replicas if isinstance(replicas, int) else 1
         props["k8s_host_network"] = spec.get("hostNetwork", False)
         props["k8s_host_pid"] = spec.get("hostPID", False)
         props["k8s_host_ipc"] = spec.get("hostIPC", False)
@@ -142,10 +162,18 @@ class KubernetesParser(BaseParser):
         all_caps_add: list[str] = []
         any_missing_sc = False
         any_drops_all = False
+        literal_secret_env: list[str] = []
 
         for container in containers:
             container = container or {}
             images.append(container.get("image", ""))
+
+            for var in container.get("env") or []:
+                var = var or {}
+                env_name = str(var.get("name", ""))
+                if ("value" in var and var.get("value") not in (None, "")
+                        and any(f in env_name.lower() for f in _SECRET_ENV_FRAGMENTS)):
+                    literal_secret_env.append(env_name)
 
             resources = container.get("resources") or {}
             if not resources.get("limits"):
@@ -189,6 +217,7 @@ class KubernetesParser(BaseParser):
         props["k8s_drops_all_caps"] = any_drops_all
         props["k8s_has_security_context"] = not any_missing_sc
         props["k8s_container_count"] = len(containers)
+        props["k8s_literal_secret_env"] = sorted(set(literal_secret_env))
 
     def _extract_service_props(self, doc: dict, props: dict) -> None:
         spec = doc.get("spec") or {}
@@ -240,7 +269,18 @@ class KubernetesParser(BaseParser):
 
     def _extract_secret_props(self, doc: dict, props: dict) -> None:
         props["k8s_secret_type"] = doc.get("type", "Opaque")
-        props["k8s_secret_keys"] = list((doc.get("data") or {}).keys())
+        data = doc.get("data") or {}
+        string_data = doc.get("stringData") or {}
+        props["k8s_secret_keys"] = list(data.keys()) + list(string_data.keys())
+        # Keys whose value is written in the manifest itself (base64 in
+        # `data` is encoding, not encryption).
+        props["k8s_secret_literal_keys"] = sorted(
+            k for k, v in {**data, **string_data}.items() if v not in (None, ""))
+
+    def _extract_autoscaler_props(self, doc: dict, props: dict) -> None:
+        ref = (doc.get("spec") or {}).get("scaleTargetRef") or {}
+        props["k8s_scale_target_kind"] = ref.get("kind", "Deployment")
+        props["k8s_scale_target_name"] = ref.get("name", "")
 
     def _extract_pv_props(self, doc: dict, props: dict) -> None:
         spec = doc.get("spec") or {}

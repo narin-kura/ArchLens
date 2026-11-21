@@ -1,0 +1,6 @@
+apiVersion: v2
+name: web-app
+description: Example chart with deliberate security and cost problems, for ArchLens tests.
+type: application
+version: 0.1.0
+appVersion: "1.4.2"

@@ -1,10 +1,17 @@
-"""Helm chart parser — reads Chart.yaml + values.yaml and templates/ to build a model."""
+"""Helm chart parser — renders a chart's templates with its default values and
+reads the result exactly like plain Kubernetes manifests.
+
+Rendering is done in-process by helm_render (no `helm` binary is run). If a
+chart cannot be rendered at all, the parser falls back to reading values.yaml
+alone, which is what ArchLens did before rendering existed."""
 
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
 from .base import BaseParser
+from .helm_render import RenderError, build_context, collect_defines, render_template
+from .kubernetes import KubernetesParser
 from ..models.architecture import ArchitectureModel, Component, ComponentType
 
 try:
@@ -12,26 +19,6 @@ try:
     _YAML_AVAILABLE = True
 except ImportError:
     _YAML_AVAILABLE = False
-
-_K8S_KIND_TO_TYPE: dict[str, ComponentType] = {
-    "Deployment":     ComponentType.CONTAINER,
-    "StatefulSet":    ComponentType.CONTAINER,
-    "DaemonSet":      ComponentType.CONTAINER,
-    "Job":            ComponentType.CONTAINER,
-    "CronJob":        ComponentType.CONTAINER,
-    "Service":        ComponentType.NETWORK,
-    "Ingress":        ComponentType.GATEWAY,
-    "NetworkPolicy":  ComponentType.NETWORK,
-    "ServiceAccount": ComponentType.IAM,
-    "Role":           ComponentType.IAM,
-    "ClusterRole":    ComponentType.IAM,
-    "RoleBinding":    ComponentType.IAM,
-    "ClusterRoleBinding": ComponentType.IAM,
-    "PersistentVolumeClaim": ComponentType.STORAGE,
-    "ConfigMap":      ComponentType.OTHER,
-    "Secret":         ComponentType.OTHER,
-    "HorizontalPodAutoscaler": ComponentType.COMPUTE,
-}
 
 
 class HelmParser(BaseParser):
@@ -60,14 +47,12 @@ class HelmParser(BaseParser):
         model.metadata["helm_app_version"] = chart_meta.get("appVersion", "")
         model.metadata["helm_description"] = chart_meta.get("description", "")
 
-        # Build components from values.yaml structure first
-        self._components_from_values(chart_name, values, model)
-
-        # Parse rendered-style templates (best-effort, ignoring Go template syntax)
-        templates_dir = chart_dir / "templates"
-        if templates_dir.is_dir():
-            for tmpl_file in sorted(templates_dir.glob("**/*.yaml")) + sorted(templates_dir.glob("**/*.yml")):
-                self._parse_template_file(tmpl_file, chart_name, model)
+        # Render templates/ with the default values, then read the output as
+        # ordinary Kubernetes manifests so every Kubernetes check applies.
+        rendered = self._render_chart(chart_dir, chart_meta, values, chart_name, model)
+        if not rendered:
+            # Nothing renderable: fall back to what values.yaml says.
+            self._components_from_values(chart_name, values, model)
 
         if not model.components:
             model.components.append(Component(
@@ -157,33 +142,49 @@ class HelmParser(BaseParser):
                 properties={"k8s_kind": "PersistentVolumeClaim"},
             ))
 
-    def _parse_template_file(self, path: Path, chart_name: str, model: ArchitectureModel) -> None:
-        try:
-            content = path.read_text(encoding="utf-8")
-            # Strip Go template directives before parsing
-            import re
-            stripped = re.sub(r"\{\{-?.*?-?\}\}", '""', content)
-            for doc in yaml.safe_load_all(stripped):
+    def _render_chart(self, chart_dir: Path, chart_meta: dict, values: dict,
+                      chart_name: str, model: ArchitectureModel) -> bool:
+        templates_dir = chart_dir / "templates"
+        if not templates_dir.is_dir():
+            return False
+        files = sorted(p for p in templates_dir.rglob("*") if p.is_file())
+        texts: dict[Path, str] = {}
+        for f in files:
+            try:
+                texts[f] = f.read_text(encoding="utf-8")
+            except Exception:
+                continue
+        # Named templates can live in any file, conventionally _helpers.tpl.
+        defines = collect_defines(list(texts.values()))
+        context = build_context(values, chart_meta, release_name=chart_name)
+        k8s = KubernetesParser()
+        rendered_any = False
+        skipped: list[str] = []
+        for f, text in texts.items():
+            if f.suffix not in (".yaml", ".yml") or f.name.startswith("_"):
+                continue
+            rel = f.relative_to(chart_dir).as_posix()
+            context["Template"] = {"Name": f"{chart_name}/{rel}", "BasePath": f"{chart_name}/templates"}
+            try:
+                output = render_template(text, context, defines)
+                docs = list(yaml.safe_load_all(output))
+            except (RenderError, yaml.YAMLError, RecursionError):
+                skipped.append(rel)
+                continue
+            for doc in docs:
                 if not isinstance(doc, dict):
                     continue
-                kind = doc.get("kind", "")
-                if not kind:
+                component = k8s._parse_resource(doc)
+                if component is None:
                     continue
-                comp_type = _K8S_KIND_TO_TYPE.get(kind, ComponentType.OTHER)
-                meta = doc.get("metadata") or {}
-                name = meta.get("name", path.stem)
-                if "[" in name or "{{" in name:
-                    name = f"{chart_name}-{kind.lower()}"
-                model.components.append(Component(
-                    id=f"helm.template.{kind.lower()}.{name}",
-                    name=name,
-                    type=comp_type,
-                    provider="kubernetes",
-                    service=kind.lower(),
-                    properties={"k8s_kind": kind, "k8s_namespace": (meta.get("namespace") or "default")},
-                ))
-        except Exception:
-            pass
+                component.id = component.id.replace("k8s.", "helm.", 1)
+                component.properties["helm_template"] = rel
+                model.components.append(component)
+                rendered_any = True
+        model.metadata["helm_rendered"] = rendered_any
+        if skipped:
+            model.metadata["helm_unrendered_templates"] = skipped
+        return rendered_any
 
     def _chart_props(self, meta: dict, values: dict) -> dict:
         return {

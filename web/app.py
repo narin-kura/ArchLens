@@ -19,6 +19,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from archlens.archive import extract_archive, is_archive
 from archlens.parsers.registry import detect_parser
 from archlens.analyzers.security import SecurityAnalyzer
 from archlens.analyzers.cost import CostAnalyzer
@@ -331,7 +332,13 @@ async def _parse_upload(file: UploadFile, format_hint: Optional[str]) -> Archite
         )
     suffix = Path(file.filename).suffix
     with tempfile.TemporaryDirectory() as tmp:
-        dest = Path(tmp) / file.filename
+        if is_archive(file.filename):
+            # A Helm chart (.tgz from `helm package`) or a folder of
+            # manifests / Terraform files, extracted with size and path limits.
+            root = extract_archive(content, file.filename, Path(tmp) / "upload")
+            parser = detect_parser(str(root), format_hint)
+            return await run_in_threadpool(parser.parse, str(root))
+        dest = Path(tmp) / Path(file.filename).name
         dest.write_bytes(content)
         source = str(tmp) if suffix == ".tf" else str(dest)
         parser = detect_parser(source, format_hint)

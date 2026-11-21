@@ -681,6 +681,12 @@ def _is_human_principal(component: Component) -> bool:
 
 class SecurityAnalyzer(BaseAnalyzer):
     def analyze(self, model: ArchitectureModel) -> list[Finding]:
+        # Kubernetes manifests and Helm charts get their own analyzer. These
+        # cloud checks would misread them: a PersistentVolume is not an S3
+        # bucket (no versioning, no public access block) and an Ingress is
+        # not an API gateway with authorizers and usage plans.
+        if model.source in ("kubernetes", "helm"):
+            return []
         findings: list[Finding] = []
         for check in [
             # Storage

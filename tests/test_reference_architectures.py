@@ -24,6 +24,7 @@ ARCH_DIRS = ("architectures", "architectures-azure", "architectures-gcp", "archi
 FIXTURES = (
     "terraform",
     "kubernetes/insecure-demo.yaml",
+    "helm/web-app",
     "cloud_exports/aws_config_export.json",
     "cloud_exports/cloudformation_stack.yaml",
     "cloud_exports/gcp_asset_inventory.json",

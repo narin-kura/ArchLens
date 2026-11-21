@@ -76,6 +76,12 @@ def _scales_itself(component) -> bool:
 
 class CostAnalyzer(BaseAnalyzer):
     def analyze(self, model: ArchitectureModel) -> list[Finding]:
+        if model.source in ("kubernetes", "helm"):
+            # Manifests name no instance sizes or cloud resources; the money
+            # questions are load balancers, idle replicas and node packing.
+            return (self._check_k8s_loadbalancer_per_service(model)
+                    + self._check_k8s_fixed_replicas(model)
+                    + self._check_k8s_no_requests(model))
         findings: list[Finding] = []
         for check in [
             self._check_oversized_rds,
@@ -172,3 +178,70 @@ class CostAnalyzer(BaseAnalyzer):
                 references=["https://docs.aws.amazon.com/savingsplans/latest/userguide/what-is-savings-plans.html"],
             )]
         return []
+
+    # ------------------------------------------------------------ Kubernetes
+
+    @staticmethod
+    def _k8s(model: ArchitectureModel, kinds: set[str]) -> list:
+        return [c for c in model.components
+                if c.provider == "kubernetes" and c.properties.get("k8s_kind") in kinds]
+
+    def _check_k8s_loadbalancer_per_service(self, model: ArchitectureModel) -> list[Finding]:
+        lbs = [c for c in self._k8s(model, {"Service"})
+               if c.properties.get("k8s_service_type") == "LoadBalancer"]
+        if len(lbs) < 2:
+            return []
+        names = ", ".join(c.name for c in lbs)
+        return [Finding(
+            type=FindingType.COST,
+            severity=Severity.MEDIUM,
+            title=f"{len(lbs)} Services each create their own cloud load balancer",
+            description=f"Every Service of type LoadBalancer ({names}) makes the cloud provision a separate "
+                        "load balancer, and each one is billed by the hour plus traffic processed, even when idle.",
+            recommendation="Expose HTTP services through one Ingress controller or Gateway API gateway behind a "
+                           "single load balancer, and keep internal services as ClusterIP.",
+            estimated_savings=0,
+            references=["https://kubernetes.io/docs/concepts/services-networking/ingress/",
+                        "https://aws.amazon.com/elasticloadbalancing/pricing/"],
+        )]
+
+    def _check_k8s_fixed_replicas(self, model: ArchitectureModel) -> list[Finding]:
+        scaled = {(c.properties.get("k8s_scale_target_kind"), c.properties.get("k8s_scale_target_name"))
+                  for c in self._k8s(model, {"HorizontalPodAutoscaler", "ScaledObject"})}
+        findings = []
+        for c in self._k8s(model, {"Deployment", "StatefulSet", "ReplicaSet"}):
+            replicas = c.properties.get("k8s_replicas", 1)
+            if replicas >= 3 and (c.properties.get("k8s_kind"), c.name) not in scaled:
+                findings.append(Finding(
+                    type=FindingType.COST,
+                    severity=Severity.LOW,
+                    title=f"'{c.name}' runs a fixed {replicas} replicas with no autoscaler",
+                    description="A fixed replica count is sized for peak traffic and keeps every pod (and the "
+                                "nodes under them) running at quiet times too.",
+                    component_id=c.id,
+                    component_name=c.name,
+                    recommendation="Add a HorizontalPodAutoscaler (or a KEDA ScaledObject for queue-driven work) "
+                                   "with a sensible minReplicas, and let the cluster autoscaler remove idle nodes.",
+                    estimated_savings=0,
+                    references=["https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/"],
+                ))
+        return findings
+
+    def _check_k8s_no_requests(self, model: ArchitectureModel) -> list[Finding]:
+        workloads = self._k8s(model, {"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet", "Job",
+                                      "CronJob", "Pod", "ReplicationController"})
+        missing = [c.name for c in workloads if not c.properties.get("k8s_has_resource_requests", True)]
+        if not missing:
+            return []
+        return [Finding(
+            type=FindingType.COST,
+            severity=Severity.LOW,
+            title=f"{len(missing)} of {len(workloads)} workloads have no CPU/memory requests",
+            description=f"Without requests ({', '.join(missing)}), the scheduler cannot pack pods onto nodes and "
+                        "the cluster autoscaler cannot size the node pool, which usually ends in more nodes "
+                        "than the workloads need.",
+            recommendation="Set requests from observed usage (for example with the Vertical Pod Autoscaler in "
+                           "recommendation mode), then let the cluster autoscaler right-size the nodes.",
+            estimated_savings=0,
+            references=["https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"],
+        )]
