@@ -121,18 +121,36 @@ function k8sPodSpec(obj) {
 
 // ------------------------------------------------------------------ export
 
-function buildKubernetesExport(diagramNodes, diagramEdges, templatesArg) {
-  const templates = templatesArg || (typeof window !== 'undefined' && window.K8S_TEMPLATES) || {};
+// What a diagram node becomes: a Kubernetes kind (catalog service id), or
+// null for things that are not Kubernetes objects (managed cloud services).
+function k8sKindOf(n) {
+  if (n.provider === 'kubernetes') return n.service;
+  if (n.provider === 'generic' || n.provider === 'docker') {
+    if (n.type === 'CONTAINER' || n.type === 'COMPUTE') return 'deployment';
+    if (n.type === 'DATABASE' || n.type === 'CACHE' || n.type === 'QUEUE') return 'statefulset';
+  }
+  return null;
+}
 
-  // What each diagram node becomes.
-  const kindOf = n => {
-    if (n.provider === 'kubernetes') return n.service;
-    if (n.provider === 'generic' || n.provider === 'docker') {
-      if (n.type === 'CONTAINER' || n.type === 'COMPUTE') return 'deployment';
-      if (n.type === 'DATABASE' || n.type === 'CACHE' || n.type === 'QUEUE') return 'statefulset';
-    }
-    return null;
-  };
+function k8sTemplates(templatesArg) {
+  return templatesArg || (typeof window !== 'undefined' && window.K8S_TEMPLATES) || {};
+}
+
+// Diagram nodes the Kubernetes export can turn into objects: Kubernetes kinds
+// that have a template, and generic containers / data stores. A Namespace on
+// its own is not enough. The canvas enables "Export Kubernetes" only when
+// there is at least one.
+function kubernetesExportableNodes(diagramNodes, templatesArg) {
+  const templates = k8sTemplates(templatesArg);
+  return diagramNodes.filter(n => {
+    const kind = k8sKindOf(n);
+    return kind && kind !== 'namespace' && templates[kind];
+  });
+}
+
+function buildKubernetesExport(diagramNodes, diagramEdges, templatesArg) {
+  const templates = k8sTemplates(templatesArg);
+  const kindOf = k8sKindOf;
 
   const nsNode = diagramNodes.find(n => kindOf(n) === 'namespace');
   const namespace = nsNode ? k8sDnsName(nsNode.name, 'app') : 'app';
@@ -390,7 +408,7 @@ function buildKubernetesExport(diagramNodes, diagramEdges, templatesArg) {
 }
 
 function exportDiagramAsKubernetes() {
-  if (!nodes.length) return;
+  if (!kubernetesExportableNodes(nodes).length) return;
   const {yaml} = buildKubernetesExport(nodes, edges);
   const blob = new Blob([yaml], {type: 'text/yaml'});
   const url = URL.createObjectURL(blob);
@@ -401,5 +419,5 @@ function exportDiagramAsKubernetes() {
 }
 
 if (typeof module !== 'undefined') {
-  module.exports = {buildKubernetesExport, k8sToYaml};
+  module.exports = {buildKubernetesExport, kubernetesExportableNodes, k8sToYaml};
 }

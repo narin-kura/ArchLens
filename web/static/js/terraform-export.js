@@ -59,6 +59,13 @@ function tfTypeFor(node) {
   return (svc && svc.tf) || node.tf || node.service;
 }
 
+// Diagram nodes the Terraform export can turn into resource blocks: those
+// with a real resource type in a provider ArchLens knows. The canvas enables
+// "Export Terraform" only when there is at least one.
+function terraformExportableNodes(diagramNodes) {
+  return diagramNodes.filter(n => tfProviderFor(tfTypeFor(n)));
+}
+
 function tfSlug(name, fallback) {
   let s = (name || fallback || 'resource').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
   if (!s) s = 'resource';
@@ -232,7 +239,7 @@ function buildTerraformExport(diagramNodes, diagramEdges) {
 }
 
 function exportDiagramAsTerraform() {
-  if (!nodes.length) return;
+  if (!terraformExportableNodes(nodes).length) return;
   const {hcl} = buildTerraformExport(nodes, edges);
   const blob = new Blob([hcl], {type: 'text/plain'});
   const url = URL.createObjectURL(blob);
@@ -240,4 +247,8 @@ function exportDiagramAsTerraform() {
   a.href = url; a.download = 'archlens-diagram.tf';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = {buildTerraformExport, terraformExportableNodes};
 }

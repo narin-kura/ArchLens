@@ -231,13 +231,33 @@ function renderCanvas() {
     `${nodes.length} service${nodes.length === 1 ? '' : 's'} · ${edges.length} connection${edges.length === 1 ? '' : 's'}`;
   const btn = document.getElementById('builderAnalyzeBtn');
   if (btn) btn.disabled = nodes.length === 0;
-  const tfBtn = document.getElementById('exportTfBtn');
-  if (tfBtn) tfBtn.disabled = nodes.length === 0;
-  const k8sBtn = document.getElementById('exportK8sBtn');
-  if (k8sBtn) k8sBtn.disabled = nodes.length === 0;
+  updateExportButton('exportTfBtn',
+    typeof terraformExportableNodes === 'function' ? terraformExportableNodes(nodes).length : 0,
+    'sample Terraform', 'resource',
+    'Add cloud, Docker or on-prem resources (AWS, Azure, GCP, Oracle Cloud, vSphere...) to export Terraform');
+  updateExportButton('exportK8sBtn',
+    typeof kubernetesExportableNodes === 'function' ? kubernetesExportableNodes(nodes).length : 0,
+    'Kubernetes manifests', 'object',
+    'Add Kubernetes objects (Deployment, Service, Ingress...) or a container to export Kubernetes manifests');
 
   updateSuggestions();
   saveDraft();
+}
+
+// An export button is usable only when the diagram has something that export
+// can generate; the tooltip says why it is off, or how much it will cover.
+function updateExportButton(id, usable, what, unit, hint) {
+  const button = document.getElementById(id);
+  if (!button) return;
+  button.disabled = usable === 0;
+  if (usable === 0) {
+    button.title = hint;
+  } else {
+    const rest = nodes.length - usable;
+    button.title = `Download ${what}: ${usable} of ${nodes.length} node${nodes.length === 1 ? '' : 's'} `
+      + (usable === 1 ? `becomes a${/^[aeiou]/.test(unit) ? 'n' : ''} ${unit}` : `become ${unit}s`)
+      + (rest ? `; the other ${rest} ${rest === 1 ? 'is' : 'are'} listed as TODOs` : '');
+  }
 }
 
 function labelEdge(uid) {
